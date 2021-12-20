@@ -8,6 +8,7 @@ setuptools.setup(
     version="0.1.1",
     author="Jeef",
     author_email="",
+    license="MIT",
     description="An API to read the status of an intellifire wifi module",
     long_description=long_description,
     long_description_content_type="text/markdown",
