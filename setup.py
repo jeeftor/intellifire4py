@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="intellifire4py", # Replace with your own username
-    version="0.1.0",
+    version="0.2.1",
     author="Jeef",
     author_email="",
     license="MIT",
