@@ -16,4 +16,16 @@ If anybody knows more about OAuth and wants to help me reverse engineer the cont
 
 # Usage
 
-(tbd)
+```python
+
+# Define an intellifre instance
+fire = Intellifire("192.168.1.80")
+
+# Poll to update the internal data source
+fire.poll()
+
+# Print out all values
+print(fire.data)    
+
+```
+
