@@ -1,3 +1,3 @@
 
-from intellifire import Intellifire
-from intellifirepolldata import IntellifirePollData
+from intellifire4py.intellifire import Intellifire
+from intellifire4py.intellifirepolldata import IntellifirePollData
