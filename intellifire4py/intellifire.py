@@ -1,7 +1,5 @@
 import requests
-
-from intellifire4py.intellifirepolldata import IntellifirePollData
-
+from .model import IntellifirePollData
 
 class Intellifire:
 

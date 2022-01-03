@@ -1,7 +1,7 @@
 import aiohttp
 import asyncio
 
-from intellifire4py import IntellifirePollData
+from intellifire4py.model import IntellifirePollData
 
 
 class IntellifireAsync:
