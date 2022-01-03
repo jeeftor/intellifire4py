@@ -1,2 +1,4 @@
 pydantic
 requests
+aiohttp
+asyncio
