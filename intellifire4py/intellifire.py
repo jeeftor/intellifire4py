@@ -1,7 +1,7 @@
 import logging
 
 import requests
-from model import IntellifirePollData
+from intellifire4py.model import IntellifirePollData
 
 class Intellifire:
 
