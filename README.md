@@ -13,6 +13,9 @@ This module will parse data from botht he `/get_serial` and `/poll` endpoints an
 
 If anybody knows more about OAuth and wants to help me reverse engineer the control endpoints I'd love the help!
 
+Hit me up on github: https://github.com/jeeftor
+
+
 
 # Usage
 

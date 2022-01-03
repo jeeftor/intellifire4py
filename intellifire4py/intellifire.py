@@ -3,6 +3,12 @@ import requests
 
 from intellifire4py.intellifirepolldata import IntellifirePollData
 
+class AsyncIntellifire:
+    def __init__(self, ip) -> None:
+        self.ip = ip
+
+        self.__data: IntellifirePollData = None
+
 
 
 class Intellifire:

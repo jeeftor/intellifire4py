@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from intellifire4py import IntellifirePollData
+from intellifire4py import IntellifirePollData, Intellifire
 import json
 
 JSON1 = """
