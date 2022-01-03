@@ -1,5 +1,7 @@
+import logging
+
 import requests
-from .model import IntellifirePollData
+from model import IntellifirePollData
 
 class Intellifire:
 
@@ -15,7 +17,7 @@ class Intellifire:
                 # Valid address - but poll endpoint not found
                 raise ConnectionError("Fireplace Endpoint Not Found - 404")
 
-            # print(response.json())
+            print(response.json())
             self.__data = IntellifirePollData(**response.json())
         except ConnectionError as e:
             raise ConnectionError("ConnectionError - host not found")
