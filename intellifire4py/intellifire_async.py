@@ -49,6 +49,8 @@ async def main():
     # Poll the fire
     print(f"{fire.data.temperature_c} c")
     print(f"{fire.data.temperature_f} f")
+    print(f"{fire.data.thermostat_setpoint_c} c")
+    print(f"{fire.data.thermostat_setpoint_f} f")
 
     fire = IntellifireAsync("192.168.1.1")
     await fire.poll(logging_level=logging.WARN)

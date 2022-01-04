@@ -15,7 +15,7 @@ class IntellifirePollData(BaseModel):
     is_hot: bool = Field(alias="hot")
     is_on: bool = Field(alias="power")
     thermostat_on: bool = Field(alias="thermostat")
-    __thermostat_setpoint: int = Field(alias="setpoint")
+    raw_thermostat_setpoint: int = Field(alias="setpoint")
     timer_on: bool = Field(alias="timer")
     timeremaining_s: int = Field(alias="timeremaining")
     prepurge: int
@@ -38,9 +38,9 @@ class IntellifirePollData(BaseModel):
 
     @property
     def thermostat_setpoint_c(self) -> int:
-        return self.__thermostat_setpoint / 100
+        return self.raw_thermostat_setpoint / 100
 
     @property
     def thermostat_setpoint_f(self) -> int:
-        return (self.__thermostat_setpoint / 100 * 9 / 5) + 32
+        return (self.raw_thermostat_setpoint / 100 * 9 / 5) + 32
 
