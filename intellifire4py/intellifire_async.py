@@ -29,7 +29,7 @@ class IntellifireAsync:
                         LOGGER.log(level=logging_level, msg=f"--Intellifire:: Error accessing {url} - 404")
                         raise ConnectionError("Fireplace Endpoint Not Found - 404")
 
-                    json_data = await response.json()
+                    json_data = await response.json(content_type=None)
                     LOGGER.log(level=logging_level, msg=f"--Intellifire:: {json_data}")
 
                     self.__data = IntellifirePollData(**json_data)

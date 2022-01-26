@@ -29,7 +29,7 @@ class Intellifire:
 
 def main():
     print("Starting Intellifre Parser")
-    fire = Intellifire("192.168.1.80")
+    fire = Intellifire("192.168.1.65")
     # Poll the fire
     fire.poll()
     print(f"{fire.data.temperature_c} c")
