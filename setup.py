@@ -14,7 +14,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/jeeftor/intellifire4py",
     packages=setuptools.find_packages(),
-    install_requires=['pydantic','requests'],
+    install_requires=['aiohttp', 'pydantic', 'requests'],
     download_url='https://github.com/jeeftor/intellifire4py/archive/refs/tags/0.1.tar.gz',
     classifiers=[
         "Programming Language :: Python :: 3",
