@@ -9,7 +9,7 @@ class IntellifirePollData(BaseModel):
     temperature_c: int = Field(alias="temperature")
     battery: int
     pilot_on: bool = Field(alias="pilot")
-    light_on: bool = Field(alias="light")
+    light_level: int = Field(alias="light")
     flameheight: int = Field(alias="height")
     fanspeed: int
     is_hot: bool = Field(alias="hot")
