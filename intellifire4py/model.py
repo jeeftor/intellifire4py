@@ -44,3 +44,39 @@ class IntellifirePollData(BaseModel):
     def thermostat_setpoint_f(self) -> int:
         return (self.raw_thermostat_setpoint / 100 * 9 / 5) + 32
 
+class UDPResponse(BaseModel):
+    mac: str
+    bssid: str
+    channel: int
+    ip: str
+    ssid: str
+    rssi: int
+    remote_terminal_port: int
+    time: int
+    version: str
+    uuid: str
+
+class IntellifireLocationDetails(BaseModel):
+    location_id: str
+    location_name: str
+    wifi_essid: str
+    wifi_password: str
+    postal_code: str
+    user_class: int
+
+class IntellifireLocations(BaseModel):
+    locations: List[IntellifireLocationDetails]
+    email_notifications_enabled: int
+
+class IntellifireFireplace(BaseModel):
+    serial: str
+    brand: str
+    name: str
+    apikey: str
+    power: str
+
+
+
+class IntellifireFireplaces(BaseModel):
+    location_name: str
+    fireplaces: List[IntellifireFireplace]

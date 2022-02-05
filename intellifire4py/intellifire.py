@@ -1,4 +1,3 @@
-import logging
 
 import requests
 from intellifire4py.model import IntellifirePollData

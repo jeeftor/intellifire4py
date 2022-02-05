@@ -1,4 +1,8 @@
-# Intellifire 
+# Intellifire (New and Improved)
+
+This is a 100% unofficial python module for working with the IntelliFire API for Intellifire WIFI Modules.
+
+
 
 Intellifire is a wifi module for a variety of fireplaces. It has both ios/android apps - but they dont like to publish the api.
 
@@ -16,7 +20,6 @@ If anybody knows more about OAuth and wants to help me reverse engineer the cont
 Hit me up on github: https://github.com/jeeftor
 
 
-
 # Usage
 
 ```python
@@ -32,3 +35,15 @@ print(fire.data)
 
 ```
 
+# I just want to control things!
+
+# Where have all the firepalces gone!
+
+The fireplace moduels are configured to respond to a specific UDP packet and return information. As such we can discover fireplaces on the network. Currently this will only return the ip address of the first fireplace to respond... (oh well)
+
+```
+# Creates a Fireplace Finder
+finder = UDPFireplaceFinder()
+# Prints IP of first fireplace to respond
+print(finder.search_fireplace())
+```
