@@ -1,7 +1,7 @@
-
 from typing import List
 
 from pydantic import BaseModel, Field
+
 
 class IntellifirePollData(BaseModel):
     name: str
@@ -37,12 +37,13 @@ class IntellifirePollData(BaseModel):
         return (self.temperature_c * 9 / 5) + 32
 
     @property
-    def thermostat_setpoint_c(self) -> int:
+    def thermostat_setpoint_c(self) -> float:
         return self.raw_thermostat_setpoint / 100
 
     @property
-    def thermostat_setpoint_f(self) -> int:
+    def thermostat_setpoint_f(self) -> float:
         return (self.raw_thermostat_setpoint / 100 * 9 / 5) + 32
+
 
 class UDPResponse(BaseModel):
     mac: str
@@ -56,6 +57,7 @@ class UDPResponse(BaseModel):
     version: str
     uuid: str
 
+
 class IntellifireLocationDetails(BaseModel):
     location_id: str
     location_name: str
@@ -64,9 +66,11 @@ class IntellifireLocationDetails(BaseModel):
     postal_code: str
     user_class: int
 
+
 class IntellifireLocations(BaseModel):
     locations: List[IntellifireLocationDetails]
     email_notifications_enabled: int
+
 
 class IntellifireFireplace(BaseModel):
     serial: str
@@ -74,7 +78,6 @@ class IntellifireFireplace(BaseModel):
     name: str
     apikey: str
     power: str
-
 
 
 class IntellifireFireplaces(BaseModel):

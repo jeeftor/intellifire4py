@@ -12,7 +12,7 @@ class IntellifireAsync:
     def __init__(self, ip) -> None:
         self.ip = ip
 
-        self.__data: IntellifirePollData = None
+        self.__data: IntellifirePollData = None # type: ignore
 
     async def poll(self, logging_level: int = logging.DEBUG):
 

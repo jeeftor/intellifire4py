@@ -84,10 +84,10 @@ class IntellifireControl:
         """Sends a command to a given firepalce"""
 
         # Validate the range on input
-        min = command.value["min"]
-        max = command.value["max"]
-        if value > max or value < min:
-            raise InputRangeException(field=command.value["value"], min=min, max=max)
+        min_value: int = command.value["min"] # type: ignore
+        max_value: int = command.value["max"] # type: ignore
+        if value > max_value or value < min_value:
+            raise InputRangeException(field=command.value["value"], min=min_value, max=max_value) # type: ignore
         self._send_cloud_command(command=command, value=value, serial=fireplace.serial)
         _log.info(f"Sending Intellifire command: [{command.value}={value}]")
 

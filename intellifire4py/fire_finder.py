@@ -1,6 +1,5 @@
 import socket
 import psutil
-import aiohttp
 import asyncio
 
 

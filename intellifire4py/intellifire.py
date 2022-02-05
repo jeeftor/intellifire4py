@@ -1,13 +1,13 @@
-
 import requests
 from intellifire4py.model import IntellifirePollData
 
-class Intellifire:
 
+class Intellifire:
+    """Synchronus intellifire poller"""
     def __init__(self, ip) -> None:
         self.ip = ip
 
-        self.__data: IntellifirePollData = None
+        self.__data: IntellifirePollData = None # type: ignore
 
     def poll(self):
         try:
