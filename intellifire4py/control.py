@@ -1,4 +1,4 @@
-"""Intellifire Control Logic"""
+"""Intellifire Control Logic."""
 import os
 from typing import List
 import requests
@@ -7,13 +7,14 @@ from intellifire4py.model import IntellifireFireplace, IntellifireFireplaces
 
 
 class ApiCallException(Exception):
-    """Error with the API call"""
+    """Error with the API call."""
 
 
 class InputRangeException(Exception):
-    """Input out of boudns"""
+    """Input out of bounds."""
 
     def __init__(self, field: str, min_value: int, max_value: int):
+        """Initialize the exception."""
         self.message = (
             f"{field} is out of bounds: valid values [{min_value}:{max_value}]"
         )
@@ -21,20 +22,21 @@ class InputRangeException(Exception):
 
 
 class LoginException(Exception):
-    """Failure with the login process"""
+    """Failure with the login process."""
 
 
 class IntellifireControl:
-    """Hacked together control API for intellifire modules"""
+    """Hacked together control API for intellifire modules."""
 
     def __init__(self, *, fireplace_ip: str):
+        """Init the control class."""
         self._cookie = None
         self.is_logged_in = False
         self._ip = fireplace_ip
         pass
 
     def login(self, *, username, password):
-        """Logs into iftapi.net in order to request cookies"""
+        """Run login flow to iftapi.net in order to request cookies."""
         data = f"username={username}&password={password}"
         p = requests.post(
             "http://iftapi.net/a//login", data=data.encode()
@@ -43,25 +45,28 @@ class IntellifireControl:
         self.is_logged_in = True
 
     def _login_check(self):
-        """Internal function to check if the user is logged in."""
+        """Check if user is logged in."""
         if not self.is_logged_in:
             raise LoginException("Not Logged In")
 
     def get_username(self):
-        """Api call to iftapi.net to extract the username based on cookie information"""
+        """Call to iftapi.net to extract the username based on cookie information."""
         self._login_check()
         url = "http://iftapi.net/a/getusername"
         requests.get(url=url, cookies=self._cookie)
 
     def get_locations(self) -> List:
-        """Enumerates configured locations that a user has access to. 'location_id' can be used to discovery fireplaces
-        and associated serial numbers + api keys at a give location."""
+        """Enumerate configured locations that a user has access to.
+
+        'location_id' can be used to discovery fireplaces
+        and associated serial numbers + api keys at a give location.
+        """
         self._login_check()
         p = requests.get(url="http://iftapi.net/a/enumlocations", cookies=self._cookie)
         return p.json()["locations"]  # type: ignore
 
     def get_fireplaces(self, *, location_id: str) -> [IntellifireFireplace]:
-        """Gets fireplaces at a location with associated API keys!!!"""
+        """Get fireplaces at a location with associated API keys!."""
         self._login_check()
         p = requests.get(
             url=f"http://iftapi.net/a/enumfireplaces?location_id={location_id}",
@@ -70,11 +75,11 @@ class IntellifireControl:
         return IntellifireFireplaces(**p.json()).fireplaces
 
     def get_challenge(self):
-        """Hits the local challenge endpoint."""
+        """Hit the local challenge endpoint."""
         return requests.get(f"http://{self._ip}/get_challenge").text
 
     def _send_cloud_command(self, command: IntellifireCommand, value: int, serial: str):
-        """Sends a cloud based control command"""
+        """Send a cloud based control command."""
         self._login_check()
         data = f"{command.value['value']}={value}"
         r = requests.post(
@@ -92,8 +97,7 @@ class IntellifireControl:
         command: IntellifireCommand,
         value: int,
     ):
-        """Sends a command to a given firepalce"""
-
+        """Send a command to a given fireplace."""
         # Validate the range on input
         min_value: int = command.value["min"]  # type: ignore
         max_value: int = command.value["max"]  # type: ignore
@@ -105,13 +109,12 @@ class IntellifireControl:
         _log.info(f"Sending Intellifire command: [{command.value}={value}]")
 
     def _send_local_command(self, command: int):
-        """Not yet implemented
+        """Not yet implemented.
 
         validation code needs to be sent whcih is sha256(apiKey + sha256(apikey + xxxx + command))
-
         Have been unsure exactly how to encode the data so it matches the sample data I see on charles
-
         """
+        pass
 
     def beep(self, *, fireplace: IntellifireFireplace):
         """Play a beep - seems to only work if flame is on."""
@@ -155,7 +158,7 @@ class IntellifireControl:
 
     @property
     def user(self):
-        """Gets user cookie."""
+        """Get user cookie."""
         return self._cookie.get("user")
 
     @property
@@ -170,7 +173,7 @@ class IntellifireControl:
 
 
 def main():
-    """Main function"""
+    """Run main function."""
     username = os.environ["IFT_USER"]
     password = os.environ["IFT_PASS"]
 

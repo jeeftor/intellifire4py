@@ -4,9 +4,10 @@ from intellifire4py.model import IntellifirePollData
 
 
 class Intellifire:
-    """Synchronous intellifire poller"""
+    """Synchronous intellifire poller."""
 
     def __init__(self, ip) -> None:
+        """Initialize the class."""
         self.ip = ip
 
         self.__data: IntellifirePollData = None  # type: ignore
@@ -26,12 +27,12 @@ class Intellifire:
 
     @property
     def data(self) -> IntellifirePollData:
-        """Return Intellifire data,"""
+        """Return Intellifire data."""
         return self.__data
 
 
 def main():
-    """Main function."""
+    """Run main function."""
     print("Starting Intellifre Parser")
     fire = Intellifire("192.168.1.65")
     # Poll the fire

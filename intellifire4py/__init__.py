@@ -1,4 +1,4 @@
-"""Intellifire 4 Python"""
+"""Intellifire 4 Python."""
 from __future__ import annotations
 
 from intellifire4py.intellifire import Intellifire

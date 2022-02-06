@@ -11,13 +11,13 @@ class IntellifireAsync:
     """Async enabled intellifire parsing class."""
 
     def __init__(self, ip) -> None:
-        """Initializes the class with an ip."""
+        """Initialize the class with an ip."""
         self.ip = ip
 
         self.__data: IntellifirePollData = None  # type: ignore
 
     async def poll(self, logging_level: int = logging.DEBUG):
-        """Poll the IFT module for data"""
+        """Poll the IFT module for data."""
         async with aiohttp.ClientSession() as session:
             url = f"http://{self.ip}/poll"
 
