@@ -5,7 +5,7 @@ import json
 class UDPFireplaceFinder:
     """UDP Broadcast based FIREPLACE finder."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the finder."""
         self.send_port = 3785
         self.recv_port = 55555
@@ -15,17 +15,17 @@ class UDPFireplaceFinder:
         self._ping()
         data = self._pong()
         print(data)
-        fireplace_ip = json.loads(data)["ip"]
+        fireplace_ip: str = json.loads(data)["ip"]
         return fireplace_ip
 
-    def _ping(self):
+    def _ping(self) -> None:
         """Send a UDP request to find fireplaces."""
         s = socket(AF_INET, SOCK_DGRAM)
         s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         s.sendto(b"IFT-search", ("255.255.255.255", self.send_port))
         print("Sending Ping!")
 
-    def _pong(self):
+    def _pong(self) -> str:  # type: ignore
         """Receive a Fireplace "I EXIST" result."""
         s = socket(AF_INET, SOCK_DGRAM)
         s.settimeout(5000)
@@ -37,7 +37,7 @@ class UDPFireplaceFinder:
             return data.decode()
 
 
-def main():
+def main() -> None:
     """Run main function."""
     finder = UDPFireplaceFinder()
     print(finder.search_fireplace())

@@ -6,13 +6,13 @@ from intellifire4py.model import IntellifirePollData
 class Intellifire:
     """Synchronous intellifire poller."""
 
-    def __init__(self, ip) -> None:
+    def __init__(self, ip: str) -> None:
         """Initialize the class."""
         self.ip = ip
 
         self.__data: IntellifirePollData = None  # type: ignore
 
-    def poll(self):
+    def poll(self) -> None:
         """Poll the device for data."""
         try:
             response = requests.get("http://" + self.ip + "/poll")
@@ -31,7 +31,7 @@ class Intellifire:
         return self.__data
 
 
-def main():
+def main() -> None:
     """Run main function."""
     print("Starting Intellifre Parser")
     fire = Intellifire("192.168.1.65")

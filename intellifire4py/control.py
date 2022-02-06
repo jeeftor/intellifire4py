@@ -2,6 +2,8 @@
 import os
 from typing import List
 import requests
+from requests.utils import RequestsCookieJar
+
 from intellifire4py.const import IntellifireCommand, _log
 from intellifire4py.model import IntellifireFireplace, IntellifireFireplaces
 
@@ -28,13 +30,13 @@ class LoginException(Exception):
 class IntellifireControl:
     """Hacked together control API for intellifire modules."""
 
-    def __init__(self, *, fireplace_ip: str):
+    def __init__(self, *, fireplace_ip: str) -> None:
         """Init the control class."""
-        self._cookie = None
+        self._cookie: RequestsCookieJar 
         self.is_logged_in = False
         self._ip = fireplace_ip
 
-    def login(self, *, username, password):
+    def login(self, *, username: str, password: str) -> None:
         """Run login flow to iftapi.net in order to request cookies."""
         data = f"username={username}&password={password}"
         p = requests.post(
@@ -43,16 +45,18 @@ class IntellifireControl:
         self._cookie = p.cookies
         self.is_logged_in = True
 
-    def _login_check(self):
+    def _login_check(self) -> None:
         """Check if user is logged in."""
         if not self.is_logged_in:
             raise LoginException("Not Logged In")
 
-    def get_username(self):
+    def get_username(self) -> str:
         """Call to iftapi.net to extract the username based on cookie information."""
         self._login_check()
         url = "http://iftapi.net/a/getusername"
-        requests.get(url=url, cookies=self._cookie)
+        r = requests.get(url=url, cookies=self._cookie)
+        return r.text
+
 
     def get_locations(self) -> List:
         """Enumerate configured locations that a user has access to.
@@ -64,7 +68,7 @@ class IntellifireControl:
         p = requests.get(url="http://iftapi.net/a/enumlocations", cookies=self._cookie)
         return p.json()["locations"]  # type: ignore
 
-    def get_fireplaces(self, *, location_id: str) -> [IntellifireFireplace]:
+    def get_fireplaces(self, *, location_id: str) -> List[IntellifireFireplace]:
         """Get fireplaces at a location with associated API keys!."""
         self._login_check()
         p = requests.get(
@@ -73,11 +77,11 @@ class IntellifireControl:
         )
         return IntellifireFireplaces(**p.json()).fireplaces
 
-    def get_challenge(self):
+    def get_challenge(self) -> str:
         """Hit the local challenge endpoint."""
         return requests.get(f"http://{self._ip}/get_challenge").text
 
-    def _send_cloud_command(self, command: IntellifireCommand, value: int, serial: str):
+    def _send_cloud_command(self, command: IntellifireCommand, value: int, serial: str) -> None:
         """Send a cloud based control command."""
         self._login_check()
         data = f"{command.value['value']}={value}"
@@ -95,83 +99,83 @@ class IntellifireControl:
         fireplace: IntellifireFireplace,
         command: IntellifireCommand,
         value: int,
-    ):
+    ) -> None:
         """Send a command to a given fireplace."""
         # Validate the range on input
         min_value: int = command.value["min"]  # type: ignore
         max_value: int = command.value["max"]  # type: ignore
         if value > max_value or value < min_value:
             raise InputRangeException(
-                field=command.value["value"], min_value=min_value, max_value=max_value
-            )  # type: ignore
+                field=str(command.value["value"]), min_value=min_value, max_value=max_value
+            ) 
         self._send_cloud_command(command=command, value=value, serial=fireplace.serial)
         _log.info(f"Sending Intellifire command: [{command.value}={value}]")
 
-    def _send_local_command(self, command: int):
+    def _send_local_command(self, command: int) -> None:
         """Not yet implemented.
 
-        validation code needs to be sent whcih is sha256(apiKey + sha256(apikey + xxxx + command))
+        validation code needs to be sent which is sha256(apiKey + sha256(apikey + xxxx + command))
         Have been unsure exactly how to encode the data so it matches the sample data I see on charles
         """
         pass
 
-    def beep(self, *, fireplace: IntellifireFireplace):
+    def beep(self, *, fireplace: IntellifireFireplace) -> None:
         """Play a beep - seems to only work if flame is on."""
         self.send_command(fireplace=fireplace, command=IntellifireCommand.BEEP, value=1)
 
-    def flame_on(self, *, fireplace: IntellifireFireplace):
+    def flame_on(self, *, fireplace: IntellifireFireplace) -> None:
         """Turn on the flame."""
         self.send_command(
             fireplace=fireplace, command=IntellifireCommand.POWER, value=1
         )
 
-    def flame_off(self, *, fireplace: IntellifireFireplace):
+    def flame_off(self, *, fireplace: IntellifireFireplace) -> None:
         """Turn off the flame."""
         self.send_command(
             fireplace=fireplace, command=IntellifireCommand.POWER, value=0
         )
 
-    def set_lights(self, *, fireplace: IntellifireFireplace, level: int):
+    def set_lights(self, *, fireplace: IntellifireFireplace, level: int) -> None:
         """Modify light levels."""
         self.send_command(
             fireplace=fireplace, command=IntellifireCommand.LIGHT, value=level
         )
 
-    def set_flame_height(self, *, fireplace: IntellifireFireplace, height: int):
+    def set_flame_height(self, *, fireplace: IntellifireFireplace, height: int) -> None:
         """Set flame height."""
         self.send_command(
             fireplace=fireplace, command=IntellifireCommand.FLAME_HEIGHT, value=height
         )
 
-    def set_fan_speed(self, *, fireplace: IntellifireFireplace, speed: int):
+    def set_fan_speed(self, *, fireplace: IntellifireFireplace, speed: int) -> None:
         """Set fan speed."""
         self.send_command(
             fireplace=fireplace, command=IntellifireCommand.FAN_SPEED, value=speed
         )
 
-    def fan_off(self, *, fireplace: IntellifireFireplace):
+    def fan_off(self, *, fireplace: IntellifireFireplace) -> None:
         """Turn fan off."""
         self.send_command(
             fireplace=fireplace, command=IntellifireCommand.FAN_SPEED, value=0
         )
 
     @property
-    def user(self):
+    def user(self) -> str:
         """Get user cookie."""
-        return self._cookie.get("user")
+        return self._cookie.get("user") # type: ignore
 
     @property
-    def auth_cookie(self):
+    def auth_cookie(self) -> str:
         """Get Auth Cookie."""
-        return self._cookie.get("auth_cookie")
+        return self._cookie.get("auth_cookie")  # type: ignore
 
     @property
-    def web_client_id(self):
+    def web_client_id(self) -> str:
         """Get web client id."""
-        return self._cookie.get("web_client_id")
+        return self._cookie.get("web_client_id")  # type: ignore
 
 
-def main():
+def main() -> None:
     """Run main function."""
     username = os.environ["IFT_USER"]
     password = os.environ["IFT_PASS"]
