@@ -43,7 +43,7 @@ class IntellifireControl:
         p = requests.post(
             "http://iftapi.net/a//login", data=data.encode()
         )  # , headers=headers)
-        self._cookie = p.cookies
+        self._cookie = p.cookies  # type: ignore
         self.is_logged_in = True
 
     def _login_check(self) -> None:

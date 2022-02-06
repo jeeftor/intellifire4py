@@ -1,5 +1,7 @@
 CHANGELOG
 
+0.7.3
+- Fixed bug with imports
 0.7.2
 - Async FireFinder implemented
 0.7
