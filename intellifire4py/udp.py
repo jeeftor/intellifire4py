@@ -2,7 +2,6 @@
 from socket import *
 import json
 
-
 class UDPFireplaceFinder:
     """UDP Broadcast based FIREPLACE finder."""
 
