@@ -1,4 +1,4 @@
 CHANGELOG
 
-v0.6
+0.6
  - Modified light from a boolean (1/0) to a numeric value
