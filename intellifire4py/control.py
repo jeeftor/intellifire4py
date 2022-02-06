@@ -31,7 +31,7 @@ class LoginException(Exception):
 class IntellifireControl:
     """Hacked together control API for intellifire modules"""
 
-    def __init__(self, fireplace_ip: str):
+    def __init__(self, *, fireplace_ip: str):
         self._cookie = None
         self.is_logged_in = False
         self._ip = fireplace_ip
@@ -84,15 +84,22 @@ class IntellifireControl:
         """Sends a command to a given firepalce"""
 
         # Validate the range on input
-        min_value: int = command.value["min"] # type: ignore
-        max_value: int = command.value["max"] # type: ignore
+        min_value: int = command.value["min"]  # type: ignore
+        max_value: int = command.value["max"]  # type: ignore
         if value > max_value or value < min_value:
-            raise InputRangeException(field=command.value["value"], min=min_value, max=max_value) # type: ignore
+            raise InputRangeException(field=command.value["value"], min=min_value, max=max_value)  # type: ignore
         self._send_cloud_command(command=command, value=value, serial=fireplace.serial)
         _log.info(f"Sending Intellifire command: [{command.value}={value}]")
 
     def _send_local_command(self, command: int):
-        """Not yet implemented"""
+        """Not yet implemented
+
+        validation code needs to be sent whcih is sha256(apiKey + sha256(apikey + xxxx + command))
+
+        Have been unsure exactly how to encode the data so it matches the sample data I see on charles
+
+        """
+
         pass
 
     def beep(self, *, fireplace: IntellifireFireplace):
@@ -104,7 +111,7 @@ class IntellifireControl:
     def flame_off(self, *, fireplace: IntellifireFireplace):
         self.send_command(fireplace=fireplace, command=IntellifireCommand.POWER, value=0)
 
-    def set_light(self, *, fireplace: IntellifireFireplace, level: int):
+    def set_lights(self, *, fireplace: IntellifireFireplace, level: int):
         self.send_command(fireplace=fireplace, command=IntellifireCommand.LIGHT, value=level)
 
     def set_flame_height(self, *, fireplace: IntellifireFireplace, height: int):
@@ -134,7 +141,7 @@ def main():
     password = os.environ['IFT_PASS']
 
     # Init and login
-    control_interface = IntellifireControl('192.168.1.65')
+    control_interface = IntellifireControl(fireplace_ip='192.168.1.65')
     control_interface.login(username=username, password=password)
 
     # Get location list
@@ -145,9 +152,9 @@ def main():
     fireplace: IntellifireFireplace = control_interface.get_fireplaces(location_id=location_id)[0]
 
     sleep_time = 5
-    control_interface.flame_off(fireplace=fireplace)
-    time.sleep(sleep_time)
-    control_interface.flame_on(fireplace=fireplace)
+    # control_interface.flame_off(fireplace=fireplace)
+    # time.sleep(sleep_time)
+    # control_interface.flame_on(fireplace=fireplace)
     # time.sleep(sleep_time)
     # control_interface.set_flame_height(fireplace=fireplace, height=1)
     # time.sleep(sleep_time)
@@ -168,11 +175,12 @@ def main():
     # control_interface.set_fan_speed(fireplace=fireplace, speed=3)
     # time.sleep(sleep_time)
     # control_interface.set_fan_speed(fireplace=fireplace, speed=4)
-    time.sleep(sleep_time)
-    # control_interface.set_fan_speed(fireplace=fireplace, speed=1)
-    control_interface.beep(fireplace=fireplace)
-    time.sleep(sleep_time)
-    control_interface.flame_off(fireplace=fireplace)
+    # time.sleep(sleep_time)
+    control_interface.set_fan_speed(fireplace=fireplace, speed=1)
+    # time.sleep(sleep_time)
+    # control_interface.beep(fireplace=fireplace)
+    # time.sleep(sleep_time)
+    # control_interface.flame_off(fireplace=fireplace)
 
     # api_key = fireplace.apikey
     # serial = fireplace.serial
