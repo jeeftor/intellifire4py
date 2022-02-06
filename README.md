@@ -58,9 +58,15 @@ if __name__ == "__main__":
 
 
 
-# I just want to control things!
+# Local Control
 
-API Wise things appear to be organized into `Users` who have control of `Locations` which contain `Fireplaces`.
+The Intellifire unit has the ability to accept local control commands on the `/post` endpoint. However there is some cloud access as an **ApiKey** needs to be extracted from `iftapi.net`. 
+
+**Local control is currently not yet implemented**
+
+# Cloud Control
+
+Taking advantage of the `iftapi.net` REST API - the module can send commands to the cloud in order to control a specific fireplace. Conceptually the API is divided into `Users` who have control of `Locations` which contain `Fireplaces`.
 
 ```
 ┌───────────┐
@@ -143,7 +149,7 @@ control_interface.beep(fireplace=fireplace)
 
 # Where have all the firepalces gone!
 
-The fireplace moduels are configured to respond to a specific UDP packet and return information. As such we can discover fireplaces on the network. Currently this will only return the ip address of the first fireplace to respond... (oh well)
+The fireplace moduels are configured to respond to a specific UDP packet and return information. As such we can discover fireplaces on the network. Currently this will only return the ip address of the first fireplace to respond... (oh well). 
 
 ```python
 # Creates a Fireplace Finder
@@ -151,3 +157,5 @@ finder = UDPFireplaceFinder()
 # Prints IP of first fireplace to respond
 print(finder.search_fireplace())
 ```
+
+*TODO: Listen for a set time and return a list of all fireplaces that respond.*
