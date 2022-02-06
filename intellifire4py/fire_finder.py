@@ -1,5 +1,5 @@
 import socket
-import psutil
+import psutil  # type: ignore
 import asyncio
 
 

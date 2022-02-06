@@ -1,5 +1,7 @@
 import os
 import time
+from typing import List, Any
+
 import requests
 
 # # These two lines enable debugging at httplib level (requests->urllib3->http.client)
@@ -56,12 +58,12 @@ class IntellifireControl:
         p = requests.get(url=url, cookies=self._cookie)
         print(p.text)
 
-    def get_locations(self):
+    def get_locations(self) -> List:
         """Enumerates configured locations that a user has access to. 'location_id' can be used to discovery fireplaces
         and associated serial numbers + api keys at a give location. """
         self._login_check()
         p = requests.get(url='http://iftapi.net/a/enumlocations', cookies=self._cookie)
-        return p.json()['locations']
+        return p.json()["locations"]  # type: ignore
 
     def get_fireplaces(self, *, location_id: str) -> [IntellifireFireplace]:
         """Gets fireplaces at a location with associated API keys!!!"""
