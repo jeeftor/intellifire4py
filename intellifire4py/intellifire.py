@@ -1,15 +1,18 @@
+"""Sync intellifire module."""
 import requests
 from intellifire4py.model import IntellifirePollData
 
 
 class Intellifire:
-    """Synchronus intellifire poller"""
+    """Synchronous intellifire poller"""
+
     def __init__(self, ip) -> None:
         self.ip = ip
 
-        self.__data: IntellifirePollData = None # type: ignore
+        self.__data: IntellifirePollData = None  # type: ignore
 
     def poll(self):
+        """Poll the device for data."""
         try:
             response = requests.get("http://" + self.ip + "/poll")
             if response.status_code == 404:
@@ -18,15 +21,17 @@ class Intellifire:
 
             print(response.json())
             self.__data = IntellifirePollData(**response.json())
-        except ConnectionError as e:
+        except ConnectionError:
             raise ConnectionError("ConnectionError - host not found")
 
     @property
     def data(self) -> IntellifirePollData:
+        """Return Intellifire data,"""
         return self.__data
 
 
 def main():
+    """Main function."""
     print("Starting Intellifre Parser")
     fire = Intellifire("192.168.1.65")
     # Poll the fire
