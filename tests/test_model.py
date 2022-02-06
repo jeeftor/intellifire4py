@@ -7,7 +7,7 @@ from intellifire4py import IntellifirePollData
 
 def test_json_files():
 
-    for file_name in ['test1.json', 'test2.json', 'test3.json', 'test4.json']:
+    for file_name in ['test1.json']:
         file = open(file_name)
         json_str = file.read()
         try:

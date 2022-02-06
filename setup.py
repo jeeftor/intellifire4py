@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="intellifire4py", # Replace with your own username
-    version="0.6",
+    version="0.7",
     author="Jeef",
     author_email="",
     license="MIT",
@@ -15,7 +15,7 @@ setuptools.setup(
     url="https://github.com/jeeftor/intellifire4py",
     packages=setuptools.find_packages(),
     install_requires=['aiohttp', 'pydantic', 'requests'],
-    download_url='https://github.com/jeeftor/intellifire4py/archive/refs/tags/0.1.tar.gz',
+    # download_url='https://github.com/jeeftor/intellifire4py/archive/refs/tags/0.1.tar.gz',
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
