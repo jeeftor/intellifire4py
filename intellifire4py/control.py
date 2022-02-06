@@ -33,7 +33,6 @@ class IntellifireControl:
         self._cookie = None
         self.is_logged_in = False
         self._ip = fireplace_ip
-        pass
 
     def login(self, *, username, password):
         """Run login flow to iftapi.net in order to request cookies."""
