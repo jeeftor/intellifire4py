@@ -4,7 +4,6 @@ import time
 from typing import List
 
 import requests
-from requests.utils import RequestsCookieJar
 
 from intellifire4py.const import IntellifireCommand, _log
 from intellifire4py.model import IntellifireFireplace, IntellifireFireplaces
@@ -34,7 +33,7 @@ class IntellifireControl:
 
     def __init__(self, *, fireplace_ip: str) -> None:
         """Init the control class."""
-        self._cookie: RequestsCookieJar 
+        self._cookie = None
         self.is_logged_in = False
         self._ip = fireplace_ip
 
