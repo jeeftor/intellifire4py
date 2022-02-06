@@ -20,10 +20,13 @@ If anybody knows more about OAuth and wants to help me reverse engineer the cont
 Hit me up on github: https://github.com/jeeftor
 
 
-# Usage
+# Local Polling
+
+Both `Intellifire` and `IntellifireAsync` classes will poll an intellifire interface on the local network for a read-only view of the device. All that is required is the ip address. If you need to discover that see further on in this document.
+
+## Sync 
 
 ```python
-
 # Define an intellifre instance
 fire = Intellifire("192.168.1.80")
 
@@ -32,8 +35,28 @@ fire.poll()
 
 # Print out all values
 print(fire.data)    
+```
+
+## Async
+
+```python
+async def main():
+    fire = IntellifireAsync("127.0.0.1")
+    await fire.poll()
+
+    # Poll the fire
+    print(f"{fire.data.temperature_c} c")
+    print(f"{fire.data.temperature_f} f")
+    print(f"{fire.data.thermostat_setpoint_c} c")
+    print(f"{fire.data.thermostat_setpoint_f} f")
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
 
 ```
+
+
 
 # I just want to control things!
 
@@ -113,12 +136,16 @@ control_interface.beep(fireplace=fireplace)
 
 # Control Exceptions
 
+- `LoginException` - problem with the login process (username/password).
+- `InputRangeException` - control value is out of valid range.
+- `ApiCallException` - Some sort of api exception occured.
+
 
 # Where have all the firepalces gone!
 
 The fireplace moduels are configured to respond to a specific UDP packet and return information. As such we can discover fireplaces on the network. Currently this will only return the ip address of the first fireplace to respond... (oh well)
 
-```
+```python
 # Creates a Fireplace Finder
 finder = UDPFireplaceFinder()
 # Prints IP of first fireplace to respond

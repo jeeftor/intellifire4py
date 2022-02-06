@@ -13,7 +13,7 @@ from intellifire4py.model import IntellifireFireplace, IntellifireLocations, Int
 
 
 class ApiCallException(Exception):
-    """Error wiht the API call"""
+    """Error with the API call"""
 
 
 class InputRangeException(Exception):
@@ -25,7 +25,7 @@ class InputRangeException(Exception):
 
 
 class LoginException(Exception):
-    pass
+    """Failure with the login process"""
 
 
 class IntellifireControl:
