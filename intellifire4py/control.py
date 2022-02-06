@@ -1,6 +1,7 @@
 """Intellifire Control Logic."""
 import os
 from typing import List
+import time
 import requests
 from requests.utils import RequestsCookieJar
 
@@ -194,42 +195,43 @@ def main() -> None:
     )[0]
 
     sleep_time = 5
-    # control_interface.flame_off(fireplace=fireplace)
-    # time.sleep(sleep_time)
-    # control_interface.flame_on(fireplace=fireplace)
-    # time.sleep(sleep_time)
-    # control_interface.set_flame_height(fireplace=fireplace, height=1)
-    # time.sleep(sleep_time)
-    # control_interface.set_flame_height(fireplace=fireplace, height=2)
-    # time.sleep(sleep_time)
-    # control_interface.set_flame_height(fireplace=fireplace, height=3)
-    # time.sleep(sleep_time)
-    # control_interface.set_flame_height(fireplace=fireplace, height=4)
-    # time.sleep(sleep_time)
-    # control_interface.set_flame_height(fireplace=fireplace, height=5)
-    # time.sleep(sleep_time)
-    # control_interface.set_flame_height(fireplace=fireplace, height=1)
-    # time.sleep(sleep_time)
-    # control_interface.set_fan_speed(fireplace=fireplace, speed=0)
-    # time.sleep(sleep_time)
-    # control_interface.set_fan_speed(fireplace=fireplace, speed=2)
-    # time.sleep(sleep_time)
-    # control_interface.set_fan_speed(fireplace=fireplace, speed=3)
-    # time.sleep(sleep_time)
-    # control_interface.set_fan_speed(fireplace=fireplace, speed=4)
-    # time.sleep(sleep_time)
+    control_interface.flame_off(fireplace=fireplace)
+    time.sleep(sleep_time)
+    control_interface.flame_on(fireplace=fireplace)
+    time.sleep(sleep_time)
+    control_interface.set_flame_height(fireplace=fireplace, height=1)
+    time.sleep(sleep_time)
+    control_interface.set_flame_height(fireplace=fireplace, height=2)
+    time.sleep(sleep_time)
+    control_interface.set_flame_height(fireplace=fireplace, height=3)
+    time.sleep(sleep_time)
+    control_interface.set_flame_height(fireplace=fireplace, height=4)
+    time.sleep(sleep_time)
+    control_interface.set_flame_height(fireplace=fireplace, height=5)
+    time.sleep(sleep_time)
+    control_interface.set_flame_height(fireplace=fireplace, height=1)
+    time.sleep(sleep_time)
+    control_interface.set_fan_speed(fireplace=fireplace, speed=0)
+    time.sleep(sleep_time)
+    control_interface.set_fan_speed(fireplace=fireplace, speed=2)
+    time.sleep(sleep_time)
+    control_interface.set_fan_speed(fireplace=fireplace, speed=3)
+    time.sleep(sleep_time)
+    control_interface.set_fan_speed(fireplace=fireplace, speed=4)
+    time.sleep(sleep_time)
     control_interface.set_fan_speed(fireplace=fireplace, speed=1)
-    # time.sleep(sleep_time)
-    # control_interface.beep(fireplace=fireplace)
-    # time.sleep(sleep_time)
-    # control_interface.flame_off(fireplace=fireplace)
+    time.sleep(sleep_time)
+    control_interface.beep(fireplace=fireplace)
+    time.sleep(sleep_time)
+    control_interface.flame_off(fireplace=fireplace)
 
-    # api_key = fireplace.apikey
-    # serial = fireplace.serial
-    # challenge = control_interface.get_challenge()
+    api_key = fireplace.apikey
+    serial = fireplace.serial
+    challenge = control_interface.get_challenge()
 
-    # print("apikey", api_key)
-    # print("serial", serial)
+    print("apikey", api_key)
+    print("serial", serial)
+    print("challenge", challenge)
 
 
 if __name__ == "__main__":

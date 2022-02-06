@@ -1,6 +1,7 @@
 """Intellifire Async local polling module."""
-import aiohttp
 import logging
+
+import aiohttp
 
 from intellifire4py.model import IntellifirePollData
 

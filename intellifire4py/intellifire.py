@@ -1,5 +1,6 @@
 """Sync intellifire module."""
 import requests
+
 from intellifire4py.model import IntellifirePollData
 
 
