@@ -1,7 +1,8 @@
 """Intellifire Control Logic."""
 import os
-from typing import List
 import time
+from typing import List
+
 import requests
 from requests.utils import RequestsCookieJar
 
