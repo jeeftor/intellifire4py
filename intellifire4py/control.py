@@ -107,7 +107,7 @@ class IntellifireControl:
         if value > max_value or value < min_value:
             raise InputRangeException(
                 field=str(command.value["value"]), min_value=min_value, max_value=max_value
-            ) 
+            )
         self._send_cloud_command(command=command, value=value, serial=fireplace.serial)
         _log.info(f"Sending Intellifire command: [{command.value}={value}]")
 
