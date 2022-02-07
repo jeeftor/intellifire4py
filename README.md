@@ -62,7 +62,8 @@ if __name__ == "__main__":
 
 The Intellifire unit has the ability to accept local control commands on the `/post` endpoint. However there is some cloud access as an **ApiKey** needs to be extracted from `iftapi.net`. 
 
-**Local control is currently not yet implemented**
+This is currently only implemnted in the [`IntellifireControlAsync`](intellifire4py/control_async.py) control module.
+
 
 # Cloud Control
 
@@ -96,6 +97,8 @@ control_interface.login(username=username, password=password)
 ```
 
 Once the login is complete all further control requests will use the cookies to authenticate and control things.
+
+
 
 ## Power (Flame on/off)
 
