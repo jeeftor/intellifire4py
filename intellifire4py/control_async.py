@@ -2,24 +2,47 @@
 import asyncio
 import os
 import time
+from enum import Enum
 from types import TracebackType
 from typing import List, Optional, Type
 import aiohttp
-
+from hashlib import sha256
 from intellifire4py.const import IntellifireCommand, _log
 from intellifire4py.control import LoginException, InputRangeException, ApiCallException
 from intellifire4py.model import IntellifireFireplace, IntellifireFireplaces
+
+import logging
+
+
+# logging.basicConfig(level=logging.DEBUG)
+#
+#
+# async def on_request_start(session, context, params):
+#     logging.getLogger('aiohttp.client').debug(f'Starting request <{params}>')
+
+
+class IntellifireSendMode(Enum):
+    LOCAL = "local"
+    CLOUD = "cloud"
 
 
 class IntellifireControlAsync:
     """Hacked together control API for intellifire modules."""
 
-    def __init__(self, *, fireplace_ip: str) -> None:
+    def __init__(self, fireplace_ip: str, *, use_http: bool = False, verify_ssl: bool = True) -> None:
         """Init the control class."""
-        self._client = aiohttp.ClientSession(raise_for_status=True)
+
+        self._client = aiohttp.ClientSession()
         self._cookie = None
+        self.send_mode = IntellifireSendMode.LOCAL
         self.is_logged_in = False
         self._ip = fireplace_ip
+        self.default_fireplace: IntellifireFireplace
+        if use_http:
+            self.prefix = "http"
+        else:
+            self.prefix = "https"
+        self._verify_ssl = verify_ssl
 
     async def close(self) -> None:
         return await self._client.close()
@@ -40,9 +63,20 @@ class IntellifireControlAsync:
         """Run login flow to iftapi.net in order to request cookies."""
         data = f"username={username}&password={password}"
 
-        async with self._client.post("http://iftapi.net/a//login", data=data.encode()) as resp:
-            self._cookie = resp.cookies
-            self.is_logged_in = True
+        try:
+            async with self._client.post(f"{self.prefix}://iftapi.net/a//login", data=data.encode(), ssl=False) as resp:
+                if resp.status != 204:
+                    raise LoginException()
+
+                self._cookie = resp.cookies
+                self.is_logged_in = True
+
+            # Now set the default fireplace
+            await self._set_default_fireplace()
+        except LoginException as e:
+            raise e
+        except Exception as ex:
+            print(ex)
         return None
 
     async def _login_check(self) -> None:
@@ -53,9 +87,20 @@ class IntellifireControlAsync:
     async def get_username(self) -> str:
         """Call to iftapi.net to extract the username based on cookie information."""
         await self._login_check()
-        async with self._client.get("http://iftapi.net/a/getusername") as resp:
+        async with self._client.get(f"{self.prefix}://iftapi.net/a/getusername") as resp:
             ret = await resp.text()
             return ret
+
+    async def _set_default_fireplace(self) -> None:
+        """Sets default_fireplace value assuming 1 fireplace and 1 location.
+
+        This function will call get_locations and get_fireplaces in order to preset the default fireplace value.
+        This will probably cover most home installs where people only have a single IFT fireplace.
+        """
+
+        locations = await self.get_locations()
+        fireplaces = await self.get_fireplaces(location_id=locations[0]['location_id'])
+        self.default_fireplace = fireplaces[0]
 
     async def get_locations(self) -> List:
         """Enumerate configured locations that a user has access to.
@@ -64,38 +109,61 @@ class IntellifireControlAsync:
         and associated serial numbers + api keys at a give location.
         """
         await self._login_check()
-        async with self._client.get(url="http://iftapi.net/a/enumlocations") as resp:
+        async with self._client.get(url=f"{self.prefix}://iftapi.net/a/enumlocations") as resp:
             json_data = await resp.json()
             return json_data["locations"]  # type: ignore
 
     async def get_fireplaces(self, *, location_id: str) -> List[IntellifireFireplace]:
         """Get fireplaces at a location with associated API keys!."""
         await self._login_check()
-        async with self._client.get(url=f"http://iftapi.net/a/enumfireplaces?location_id={location_id}") as resp:
+        async with self._client.get(
+                url=f"{self.prefix}://iftapi.net/a/enumfireplaces?location_id={location_id}") as resp:
             json_data = await resp.json()
             return IntellifireFireplaces(**json_data).fireplaces
 
-
-    # async def get_challenge(self) -> str:
-    #     """Hit the local challenge endpoint."""
-    #     async with self._client.get(f"http://{self._ip}/get_challenge") as resp:
-    #         ret = resp.text
-    #         return ret
+    async def get_challenge(self) -> str:
+        """Hit the local challenge endpoint."""
+        async with self._client.get(f"http://{self._ip}/get_challenge") as resp:
+            ret = resp.text
+            return ret
 
     async def _send_cloud_command(self, command: IntellifireCommand, value: int, serial: str) -> None:
         """Send a cloud based control command."""
         await self._login_check()
         data = f"{command.value['value']}={value}"
-        async with self._client.post(f"http://iftapi.net/a/{serial}//apppost",data=data.encode()) as resp:
+        async with self._client.post(f"{self.prefix}://iftapi.net/a/{serial}//apppost", data=data.encode()) as resp:
             if resp.status != 204:
                 raise ApiCallException("Error with API call")
 
+    async def _send_local_command(self, *,
+                            fireplace: IntellifireFireplace,
+                            command: IntellifireCommand,
+                            value: int) -> None:
+        """Send a local command to the /post interface.
+
+        Validation code needs to be sent with request - calculated as: sha256(apiKey + sha256(apikey + challenge + command))
+        """
+        # Required fields
+        api_key = fireplace.apikey
+        challenge: str = await self.get_challenge()
+        payload = f"post:command={command.value}&value={value}"
+
+        api_bytes = bytes.fromhex(api_key)
+        challenge_bytes = bytes.fromhex(challenge)
+        payload_bytes = payload.encode()
+
+        response = sha256(api_bytes + sha256(api_bytes + challenge_bytes + payload_bytes).digest()).hexdigest()
+
+        async with self._client.post(
+                f'command={command.value}&value={value}&user={self.user}&response={response}') as resp:
+            print(resp.status)
+
     async def send_command(
-        self,
-        *,
-        fireplace: IntellifireFireplace,
-        command: IntellifireCommand,
-        value: int,
+            self,
+            *,
+            fireplace: IntellifireFireplace,
+            command: IntellifireCommand,
+            value: int,
     ) -> None:
         """Send a command to a given fireplace."""
         # Validate the range on input
@@ -108,14 +176,6 @@ class IntellifireControlAsync:
         await self._send_cloud_command(command=command, value=value, serial=fireplace.serial)
         _log.info(f"Sending Intellifire command: [{command.value}={value}]")
 
-    # def _send_local_command(self, command: int) -> None:
-    #     """Not yet implemented.
-    #
-    #     validation code needs to be sent which is sha256(apiKey + sha256(apikey + xxxx + command))
-    #     Have been unsure exactly how to encode the data so it matches the sample data I see on charles
-    #     """
-    #     pass
-    #
     async def beep(self, *, fireplace: IntellifireFireplace) -> None:
         """Play a beep - seems to only work if flame is on."""
         await self.send_command(fireplace=fireplace, command=IntellifireCommand.BEEP, value=1)
@@ -140,18 +200,24 @@ class IntellifireControlAsync:
 
     async def set_flame_height(self, *, fireplace: IntellifireFireplace, height: int) -> None:
         """Set flame height."""
+        if fireplace is None:
+            fireplace = self.default_fireplace
         await self.send_command(
             fireplace=fireplace, command=IntellifireCommand.FLAME_HEIGHT, value=height
         )
 
     async def set_fan_speed(self, *, fireplace: IntellifireFireplace, speed: int) -> None:
         """Set fan speed."""
+        if fireplace is None:
+            fireplace = self.default_fireplace
         await self.send_command(
             fireplace=fireplace, command=IntellifireCommand.FAN_SPEED, value=speed
         )
 
     async def fan_off(self, *, fireplace: IntellifireFireplace) -> None:
         """Turn fan off."""
+        if fireplace is None:
+            fireplace = self.default_fireplace
         await self.send_command(
             fireplace=fireplace, command=IntellifireCommand.FAN_SPEED, value=0
         )
@@ -172,60 +238,80 @@ class IntellifireControlAsync:
         return self._cookie.get("web_client_id")  # type: ignore
 
 
+async def on_request_start(session, context, params):
+    logging.getLogger('aiohttp.client').debug(f'Starting request <{params}>')
+
+
 async def main() -> None:
     """Run main function."""
     username = os.environ["IFT_USER"]
     password = os.environ["IFT_PASS"]
+    ift_control = IntellifireControlAsync(fireplace_ip="192.168.1.65", use_http=True, verify_ssl=False)
 
-    ift_control = IntellifireControlAsync(fireplace_ip="192.168.1.65")
+    try:
+        try:
+            await ift_control.login(username=username, password="assword")
+        except LoginException:
+            print("Bad password!")
+            await ift_control.login(username=username, password=password)
 
-    await ift_control.login(username=username, password=password)
-    print("Logged in:", ift_control.is_logged_in)
+        print("Logged in:", ift_control.is_logged_in)
 
-    # Get location list
-    locations = await ift_control.get_locations()
-    location_id = locations[0]["location_id"]
-    print('location_id:', location_id)
+        # Get location list
+        locations = await ift_control.get_locations()
+        location_id = locations[0]["location_id"]
+        print('location_id:', location_id)
 
-    username = await ift_control.get_username()
-    print("username", username)
+        username = await ift_control.get_username()
+        print("username", username)
 
-    # Extract a fireplace
-    fireplaces = await ift_control.get_fireplaces(
-        location_id=location_id
-    )
-    fireplace: IntellifireFireplace = fireplaces[0]
+        # Extract a fireplace
+        fireplaces = await ift_control.get_fireplaces(
+            location_id=location_id
+        )
+        fireplace: IntellifireFireplace = fireplaces[0]
+        default_fireplace = ift_control.default_fireplace
 
-    sleep_time = 5
-    await ift_control.flame_off(fireplace=fireplace)
-    time.sleep(sleep_time)
-    await ift_control.flame_on(fireplace=fireplace)
-    time.sleep(sleep_time)
-    await ift_control.set_flame_height(fireplace=fireplace, height=1)
-    time.sleep(sleep_time)
-    await ift_control.set_flame_height(fireplace=fireplace, height=2)
-    time.sleep(sleep_time)
-    await ift_control.set_flame_height(fireplace=fireplace, height=3)
-    time.sleep(sleep_time)
-    await ift_control.set_flame_height(fireplace=fireplace, height=4)
-    time.sleep(sleep_time)
-    # await ift_control.set_flame_height(fireplace=fireplace, height=5)
-    # time.sleep(sleep_time)
-    await ift_control.set_flame_height(fireplace=fireplace, height=1)
-    time.sleep(sleep_time)
-    await ift_control.set_fan_speed(fireplace=fireplace, speed=0)
-    time.sleep(sleep_time)
-    await ift_control.set_fan_speed(fireplace=fireplace, speed=2)
-    time.sleep(sleep_time)
-    await ift_control.set_fan_speed(fireplace=fireplace, speed=3)
-    time.sleep(sleep_time)
-    await ift_control.set_fan_speed(fireplace=fireplace, speed=4)
-    time.sleep(sleep_time)
-    await ift_control.set_fan_speed(fireplace=fireplace, speed=1)
-    time.sleep(sleep_time)
-    await ift_control.beep(fireplace=fireplace)
-    time.sleep(sleep_time)
-    await ift_control.flame_off(fireplace=fireplace)
+        print("Serial:", default_fireplace.serial)
+        print("APIKey:", default_fireplace.apikey)
+
+
+        for control in [IntellifireSendMode.LOCAL, IntellifireSendMode.CLOUD]:
+            print("Using çontrol Møde: ", control)
+            ift_control.send_mode = control
+            sleep_time = 5
+            await ift_control.flame_off(fireplace=default_fireplace)
+            time.sleep(sleep_time)
+            await ift_control.flame_on(fireplace=fireplace)
+            time.sleep(sleep_time)
+            await ift_control.set_flame_height(fireplace=default_fireplace, height=1)
+            time.sleep(sleep_time)
+            await ift_control.set_flame_height(fireplace=fireplace, height=2)
+            time.sleep(sleep_time)
+            await ift_control.set_flame_height(fireplace=fireplace, height=3)
+            time.sleep(sleep_time)
+            await ift_control.set_flame_height(fireplace=fireplace, height=4)
+            time.sleep(sleep_time)
+            # await ift_control.set_flame_height(fireplace=fireplace, height=5)
+            # time.sleep(sleep_time)
+            await ift_control.set_flame_height(fireplace=fireplace, height=1)
+            time.sleep(sleep_time)
+            await ift_control.set_fan_speed(fireplace=fireplace, speed=0)
+            time.sleep(sleep_time)
+            await ift_control.set_fan_speed(fireplace=fireplace, speed=2)
+            time.sleep(sleep_time)
+            await ift_control.set_fan_speed(fireplace=fireplace, speed=3)
+            time.sleep(sleep_time)
+            await ift_control.set_fan_speed(fireplace=fireplace, speed=4)
+            time.sleep(sleep_time)
+            await ift_control.set_fan_speed(fireplace=fireplace, speed=1)
+            time.sleep(sleep_time)
+            await ift_control.beep(fireplace=fireplace)
+            time.sleep(sleep_time)
+            await ift_control.flame_off(fireplace=fireplace)
+    finally:
+        await ift_control.close()
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()

@@ -1,5 +1,7 @@
 
 CHANGELOG
+0.7.6
+- Changed raise_for_status to default
 0.7.5
 - Async Control - class rename
 0.7.4
