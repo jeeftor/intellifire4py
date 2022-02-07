@@ -11,7 +11,7 @@ from intellifire4py.control import LoginException, InputRangeException, ApiCallE
 from intellifire4py.model import IntellifireFireplace, IntellifireFireplaces
 
 
-class AsyncIntellifireControl:
+class IntellifireControlAsync:
     """Hacked together control API for intellifire modules."""
 
     def __init__(self, *, fireplace_ip: str) -> None:
@@ -177,7 +177,7 @@ async def main() -> None:
     username = os.environ["IFT_USER"]
     password = os.environ["IFT_PASS"]
 
-    ift_control = AsyncIntellifireControl(fireplace_ip="192.168.1.65")
+    ift_control = IntellifireControlAsync(fireplace_ip="192.168.1.65")
 
     await ift_control.login(username=username, password=password)
     print("Logged in:", ift_control.is_logged_in)
