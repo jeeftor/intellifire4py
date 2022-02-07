@@ -1,5 +1,7 @@
 
 CHANGELOG
+0.9.0
+- Pre-release ... Local + Cloud Control implemented!
 0.7.6
 - Changed raise_for_status to default
 0.7.5
