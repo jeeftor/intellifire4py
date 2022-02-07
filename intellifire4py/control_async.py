@@ -2,7 +2,6 @@
 import asyncio
 import os
 import time
-from enum import Enum
 from types import TracebackType
 from typing import List, Optional, Type
 import aiohttp

@@ -8,3 +8,4 @@ from intellifire4py.model import (IntellifireFireplace, IntellifireFireplaces,
                                   IntellifireLocationDetails,
                                   IntellifireLocations, IntellifirePollData)
 from intellifire4py.udp import UDPFireplaceFinder, AsyncUDPFireplaceFinder
+from intellifire4py.control_async import AsyncIntellifireControl
