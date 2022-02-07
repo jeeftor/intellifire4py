@@ -58,16 +58,53 @@ if __name__ == "__main__":
 
 
 
+# Fireplace Control
+
+The Async Control Interface gives you the ability to directly send commands to your IFT unit. To instantiate one you will need 
+
+- `ip` - Fireplace ip on the network - *used for initial instantiation*
+- `username` - Username (email) used in intellifire app - *used for login*
+- `password` - Password - *used for login*
+
+### SSL Considerations
+
+Sometimes we live in a tough SSL world and as such you can disable SSL (https) mode for communicating with `iftapi.net` as well as disable SSL Certificate Verification. In most cases you will not need to deal with this.
+
+```
+# No SSH Inspection and use HTTP mode
+ift_control = IntellifireControlAsync(
+	fireplace_ip=ip, 
+	use_http=True, 
+	verify_ssl=False
+)
+```    
+
+
 # Local Control
 
-The Intellifire unit has the ability to accept local control commands on the `/post` endpoint. However there is some cloud access as an **ApiKey** needs to be extracted from `iftapi.net`. 
+Local control can take advantage of the units `/post` endpoint. However these commands require an **ApiKey** that must to be retreived from  `iftapi.net`. 
 
-This is currently only implemnted in the [`IntellifireControlAsync`](intellifire4py/control_async.py) control module.
+*This is currently only implemnted in the [`IntellifireControlAsync`](intellifire4py/control_async.py#L24) control module.*
+
+Local control is the default state but if you need to manually set it you can use:
+
+```python
+ift_control.send_mode = IntellifireSendMode.LOCAL
+```
 
 
 # Cloud Control
 
-Taking advantage of the `iftapi.net` REST API - the module can send commands to the cloud in order to control a specific fireplace. Conceptually the API is divided into `Users` who have control of `Locations` which contain `Fireplaces`.
+Taking advantage of the `iftapi.net` REST API - the module can send commands to the cloud in order to control a specific fireplace. In order to enable this you need to set the `.send_mode` to something like:
+
+```python
+ift_control.send_mode = IntellifireSendMode.CLOUD
+```
+
+# API Overview
+
+
+Conceptually the API is divided into `Users` who have control of `Locations` which contain `Fireplaces`.
 
 ```
 ┌───────────┐
@@ -98,7 +135,13 @@ control_interface.login(username=username, password=password)
 
 Once the login is complete all further control requests will use the cookies to authenticate and control things.
 
+All commands will reference a specific `IntellifireFireplace`, however in the case that you have a single Intellifire Device installed in your user account you can just use the `.default_fireplace` property
 
+```python
+default_fireplace = ift_control.default_fireplace
+print("Serial:", default_fireplace.serial)
+print("APIKey:", default_fireplace.apikey)
+```
 
 ## Power (Flame on/off)
 

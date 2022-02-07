@@ -260,8 +260,9 @@ async def main() -> None:
     """Run main function."""
     username = os.environ["IFT_USER"]
     password = os.environ["IFT_PASS"]
+    ip = os.environ["IFT_IP"]
     ift_control = IntellifireControlAsync(
-        fireplace_ip="192.168.1.65", use_http=True, verify_ssl=False
+        fireplace_ip=ip, use_http=True, verify_ssl=False
     )
 
     try:
