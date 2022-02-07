@@ -58,7 +58,6 @@ class IntellifireControl:
         r = requests.get(url=url, cookies=self._cookie)
         return r.text
 
-
     def get_locations(self) -> List:
         """Enumerate configured locations that a user has access to.
 
@@ -82,7 +81,9 @@ class IntellifireControl:
         """Hit the local challenge endpoint."""
         return requests.get(f"http://{self._ip}/get_challenge").text
 
-    def _send_cloud_command(self, command: IntellifireCommand, value: int, serial: str) -> None:
+    def _send_cloud_command(
+        self, command: IntellifireCommand, value: int, serial: str
+    ) -> None:
         """Send a cloud based control command."""
         self._login_check()
         data = f"{command.value['value']}={value}"
@@ -107,7 +108,9 @@ class IntellifireControl:
         max_value: int = command.value["max"]  # type: ignore
         if value > max_value or value < min_value:
             raise InputRangeException(
-                field=str(command.value["value"]), min_value=min_value, max_value=max_value
+                field=str(command.value["value"]),
+                min_value=min_value,
+                max_value=max_value,
             )
         self._send_cloud_command(command=command, value=value, serial=fireplace.serial)
         _log.info(f"Sending Intellifire command: [{command.value}={value}]")
@@ -163,7 +166,7 @@ class IntellifireControl:
     @property
     def user(self) -> str:
         """Get user cookie."""
-        return self._cookie.get("user") # type: ignore
+        return self._cookie.get("user")  # type: ignore
 
     @property
     def auth_cookie(self) -> str:

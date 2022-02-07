@@ -4,7 +4,9 @@ import json
 import time
 from socket import AF_INET, SOCK_DGRAM, socket
 from typing import Sequence
+
 from _socket import SO_BROADCAST, SOL_SOCKET
+
 from .const import _log
 
 
@@ -36,7 +38,9 @@ class UDPFireplaceFinder:
         s.settimeout(5000)
         s.bind(("0.0.0.0", self.recv_port))
 
-        _log.info(f"Waiting {timeout_in_seconds} seconds to see which fireplaces respond")
+        _log.info(
+            f"Waiting {timeout_in_seconds} seconds to see which fireplaces respond"
+        )
 
         # Reset ip's
         ip_set: set[str] = set()
@@ -80,7 +84,9 @@ class AsyncUDPFireplaceFinder:
         s.settimeout(5000)
         s.bind(("0.0.0.0", self.recv_port))
 
-        _log.info(f"Waiting {timeout_in_seconds} seconds to see which fireplaces respond")
+        _log.info(
+            f"Waiting {timeout_in_seconds} seconds to see which fireplaces respond"
+        )
 
         # Reset ip's
         ip_set: set[str] = set()
