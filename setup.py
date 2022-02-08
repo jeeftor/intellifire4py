@@ -15,7 +15,6 @@ setuptools.setup(
     url="https://github.com/jeeftor/intellifire4py",
     packages=setuptools.find_packages(),
     install_requires=['aiohttp', 'pydantic', 'requests'],
-    # download_url='https://github.com/jeeftor/intellifire4py/archive/refs/tags/0.1.tar.gz',
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

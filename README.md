@@ -26,6 +26,8 @@ Both `Intellifire` and `IntellifireAsync` classes will poll an intellifire inter
 
 ## Sync 
 
+This is not fully developed and you shouldn't really use it - if you DO want to use it - 
+
 ```python
 # Define an intellifre instance
 fire = Intellifire("192.168.1.80")
@@ -156,7 +158,7 @@ control_interface.flame_off(fireplace=fireplace)
 You can control the flame height with `set_flame_height` method. Height ranges from 0 to 4:
 
 ```python
-control_interface.set_flame_height(fireplace=fireplace, height=3)
+await control_interface.set_flame_height(fireplace=fireplace, height=3)
 ```
 
 ## Fan Speed
@@ -164,7 +166,7 @@ control_interface.set_flame_height(fireplace=fireplace, height=3)
 Fan speed is controled via the `set_fan_speed` method. Valid ranges for `speed` 0 to 4.
 
 ```python
-control_interface.set_fan_speed(fireplace=fireplace, speed=1)
+await control_interface.set_fan_speed(fireplace=fireplace, speed=1)
 ```
 
 ## Lights
@@ -173,17 +175,40 @@ You can control lights with `set_lights` method. Valid ranges for `level` are 0 
 
 
 ```python
-control_interface.set_lights(fireplace=fireplace, speed=1)
-
+await control_interface.set_lights(fireplace=fireplace, speed=1)
 ```
+
 # Beep
 
 Apparently, if the fireplace is on (flame on) you can send a beep.
 
 
 ```python
-control_interface.beep(fireplace=fireplace)
+await control_interface.beep(fireplace=fireplace)
+```
 
+# Thermostat
+
+
+
+```python
+# Set to 70 and store the value internally
+await ift_control.set_thermostat_f(fireplace=defualt_fireplace, temp_f=70)
+# Set to 23 and store value internally
+await ift_control.set_thermostat_c(fireplace=defualt_fireplace, temp_c=23)
+# Turn off thermostat
+await ift_control.turn_off_thermostat(fireplace=defualt_fireplace)
+# Turn on thermostat and set temp to 23c as this was the last temp
+await ift_control.turn_on_thermostat(fireplace=defualt_fireplace)
+```
+
+# Sleep Timer
+
+The sleep timer range is from (`1`-`180` minutes). Interact as follows:
+
+```python
+await ift_control.set_sleep_timer(fireplace=default_fp, minutes=120)
+await ift_control.turn_off_sleep_timer(fireplace=default_fp, minutes=120)
 ```
 
 # Control Exceptions

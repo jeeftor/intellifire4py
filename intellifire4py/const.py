@@ -14,9 +14,13 @@ class IntellifireCommand(Enum):
     LIGHT = {"value": "light", "min": 0, "max": 3}
     FLAME_HEIGHT = {"value": "height", "min": 0, "max": 4}
     FAN_SPEED = {"value": "fanspeed", "min": 0, "max": 4}
-    THERMOSTAT_SETPOINT = {"value": "thermostat_setpoint", "min": 0, "max": 37}
+    THERMOSTAT_SETPOINT = {
+        "value": "thermostat_setpoint",
+        "min": 0,
+        "max": 37,
+    }  # 0 = disable thermostat
     TIME_REMAINING = {
         "value": "time_remaining",
         "min": 0,
         "max": 10800,
-    }  # multiples of 60
+    }  # multiples of 60 - 0 = disable

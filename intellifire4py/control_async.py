@@ -34,6 +34,7 @@ class IntellifireControlAsync:
         self.is_logged_in = False
         self._ip = fireplace_ip
         self.default_fireplace: IntellifireFireplace
+        self._last_thermostat_setpoint: int = 0
         if use_http:
             self.prefix = "http"
         else:
@@ -238,6 +239,54 @@ class IntellifireControlAsync:
         """Turn fan off."""
         await self.send_command(
             fireplace=fireplace, command=IntellifireCommand.FAN_SPEED, value=0
+        )
+
+    async def turn_off_thermostat(self, *, fireplace: IntellifireFireplace) -> None:
+        """Turn off thermostat mode"""
+        await self.send_command(
+            fireplace=fireplace, command=IntellifireCommand.THERMOSTAT_SETPOINT, value=0
+        )
+
+    async def turn_on_thermostat(self, *, fireplace: IntellifireFireplace) -> None:
+        """Turn on thermostat mode"""
+        await self.send_command(
+            fireplace=fireplace,
+            command=IntellifireCommand.THERMOSTAT_SETPOINT,
+            value=self._last_thermostat_setpoint,
+        )
+
+    async def set_thermostat_f(
+        self, *, fireplace: IntellifireFireplace, temp_f: int
+    ) -> None:
+        """Set thermostat value in fahrenheit."""
+        temp_c = int((temp_f - 32) * 5 / 9)
+        await self.set_thermostat_c(fireplace=fireplace, temp_c=temp_c)
+
+    async def set_thermostat_c(
+        self, *, fireplace: IntellifireFireplace, temp_c: int
+    ) -> None:
+        """Set thermostat value in centigrade."""
+        self._last_thermostat_setpoint = temp_c
+        await self.send_command(
+            fireplace=fireplace,
+            command=IntellifireCommand.THERMOSTAT_SETPOINT,
+            value=temp_c,
+        )
+
+    async def set_sleep_timer(
+        self, *, fireplace: IntellifireFireplace, minutes: int
+    ) -> None:
+        """Set the sleep timer in minutes."""
+        await self.send_command(
+            fireplace=fireplace,
+            command=IntellifireCommand.TIME_REMAINING,
+            value=minutes * 60,
+        )
+
+    async def stop_sleep_timer(self, *, fireplace: IntellifireFireplace) -> None:
+        """Stop the sleep timer."""
+        await self.send_command(
+            fireplace=fireplace, command=IntellifireCommand.TIME_REMAINING, value=0
         )
 
     @property
