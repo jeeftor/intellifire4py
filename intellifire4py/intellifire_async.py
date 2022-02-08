@@ -1,4 +1,6 @@
 """Intellifire Async local polling module."""
+from json import JSONDecodeError
+
 import aiohttp
 
 from intellifire4py.model import IntellifirePollData
@@ -28,9 +30,11 @@ class IntellifireAsync:
                         # Valid address - but poll endpoint not found
                         _log.warn(msg=f"--Intellifire:: Error accessing {url} - 404",)
                         raise ConnectionError("Fireplace Endpoint Not Found - 404")
-
-                    json_data = await response.json(content_type=None)
-                    _log.debug(msg=f"Received: {json_data}")
+                    try:
+                        json_data = await response.json(content_type=None)
+                        _log.debug(msg=f"Received: {json_data}")
+                    except JSONDecodeError:
+                        _log.warn(f"Error decoding JSON: {response.text}")
 
                     self.__data = IntellifirePollData(**json_data)
                 except ConnectionError:

@@ -1,6 +1,12 @@
 
 CHANGELOG
-0.9.1
+0.9.4
+- Fixed error with only sending cloud commands
+- Fixed errors with some properties returning full cookies
+- Corrected an issue in local sending interface
+0.9.3
+- Added error handling for local poll
+0.9.2
 - ClientSession logic to reopen a closed session
 0.9.1
 - Full control feature set for async control
