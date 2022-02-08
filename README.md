@@ -1,3 +1,5 @@
+<img src="http://raw.githubusercontent.com/home-assistant/brands/master/core_integrations/intellifire/icon.png" height=100 >
+
 # Intellifire (New and Improved)
 
 This is a 100% unofficial python module for working with the IntelliFire API for Intellifire WIFI Modules.
