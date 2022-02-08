@@ -8,6 +8,7 @@ from types import TracebackType
 from typing import List, Optional, Type
 
 import aiohttp
+from aiohttp import ClientSession
 
 from intellifire4py.const import IntellifireCommand, _log
 from intellifire4py.control import ApiCallException, InputRangeException, LoginException
@@ -28,7 +29,7 @@ class IntellifireControlAsync:
         self, fireplace_ip: str, *, use_http: bool = False, verify_ssl: bool = True
     ) -> None:
         """Init the control class."""
-        self._client = aiohttp.ClientSession()
+        self.__client = aiohttp.ClientSession()
         self._cookie = None
         self.send_mode = IntellifireSendMode.LOCAL
         self.is_logged_in = False
@@ -40,6 +41,17 @@ class IntellifireControlAsync:
         else:
             self.prefix = "https"
         self._verify_ssl = verify_ssl
+
+        _log.info("Instantiating a IntellifireControlAsync")
+
+    @property
+    def _client(self) -> ClientSession:
+        """Returns either an open session or a new one - using previous session cookies"""
+        if self.__client.closed:
+            _log.info("Recreating closed Client session using stored cookies")
+            self.__client = aiohttp.ClientSession(cookies=self._cookie)
+        return self.__client
+
 
     async def close(self) -> None:
         """Close socket."""
@@ -63,7 +75,6 @@ class IntellifireControlAsync:
     async def login(self, *, username: str, password: str) -> None:
         """Run login flow to iftapi.net in order to request cookies."""
         data = f"username={username}&password={password}"
-
         try:
             async with self._client.post(
                 f"{self.prefix}://iftapi.net/a//login", data=data.encode(), ssl=False
@@ -73,10 +84,12 @@ class IntellifireControlAsync:
 
                 self._cookie = resp.cookies  # type: ignore
                 self.is_logged_in = True
+                _log.info("Success - Logged into IFTAPI")
 
             # Now set the default fireplace
             await self._set_default_fireplace()
         except LoginException as ex:
+            _log.warning("Login failure")
             raise ex
         return None
 
@@ -103,6 +116,7 @@ class IntellifireControlAsync:
         locations = await self.get_locations()
         fireplaces = await self.get_fireplaces(location_id=locations[0]["location_id"])
         self.default_fireplace = fireplaces[0]
+        _log.debug(f"configure default fireplace: {self.default_fireplace.serial}")
 
     async def get_locations(self) -> List:
         """Enumerate configured locations that a user has access to.
@@ -335,6 +349,12 @@ async def main() -> None:
         fireplaces = await ift_control.get_fireplaces(location_id=location_id)
         fireplace: IntellifireFireplace = fireplaces[0]
         default_fireplace = ift_control.default_fireplace
+
+        print("Closing Session")
+        await ift_control.close()
+        fireplaces = await ift_control.get_fireplaces(location_id=location_id)
+        username = await ift_control.get_username()
+        print("username", username)
 
         print("Serial:", default_fireplace.serial)
         print("APIKey:", default_fireplace.apikey)
