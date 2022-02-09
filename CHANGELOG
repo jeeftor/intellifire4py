@@ -1,5 +1,8 @@
 
 CHANGELOG
+0.9.6
+- Fixed local sending error
+- Updated Error enum value
 0.9.5
 - Fixed setpoint - needed to end in 00
 - removed printouts
@@ -30,4 +33,4 @@ CHANGELOG
 - Initial implementation of cloud-based control logic
 0.6
  - Modified light from a boolean (1/0) to a numeric value
- 
+

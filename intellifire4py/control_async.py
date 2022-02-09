@@ -174,7 +174,7 @@ class IntellifireControlAsync:
         # Required fields
         api_key = fireplace.apikey
         challenge: str = await self.get_challenge()
-        payload = f"post:command={command.value['value']}&value={value}"
+        payload = f"post:command={command.value['local_command']}&value={value}"
         api_bytes = bytes.fromhex(api_key)
         challenge_bytes = bytes.fromhex(challenge)
         payload_bytes = payload.encode()
@@ -211,7 +211,7 @@ class IntellifireControlAsync:
 
         if value > max_value or value < min_value:
             raise InputRangeException(
-                field=str(command.value["value"]),
+                field=str(command.name),
                 min_value=min_value,
                 max_value=max_value,
             )
