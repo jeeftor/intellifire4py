@@ -394,18 +394,29 @@ async def main() -> None:
         print("Serial:", default_fireplace.serial)
         print("APIKey:", default_fireplace.apikey)
 
-        ift_control.send_mode = IntellifireSendMode.CLOUD
 
-        sleep_time = 5
-        await ift_control.flame_on(fireplace=fireplace)
-        await ift_control.set_fan_speed(fireplace=fireplace, speed=0)
-        time.sleep(sleep_time)
-        await ift_control.set_fan_speed(fireplace=fireplace, speed=1)
-        time.sleep(sleep_time)
-        await ift_control.set_fan_speed(fireplace=fireplace, speed=2)
-        time.sleep(sleep_time)
-        await ift_control.set_fan_speed(fireplace=fireplace, speed=3)
-        await ift_control.flame_off(fireplace=fireplace)
+
+
+        print('await ift_control.set_flame_height(fireplace=default_fireplace, height=4)')
+        await ift_control.set_flame_height(fireplace=default_fireplace, height=4)
+
+        # time.sleep(10)
+        # ift_control.send_mode = IntellifireSendMode.CLOUD
+        # print('await ift_control.set_flame_height(fireplace=default_fireplace, height=0)')
+        # await ift_control.set_flame_height(fireplace=default_fireplace, height=0)
+
+
+
+        # sleep_time = 5
+        # await ift_control.flame_on(fireplace=fireplace)
+        # await ift_control.set_fan_speed(fireplace=fireplace, speed=0)
+        # time.sleep(sleep_time)
+        # await ift_control.set_fan_speed(fireplace=fireplace, speed=1)
+        # time.sleep(sleep_time)
+        # await ift_control.set_fan_speed(fireplace=fireplace, speed=2)
+        # time.sleep(sleep_time)
+        # await ift_control.set_fan_speed(fireplace=fireplace, speed=3)
+        # await ift_control.flame_off(fireplace=fireplace)
         exit(0)
         for control in [IntellifireSendMode.LOCAL, IntellifireSendMode.CLOUD]:
             print("Using çontrol Møde: ", control)

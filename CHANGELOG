@@ -1,5 +1,7 @@
 
 CHANGELOG
+0.9.7
+- Fixed issue with local flame_height vs height command
 0.9.6
 - Fixed local sending error
 - Updated Error enum value

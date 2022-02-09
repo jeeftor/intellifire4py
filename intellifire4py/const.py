@@ -14,7 +14,7 @@ class IntellifireCommand(Enum):
     LIGHT = {"cloud_command": "light", "local_command": "light", "min": 0, "max": 3}
     FLAME_HEIGHT = {
         "cloud_command": "height",
-        "local_command": "height",
+        "local_command": "flame_height",
         "min": 0,
         "max": 4,
     }
