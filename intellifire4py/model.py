@@ -1,3 +1,10 @@
+"""Model definitions."""
+# pylint: disable=no-member
+# pylint: disable=C0115
+# pylint: disable=C0116
+# pylint: disable=R0903
+# pylint: disable=E0611
+# flake8: noqa  D101
 from typing import List
 
 from pydantic import BaseModel, Field

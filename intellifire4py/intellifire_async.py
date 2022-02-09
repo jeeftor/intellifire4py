@@ -7,6 +7,7 @@ from intellifire4py.model import IntellifirePollData
 
 from .const import _log
 
+
 class IntellifireAsync:
     """Async enabled intellifire parsing class."""
 
@@ -28,17 +29,19 @@ class IntellifireAsync:
                 try:
                     if response.status == 404:
                         # Valid address - but poll endpoint not found
-                        _log.warn(msg=f"--Intellifire:: Error accessing {url} - 404",)
+                        _log.warning(
+                            msg=f"--Intellifire:: Error accessing {url} - 404",
+                        )
                         raise ConnectionError("Fireplace Endpoint Not Found - 404")
                     try:
                         json_data = await response.json(content_type=None)
                         _log.debug(msg=f"Received: {json_data}")
                     except JSONDecodeError:
-                        _log.warn(f"Error decoding JSON: {response.text}")
+                        _log.warning(f"Error decoding JSON: {response.text}")
 
                     self.__data = IntellifirePollData(**json_data)
                 except ConnectionError:
-                    _log.warn(msg=f"Connection Error accessing {url}")
+                    _log.warning(msg=f"Connection Error accessing {url}")
                     raise ConnectionError("ConnectionError - host not found")
 
     @property

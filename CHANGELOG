@@ -1,5 +1,9 @@
 
 CHANGELOG
+0.9.5
+- Fixed setpoint - needed to end in 00
+- removed printouts
+- Separate values for cloud control and local control (specifically for fanspeed & fan_speed)
 0.9.4
 - Fixed error with only sending cloud commands
 - Fixed errors with some properties returning full cookies

@@ -8,7 +8,7 @@ from types import TracebackType
 from typing import List, Optional, Type
 
 import aiohttp
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ServerDisconnectedError
 
 from intellifire4py.const import IntellifireCommand, _log
 from intellifire4py.control import ApiCallException, InputRangeException, LoginException
@@ -35,7 +35,7 @@ class IntellifireControlAsync:
         self.is_logged_in = False
         self._ip = fireplace_ip
         self.default_fireplace: IntellifireFireplace
-        self._last_thermostat_setpoint: int = 0
+        self._last_thermostat_setpoint: int = 2100
         if use_http:
             self.prefix = "http"
         else:
@@ -46,12 +46,11 @@ class IntellifireControlAsync:
 
     @property
     def _client(self) -> ClientSession:
-        """Returns either an open session or a new one - using previous session cookies"""
+        """Return either an open session or a new one - using previous session cookies."""
         if self.__client.closed:
-            _log.info("Recreating closed Client session using stored cookies")
+            _log.warning("Recreating closed Client session using stored cookies")
             self.__client = aiohttp.ClientSession(cookies=self._cookie)
         return self.__client
-
 
     async def close(self) -> None:
         """Close socket."""
@@ -144,7 +143,6 @@ class IntellifireControlAsync:
         """Hit the local challenge endpoint."""
         async with self._client.get(f"http://{self._ip}/get_challenge") as resp:
             ret = await resp.text()
-            print(ret)
             return ret
 
     async def _send_cloud_command(
@@ -152,10 +150,13 @@ class IntellifireControlAsync:
     ) -> None:
         """Send a cloud based control command."""
         await self._login_check()
-        data = f"{command.value['value']}={value}"
+        data = f"{command.value['cloud_command']}={value}"
         async with self._client.post(
             f"{self.prefix}://iftapi.net/a/{serial}//apppost", data=data.encode()
         ) as resp:
+            _log.info(
+                f"Sending {self.send_mode.value} Intellifire command: [{command.value['cloud_command']}={value}]"
+            )
             if resp.status != 204:
                 raise ApiCallException("Error with API call")
 
@@ -173,7 +174,7 @@ class IntellifireControlAsync:
         # Required fields
         api_key = fireplace.apikey
         challenge: str = await self.get_challenge()
-        payload = f"post:command={command.name.lower()}&value={value}"
+        payload = f"post:command={command.value['value']}&value={value}"
         api_bytes = bytes.fromhex(api_key)
         challenge_bytes = bytes.fromhex(challenge)
         payload_bytes = payload.encode()
@@ -182,14 +183,19 @@ class IntellifireControlAsync:
             api_bytes + sha256(api_bytes + challenge_bytes + payload_bytes).digest()
         ).hexdigest()
 
-        data = f"command={command.name.lower()}&value={value}&user={self.user}&response={response}"
+        data = f"command={command.value['local_command']}&value={value}&user={self.user}&response={response}"
         url = f"http://{self._ip}/post"
 
-        async with self._client.post(url=url, data=data, headers={"content-type": "application/x-www-form-urlencoded"}) as resp:
-            print(resp)
+        async with self._client.post(
+            url=url,
+            data=data,
+            headers={"content-type": "application/x-www-form-urlencoded"},
+        ) as resp:
+            _log.info(
+                f"Sending {self.send_mode.value} Intellifire command: [{command.value['local_command']}={value}]"
+            )
             if resp.status == 404:
-                print("Error with challenge reply")
-                print(url)
+                _log.warning(f"Failed to post: {url}{data}")
 
     async def send_command(
         self,
@@ -202,18 +208,26 @@ class IntellifireControlAsync:
         # Validate the range on input
         min_value: int = command.value["min"]  # type: ignore
         max_value: int = command.value["max"]  # type: ignore
+
         if value > max_value or value < min_value:
             raise InputRangeException(
                 field=str(command.value["value"]),
                 min_value=min_value,
                 max_value=max_value,
             )
-        if self.send_mode is IntellifireSendMode.LOCAL:
-            await self._send_local_command(fireplace=fireplace, command=command, value=value)
-        elif self.send_mode is IntellifireSendMode.CLOUD:
-            await self._send_cloud_command(command=command, value=value, serial=fireplace.serial)
-
-        _log.info(f"Sending {self.send_mode.value} Intellifire command: [{command.value}={value}]")
+        try:
+            if self.send_mode is IntellifireSendMode.LOCAL:
+                await self._send_local_command(
+                    fireplace=fireplace, command=command, value=value
+                )
+            elif self.send_mode is IntellifireSendMode.CLOUD:
+                await self._send_cloud_command(
+                    command=command, value=value, serial=fireplace.serial
+                )
+        except ServerDisconnectedError:
+            _log.warning("Server Disconnect ... retrying command")
+            # Try again? (will this cause a recursive nightmare)
+            await self.send_command(fireplace=fireplace, command=command, value=value)
 
     async def beep(self, *, fireplace: IntellifireFireplace) -> None:
         """Play a beep - seems to only work if flame is on."""
@@ -274,13 +288,13 @@ class IntellifireControlAsync:
         )
 
     async def turn_off_thermostat(self, *, fireplace: IntellifireFireplace) -> None:
-        """Turn off thermostat mode"""
+        """Turn off thermostat mode."""
         await self.send_command(
             fireplace=fireplace, command=IntellifireCommand.THERMOSTAT_SETPOINT, value=0
         )
 
     async def turn_on_thermostat(self, *, fireplace: IntellifireFireplace) -> None:
-        """Turn on thermostat mode"""
+        """Turn on thermostat mode."""
         await self.send_command(
             fireplace=fireplace,
             command=IntellifireCommand.THERMOSTAT_SETPOINT,
@@ -292,17 +306,20 @@ class IntellifireControlAsync:
     ) -> None:
         """Set thermostat value in fahrenheit."""
         temp_c = int((temp_f - 32) * 5 / 9)
-        await self.set_thermostat_c(fireplace=fireplace, temp_c=temp_c)
+
+        await self.set_thermostat_c(fireplace=fireplace, temp_c=(temp_c))
 
     async def set_thermostat_c(
         self, *, fireplace: IntellifireFireplace, temp_c: int
     ) -> None:
         """Set thermostat value in centigrade."""
         self._last_thermostat_setpoint = temp_c
+        # Need to multiply actual c value by 100 to meet
+        # api specs. Not sure why :)
         await self.send_command(
             fireplace=fireplace,
             command=IntellifireCommand.THERMOSTAT_SETPOINT,
-            value=temp_c,
+            value=temp_c * 100,
         )
 
     async def set_sleep_timer(
@@ -312,7 +329,7 @@ class IntellifireControlAsync:
         await self.send_command(
             fireplace=fireplace,
             command=IntellifireCommand.TIME_REMAINING,
-            value=minutes * 60,
+            value=minutes * 60,  # api requires seconds - but we will work in minutes
         )
 
     async def stop_sleep_timer(self, *, fireplace: IntellifireFireplace) -> None:
@@ -324,17 +341,17 @@ class IntellifireControlAsync:
     @property
     def user(self) -> str:
         """Get user cookie."""
-        return self._cookie.get("user").value
+        return str(self._cookie.get("user").value)
 
     @property
     def auth_cookie(self) -> str:
         """Get Auth Cookie."""
-        return self._cookie.get("auth_cookie").value
+        return str(self._cookie.get("auth_cookie").value)
 
     @property
     def web_client_id(self) -> str:
         """Get web client id."""
-        return self._cookie.get("web_client_id").value
+        return str(self._cookie.get("web_client_id").value)
 
 
 async def main() -> None:
@@ -377,7 +394,18 @@ async def main() -> None:
         print("Serial:", default_fireplace.serial)
         print("APIKey:", default_fireplace.apikey)
 
-        await ift_control.flame_off(fireplace=default_fireplace)
+        ift_control.send_mode = IntellifireSendMode.CLOUD
+
+        sleep_time = 5
+        await ift_control.flame_on(fireplace=fireplace)
+        await ift_control.set_fan_speed(fireplace=fireplace, speed=0)
+        time.sleep(sleep_time)
+        await ift_control.set_fan_speed(fireplace=fireplace, speed=1)
+        time.sleep(sleep_time)
+        await ift_control.set_fan_speed(fireplace=fireplace, speed=2)
+        time.sleep(sleep_time)
+        await ift_control.set_fan_speed(fireplace=fireplace, speed=3)
+        await ift_control.flame_off(fireplace=fireplace)
         exit(0)
         for control in [IntellifireSendMode.LOCAL, IntellifireSendMode.CLOUD]:
             print("Using çontrol Møde: ", control)
