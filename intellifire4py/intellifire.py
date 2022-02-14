@@ -30,17 +30,3 @@ class Intellifire:
     def data(self) -> IntellifirePollData:
         """Return Intellifire data."""
         return self.__data
-
-
-def main() -> None:
-    """Run main function."""
-    print("Starting Intellifre Parser")
-    fire = Intellifire("192.168.1.65")
-    # Poll the fire
-    fire.poll()
-    print(f"{fire.data.temperature_c} c")
-    print(f"{fire.data.temperature_f} f")
-
-
-if __name__ == "__main__":
-    main()

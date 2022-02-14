@@ -1,5 +1,7 @@
 
 CHANGELOG
+0.9.8
+- Removed all sample code from files ... moved it to the README
 0.9.7
 - Fixed issue with local flame_height vs height command
 0.9.6

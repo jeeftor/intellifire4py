@@ -1,6 +1,4 @@
 """Intellifire Control Logic."""
-import os
-import time
 from typing import List
 
 import requests
@@ -177,65 +175,3 @@ class IntellifireControl:
     def web_client_id(self) -> str:
         """Get web client id."""
         return self._cookie.get("web_client_id")  # type: ignore
-
-
-def main() -> None:
-    """Run main function."""
-    username = os.environ["IFT_USER"]
-    password = os.environ["IFT_PASS"]
-
-    # Init and login
-    control_interface = IntellifireControl(fireplace_ip="192.168.1.65")
-    control_interface.login(username=username, password=password)
-
-    # Get location list
-    locations = control_interface.get_locations()
-    location_id = locations[0]["location_id"]
-
-    # Extract a fireplace
-    fireplace: IntellifireFireplace = control_interface.get_fireplaces(
-        location_id=location_id
-    )[0]
-
-    sleep_time = 5
-    control_interface.flame_off(fireplace=fireplace)
-    time.sleep(sleep_time)
-    control_interface.flame_on(fireplace=fireplace)
-    time.sleep(sleep_time)
-    control_interface.set_flame_height(fireplace=fireplace, height=1)
-    time.sleep(sleep_time)
-    control_interface.set_flame_height(fireplace=fireplace, height=2)
-    time.sleep(sleep_time)
-    control_interface.set_flame_height(fireplace=fireplace, height=3)
-    time.sleep(sleep_time)
-    control_interface.set_flame_height(fireplace=fireplace, height=4)
-    time.sleep(sleep_time)
-    control_interface.set_flame_height(fireplace=fireplace, height=5)
-    time.sleep(sleep_time)
-    control_interface.set_flame_height(fireplace=fireplace, height=1)
-    time.sleep(sleep_time)
-    control_interface.set_fan_speed(fireplace=fireplace, speed=0)
-    time.sleep(sleep_time)
-    control_interface.set_fan_speed(fireplace=fireplace, speed=2)
-    time.sleep(sleep_time)
-    control_interface.set_fan_speed(fireplace=fireplace, speed=3)
-    time.sleep(sleep_time)
-    control_interface.set_fan_speed(fireplace=fireplace, speed=4)
-    time.sleep(sleep_time)
-    control_interface.set_fan_speed(fireplace=fireplace, speed=1)
-    time.sleep(sleep_time)
-    control_interface.beep(fireplace=fireplace)
-    time.sleep(sleep_time)
-    control_interface.flame_off(fireplace=fireplace)
-
-    api_key = fireplace.apikey
-    serial = fireplace.serial
-    challenge = control_interface.get_challenge()
-
-    print("apikey", api_key)
-    print("serial", serial)
-    print("challenge", challenge)
-
-
-if __name__ == "__main__":
-    main()

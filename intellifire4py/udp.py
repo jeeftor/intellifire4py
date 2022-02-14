@@ -1,5 +1,4 @@
 """Fire finder module."""
-import asyncio
 import json
 import time
 from socket import AF_INET, SOCK_DGRAM, socket
@@ -98,22 +97,4 @@ class AsyncUDPFireplaceFinder:
                 _log.info(f"Received Fireplace response from: {addr}")
                 ip = json.loads(data.decode())["ip"]
                 ip_set.add(ip)
-        # return list(ip_set)
         self.ips = list(ip_set)
-
-
-def main() -> None:
-    """Run main function."""
-    print("----- Running Sync Mode -----")
-    finder = UDPFireplaceFinder()
-    print(finder.search_fireplace(timeout=15))
-
-    print("----- Running Async Mode -----")
-    af = AsyncUDPFireplaceFinder()
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(af.search_fireplace(timeout=15))
-    print(af.ips)
-
-
-if __name__ == "__main__":
-    main()
