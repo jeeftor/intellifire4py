@@ -22,7 +22,7 @@ class IntellifireAsync:
         async with aiohttp.ClientSession() as session:
             url = f"http://{self.ip}/poll"
 
-            _log.info(f"--Intellifire:: Querying {url}")
+            _log.debug(f"--Intellifire:: Querying {url}")
 
             async with session.get(url) as response:
 

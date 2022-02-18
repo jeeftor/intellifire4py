@@ -10,11 +10,11 @@ from intellifire4py.control_async import IntellifireSendMode
 async def main() -> None:
     """Run main function."""
     """Run main function."""
-    print("----- Running Sync Mode -----")
+    print("----- Running Sync Mode (waiting 15 seconds)-----")
     finder = UDPFireplaceFinder()
     print(finder.search_fireplace(timeout=15))
 
-    print("----- Running Async Mode -----")
+    print("----- Running Async Mode (waiting 15 seconds)-----")
     af = AsyncUDPFireplaceFinder()
     await af.search_fireplace(timeout=15)
     print(af.ips)
