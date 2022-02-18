@@ -1,5 +1,8 @@
 
 CHANGELOG
+0.9.9
+- Changed an info printout to debug
+- Updated readme wiht example.py which has examples
 0.9.8
 - Removed all sample code from files ... moved it to the README
 0.9.7
