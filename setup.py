@@ -13,7 +13,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/jeeftor/intellifire4py",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=['tests','tests.*']),
     install_requires=['aiohttp', 'pydantic', 'requests'],
     classifiers=[
         "Programming Language :: Python :: 3",
