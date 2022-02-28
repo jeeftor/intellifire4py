@@ -9,21 +9,23 @@ from intellifire4py.control_async import IntellifireSendMode
 
 async def main() -> None:
     """Run main function."""
-    """Run main function."""
-    print("----- Running Sync Mode (waiting 15 seconds)-----")
-    finder = UDPFireplaceFinder()
-    print(finder.search_fireplace(timeout=15))
 
-    print("----- Running Async Mode (waiting 15 seconds)-----")
+    # print("----- Running Sync Mode (waiting 15 seconds)-----")
+    # finder = UDPFireplaceFinder()
+    # print(finder.search_fireplace(timeout=15))
+
+    print("----- Running Async Mode (waiting 3 seconds)-----")
     af = AsyncUDPFireplaceFinder()
-    await af.search_fireplace(timeout=15)
+    await af.search_fireplace(timeout=3)
     print(af.ips)
+
+    ip = af.ips[0]
 
 
     """Run main function."""
     username = os.environ["IFT_USER"]
     password = os.environ["IFT_PASS"]
-    ip = os.environ["IFT_IP"]
+    # ip = os.environ["IFT_IP"]
     ift_control = IntellifireControlAsync(
         fireplace_ip=ip, use_http=True, verify_ssl=False
     )
@@ -36,7 +38,6 @@ async def main() -> None:
             await ift_control.login(username=username, password=password)
 
         print("Logged in:", ift_control.is_logged_in)
-
         # Get location list
         locations = await ift_control.get_locations()
         location_id = locations[0]["location_id"]
@@ -60,10 +61,13 @@ async def main() -> None:
         print("APIKey:", default_fireplace.apikey)
 
 
+        # Send a soft reset command?
+        ift_control.send_mode = IntellifireSendMode.CLOUD
+        await ift_control.soft_reset(fireplace=default_fireplace)
+        await ift_control.flame_on(fireplace=fireplace)
 
-
-        print('await ift_control.set_flame_height(fireplace=default_fireplace, height=4)')
-        await ift_control.set_flame_height(fireplace=default_fireplace, height=4)
+        # print('await ift_control.set_flame_height(fireplace=default_fireplace, height=4)')
+        # await ift_control.set_flame_height(fireplace=default_fireplace, height=4)
 
         # time.sleep(10)
         # ift_control.send_mode = IntellifireSendMode.CLOUD
@@ -82,7 +86,7 @@ async def main() -> None:
         # time.sleep(sleep_time)
         # await ift_control.set_fan_speed(fireplace=fireplace, speed=3)
         # await ift_control.flame_off(fireplace=fireplace)
-        exit(0)
+        # exit(0)
         for control in [IntellifireSendMode.LOCAL, IntellifireSendMode.CLOUD]:
             print("Using çontrol Møde: ", control)
             ift_control.send_mode = control
