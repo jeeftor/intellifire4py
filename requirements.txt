@@ -4,3 +4,4 @@ aiohttp~=3.8.1
 intellifire4py~=0.6
 asyncio~=3.4.3
 # psutil~=5.9.0
+aenum~=3.1.8

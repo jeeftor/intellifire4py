@@ -19,6 +19,11 @@ class IntellifireSendMode(Enum):
     CLOUD = "cloud"
 
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
+
 class IntellifireControlAsync:
     """Hacked together control API for intellifire modules."""
 
@@ -193,6 +198,8 @@ class IntellifireControlAsync:
             )
             if resp.status == 404:
                 _log.warning(f"Failed to post: {url}{data}")
+            if resp.status == 422:
+                _log.warning(f"422 Code on: {url}{data}")
 
     async def send_command(
         self,
@@ -276,6 +283,16 @@ class IntellifireControlAsync:
         """Set fan speed."""
         await self.send_command(
             fireplace=fireplace, command=IntellifireCommand.FAN_SPEED, value=speed
+        )
+
+    async def soft_reset(self, *, fireplace: IntellifireFireplace) -> None:
+        """Send Soft Reset Command."""
+        if self.send_mode == IntellifireSendMode.LOCAL:
+            _log.warning(
+                "soft_reset command only will work via cloud control"
+            )  # I haven't been able to figure out if there is a local version of this command
+        await self.send_command(
+            fireplace=fireplace, command=IntellifireCommand.SOFT_RESET, value=1
         )
 
     async def fan_off(self, *, fireplace: IntellifireFireplace) -> None:

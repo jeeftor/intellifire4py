@@ -9,6 +9,8 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
+from intellifire4py.const import IntellifireErrorCode
+
 
 class IntellifirePollData(BaseModel):
     name: str
@@ -50,6 +52,10 @@ class IntellifirePollData(BaseModel):
     @property
     def thermostat_setpoint_f(self) -> float:
         return (self.raw_thermostat_setpoint / 100 * 9 / 5) + 32
+
+    @property
+    def error_codes(self) -> list[IntellifireErrorCode]:
+        return [IntellifireErrorCode(i) for i in self.errors]
 
 
 class UDPResponse(BaseModel):

@@ -1,5 +1,7 @@
 
 CHANGELOG
+0.9.10
+- Error Code processing
 0.9.9
 - Changed an info printout to debug
 - Updated readme wiht example.py which has examples

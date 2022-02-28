@@ -4,6 +4,8 @@ from unittest import TestCase
 from pydantic import ValidationError
 
 from intellifire4py import IntellifirePollData
+from intellifire4py.const import IntellifireErrorCode
+
 
 def test_json_files():
 
@@ -11,7 +13,7 @@ def test_json_files():
         file = open(file_name)
         json_str = file.read()
         try:
-            IntellifirePollData.parse_raw(json_str)
+            p = IntellifirePollData.parse_raw(json_str)
         except ValidationError as e:
             print(e)
 
