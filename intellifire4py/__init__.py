@@ -13,3 +13,4 @@ from intellifire4py.model import (
     IntellifirePollData,
 )
 from intellifire4py.udp import AsyncUDPFireplaceFinder, UDPFireplaceFinder
+from intellifire4py.const import IntellifireErrorCode

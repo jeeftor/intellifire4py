@@ -3,6 +3,8 @@ from unittest import TestCase
 from intellifire4py import IntellifirePollData, Intellifire
 import json
 
+from intellifire4py.const import IntellifireErrorCode
+
 JSON1 = """
     {
   "name": "",
@@ -47,6 +49,7 @@ class TestIntellifire(TestCase):
 
         try:
             d = IntellifirePollData.parse_obj(d1)
+            assert d.error_codes[0] == IntellifireErrorCode.FAN_DELAY
         except:
             self.fail("Couldn't parse D1")
 
