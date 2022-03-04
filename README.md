@@ -40,9 +40,9 @@ _____lc|_|_|/)______)_____)______( \|_|_|_|_____
     * [Flame Height](#flame-height)
     * [Fan Speed](#fan-speed)
     * [Lights](#lights)
-- [Beep](#beep)
-- [Thermostat](#thermostat)
-- [Sleep Timer](#sleep-timer)
+    * [Beep](#beep)
+    * [Thermostat](#thermostat)
+    * [Sleep Timer](#sleep-timer)
 - [Control Exceptions](#control-exceptions)
 - [Sample Code](#sample-code)
 
@@ -213,16 +213,16 @@ You can control lights with `set_lights` method. Valid ranges for `level` are 0 
 await control_interface.set_lights(fireplace=fireplace, speed=1)
 ```
 
-# Beep
+## Beep
 
-Apparently, if the fireplace is on (flame on) you can send a beep.
+Apparently, if the fireplace is on (flame on) you can send a beep. This also may not work.
 
 
 ```python
 await control_interface.beep(fireplace=fireplace)
 ```
 
-# Thermostat
+## Thermostat
 
 
 
@@ -237,7 +237,7 @@ await ift_control.turn_off_thermostat(fireplace=defualt_fireplace)
 await ift_control.turn_on_thermostat(fireplace=defualt_fireplace)
 ```
 
-# Sleep Timer
+## Sleep Timer
 
 The sleep timer range is from (`1`-`180` minutes). Interact as follows:
 
