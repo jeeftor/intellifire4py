@@ -254,4 +254,4 @@ await ift_control.turn_off_sleep_timer(fireplace=default_fp, minutes=120)
 
 # Sample Code
 
-There is some sample code in [`example.py`](https://github.com/jeeftor/intellifire4py/blob/master/)
+There is some sample code in [`example.py`](https://github.com/jeeftor/intellifire4py/blob/master/example.py)
