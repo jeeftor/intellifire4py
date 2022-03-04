@@ -1,5 +1,10 @@
 
 CHANGELOG
+1.0.0
+- Removed Sync control/poll code
+- Added pre-commit hooks
+- Linted everything
+- Added pre-commit to github ci
 0.9.10
 - Error Code processing
 0.9.9
