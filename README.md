@@ -21,6 +21,8 @@ _____lc|_|_|/)______)_____)______( \|_|_|_|_____
 - [`CHANGELOG`](https://raw.githubusercontent.com/jeeftor/intellifire4py/master/CHANGELOG)
 - [`Source Code`](https://github.com/jeeftor/intellifire4py)
 
+**Table o`Contents**
+
 <!-- toc -->
 
 - [Intellifire (New and Improved)](#intellifire-new-and-improved)
@@ -252,4 +254,4 @@ await ift_control.turn_off_sleep_timer(fireplace=default_fp, minutes=120)
 
 # Sample Code
 
-There is some sample code in [`example.py`](example.py)
+There is some sample code in [`example.py`](https://github.com/jeeftor/intellifire4py/blob/master/)
