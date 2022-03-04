@@ -40,4 +40,4 @@ jobs:
 
       - name: Run pre-commit on all files
         run: |
-          pre-commit run --all-files --show-diff-on-failure --color=always
+          pre-commit run --files ./intellifire4py/* --show-diff-on-failure --color=always
