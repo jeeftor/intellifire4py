@@ -3,7 +3,7 @@ import logging
 from enum import Enum
 from hashlib import sha256
 from types import TracebackType
-from typing import Optional, Any
+from typing import Any, Optional
 
 import aiohttp
 from aiohttp import ClientSession, ServerDisconnectedError
