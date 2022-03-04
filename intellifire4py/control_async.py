@@ -3,7 +3,7 @@ import logging
 from enum import Enum
 from hashlib import sha256
 from types import TracebackType
-from typing import Optional
+from typing import Optional, Any
 
 import aiohttp
 from aiohttp import ClientSession, ServerDisconnectedError
@@ -53,11 +53,11 @@ class IntellifireControlAsync:
             self.__client = aiohttp.ClientSession(cookies=self._cookie)
         return self.__client
 
-    async def close(self) -> None:
+    async def close(self) -> Any:
         """Close socket."""
         return await self._client.close()
 
-    async def __aenter__(self) -> "Client":  # noqa: F821 type: ignore
+    async def __aenter__(self) -> "Client":  # type: ignore # noqa: F821
         """Magic Enter Function."""
         # This function may not be needed at all 🤷️
         return self
@@ -82,7 +82,7 @@ class IntellifireControlAsync:
                 if resp.status != 204:
                     raise LoginException()
 
-                self._cookie = resp.cookies  # type: ignore
+                self._cookie = resp.cookies
                 self.is_logged_in = True
                 _log.info("Success - Logged into IFTAPI")
 
@@ -98,7 +98,7 @@ class IntellifireControlAsync:
         if not self.is_logged_in:
             raise LoginException("Not Logged In")
 
-    async def get_username(self) -> str:
+    async def get_username(self) -> Any:
         """Call to iftapi.net to extract the username based on cookie information."""
         await self._login_check()
         async with self._client.get(
@@ -140,7 +140,7 @@ class IntellifireControlAsync:
             json_data = await resp.json()
             return IntellifireFireplaces(**json_data).fireplaces
 
-    async def get_challenge(self) -> str:
+    async def get_challenge(self) -> Any:
         """Hit the local challenge endpoint."""
         async with self._client.get(f"http://{self._ip}/get_challenge") as resp:
             ret = await resp.text()
@@ -354,14 +354,14 @@ class IntellifireControlAsync:
     @property
     def user(self) -> str:
         """Get user cookie."""
-        return str(self._cookie.get("user").value)
+        return str(self._cookie.get("user").value)  # type: ignore
 
     @property
     def auth_cookie(self) -> str:
         """Get Auth Cookie."""
-        return str(self._cookie.get("auth_cookie").value)
+        return str(self._cookie.get("auth_cookie").value)  # type: ignore
 
     @property
     def web_client_id(self) -> str:
         """Get web client id."""
-        return str(self._cookie.get("web_client_id").value)
+        return str(self._cookie.get("web_client_id").value)  # type: ignore

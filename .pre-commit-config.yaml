@@ -35,4 +35,6 @@ repos:
     - id: mypy
       types: [python]
       files: ^intellifire4py/.+\.py$
+      additional_dependencies: [types-requests, pydantic]
+
 
