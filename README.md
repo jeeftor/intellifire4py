@@ -4,52 +4,22 @@
 - [`CHANGELOG`](https://raw.githubusercontent.com/jeeftor/intellifire4py/master/CHANGELOG)
 - [`Source Code`](https://github.com/jeeftor/intellifire4py)
 
+<!-- toc -->
 # Intellifire (New and Improved)
 
-This is a 100% unofficial python module for working with the IntelliFire API for Intellifire WIFI Modules.
+This is an Python Async Module for dealing with IntelliFire places. This is a 100% unofficial python module for working with the IntelliFire API for Intellifire WIFI Modules.
 
-
-
-Intellifire is a wifi module for a variety of fireplaces. It has both ios/android apps - but they dont like to publish the api.
-
-From my research I've identified 4 endpoints:
-
-`/poll`
-`/get_serial`
-`/get_challenge`
-`/post`
-
-This module will parse data from botht he `/get_serial` and `/poll` endpoints and parse the resultatn JSON into something readable.
-
-If anybody knows more about OAuth and wants to help me reverse engineer the control endpoints I'd love the help!
-
-Hit me up on github: https://github.com/jeeftor
-
+Intellifire is a wifi module for a variety of fireplaces.
 
 # Local Polling
 
-Both `Intellifire` and `IntellifireAsync` classes will poll an intellifire interface on the local network for a read-only view of the device. All that is required is the ip address. If you need to discover that see further on in this document.
+Intellifire publishes status information on a `/post` http endpiont.  `IntellifireAsync` will poll an intellifire interface on the local network for a read-only view of the device. All that is required is the ip address.
 
-## Sync 
-
-This is not fully developed and you shouldn't really use it - if you DO want to use it - 
-
-```python
-# Define an intellifre instance
-fire = Intellifire("192.168.1.80")
-
-# Poll to update the internal data source
-fire.poll()
-
-# Print out all values
-print(fire.data)    
-```
-
-## Async
+A demonstration of how to poll a fireplace is as follows:
 
 ```python
 async def main():
-    fire = IntellifireAsync("127.0.0.1")
+    fire = IntellifireAsync("192.168.1.3")
     await fire.poll()
 
     # Poll the fire
@@ -63,12 +33,24 @@ if __name__ == "__main__":
     loop.run_until_complete(main())
 
 ```
+# Auto Discovery
 
+The IFT module will respond to the receipt of a udp packet with its ip information. You can run either a Sync or Async version of this functionaly.
+
+```python
+print("----- Find Fire Places - Sync Mode  (waiting 3 seconds)-----")
+finder = UDPFireplaceFinder()
+print(finder.search_fireplace(timeout=3))
+
+print("----- Find Fire Places - Aync Mode  (waiting 3 seconds)-----")
+af = AsyncUDPFireplaceFinder()
+await af.search_fireplace(timeout=3)
+```
 
 
 # Fireplace Control
 
-The Async Control Interface gives you the ability to directly send commands to your IFT unit. To instantiate one you will need 
+The Async Control Interface gives you the ability to directly send commands to your IFT unit. To instantiate one you will need
 
 - `ip` - Fireplace ip on the network - *used for initial instantiation*
 - `username` - Username (email) used in intellifire app - *used for login*
@@ -81,16 +63,16 @@ Sometimes we live in a tough SSL world and as such you can disable SSL (https) m
 ```
 # No SSH Inspection and use HTTP mode
 ift_control = IntellifireControlAsync(
-	fireplace_ip=ip, 
-	use_http=True, 
+	fireplace_ip=ip,
+	use_http=True,
 	verify_ssl=False
 )
-```    
+```
 
 
-# Local Control
+## Local Control
 
-Local control can take advantage of the units `/post` endpoint. However these commands require an **ApiKey** that must to be retreived from  `iftapi.net`. 
+Local control can take advantage of the units `/post` endpoint. However these commands require an **ApiKey** that must to be retreived from  `iftapi.net`.
 
 *This is currently only implemnted in the [`IntellifireControlAsync`](intellifire4py/control_async.py#L24) control module.*
 
@@ -101,7 +83,7 @@ ift_control.send_mode = IntellifireSendMode.LOCAL
 ```
 
 
-# Cloud Control
+## Cloud Control
 
 Taking advantage of the `iftapi.net` REST API - the module can send commands to the cloud in order to control a specific fireplace. In order to enable this you need to set the `.send_mode` to something like:
 
@@ -109,22 +91,22 @@ Taking advantage of the `iftapi.net` REST API - the module can send commands to 
 ift_control.send_mode = IntellifireSendMode.CLOUD
 ```
 
-# API Overview
+# Control API Overview
 
 
 Conceptually the API is divided into `Users` who have control of `Locations` which contain `Fireplaces`.
 
 ```
 ┌───────────┐
-│   Users   │ 
+│   Users   │
 └─────┬─────┘
-      │      
-      │      
+      │
+      │
 ┌─────▼─────┐
-│ Location  │ 
+│ Location  │
 └─────┬─────┘
-      │      
-      │      
+      │
+      │
 ┌─────▼─────┐
 │ Fireplace │
 └───────────┘
@@ -137,11 +119,13 @@ username = os.environ['IFT_USER']
 password = os.environ['IFT_PASS']
 
 # Init and login
-control_interface = IntellifireControl(fireplace_ip='192.168.1.65')
-control_interface.login(username=username, password=password)
+ift_control = IntellifireControlAsync(fireplace_ip='192.168.1.65')
+await ift_control.login(username=username, password=password)
 ```
 
-Once the login is complete all further control requests will use the cookies to authenticate and control things.
+Once the login is complete all further control requests will use data from these cookies to authenticate and control things. Local calls will use an api_key from the cookie while cloud calls will use the entire cookie.
+
+## The default fireplace
 
 All commands will reference a specific `IntellifireFireplace`, however in the case that you have a single Intellifire Device installed in your user account you can just use the `.default_fireplace` property
 
@@ -166,6 +150,8 @@ You can control the flame height with `set_flame_height` method. Height ranges f
 ```python
 await control_interface.set_flame_height(fireplace=fireplace, height=3)
 ```
+
+*Note that a zero height flame is the "lowest" flame setting supported by the module.*
 
 ## Fan Speed
 
@@ -223,19 +209,6 @@ await ift_control.turn_off_sleep_timer(fireplace=default_fp, minutes=120)
 - `InputRangeException` - control value is out of valid range.
 - `ApiCallException` - Some sort of api exception occured.
 
-
-# Where have all the firepalces gone!
-
-The fireplace moduels are configured to respond to a specific UDP packet and return information. As such we can discover fireplaces on the network. Currently this will only return the ip address of the first fireplace to respond... (oh well). 
-
-```python
-# Creates a Fireplace Finder
-finder = UDPFireplaceFinder()
-# Prints IP of first fireplace to respond
-print(finder.search_fireplace())
-```
-
-*TODO: Listen for a set time and return a list of all fireplaces that respond.*
 
 
 # Sample Code

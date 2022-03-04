@@ -9,7 +9,11 @@ import aiohttp
 from aiohttp import ClientSession, ServerDisconnectedError
 
 from intellifire4py.const import IntellifireCommand, _log
-from intellifire4py.control import ApiCallException, InputRangeException, LoginException
+from intellifire4py.exceptions import (
+    ApiCallException,
+    InputRangeException,
+    LoginException,
+)
 from intellifire4py.model import IntellifireFireplace, IntellifireFireplaces
 
 

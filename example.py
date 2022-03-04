@@ -1,50 +1,75 @@
+"""Example usage of the Library."""
 import asyncio
 import os
 import time
 
-from intellifire4py import UDPFireplaceFinder, AsyncUDPFireplaceFinder, IntellifireControlAsync, IntellifireFireplace
-from intellifire4py.control import LoginException
+from intellifire4py import (
+    AsyncUDPFireplaceFinder,
+    IntellifireControlAsync,
+    IntellifireFireplace,
+    UDPFireplaceFinder,
+)
 from intellifire4py.control_async import IntellifireSendMode
+from intellifire4py.exceptions import LoginException
 
 
 async def main() -> None:
     """Run main function."""
 
-    # print("----- Running Sync Mode (waiting 15 seconds)-----")
-    # finder = UDPFireplaceFinder()
-    # print(finder.search_fireplace(timeout=15))
+    print("----- Find Fire Places - Sync Mode  (waiting 3 seconds)-----")
+    finder = UDPFireplaceFinder()
+    print(finder.search_fireplace(timeout=3))
 
-    print("----- Running Async Mode (waiting 3 seconds)-----")
+    print("----- Find Fire Places - Aync Mode  (waiting 3 seconds)-----")
     af = AsyncUDPFireplaceFinder()
     await af.search_fireplace(timeout=3)
-    print(af.ips)
 
     ip = af.ips[0]
-
+    print(f"-- Found fireplace at [{ip}] --")
 
     """Run main function."""
+    print(
+        """
+    Accessing IFTAPI Username and Password via Environment Variables
+    - if these aren't set please do so, also
+    you will see some errors probably
+
+      export IFT_USER=<username>
+      export IFT_PASS=<password>
+
+    """
+    )
     username = os.environ["IFT_USER"]
     password = os.environ["IFT_PASS"]
-    # ip = os.environ["IFT_IP"]
+
+    print("--- Creating Fireplace Controller ---")
     ift_control = IntellifireControlAsync(
         fireplace_ip=ip, use_http=True, verify_ssl=False
     )
 
     try:
         try:
+            print(" -- Purposefully trying a bad password!")
             await ift_control.login(username=username, password="assword")
         except LoginException:
-            print("Bad password!")
-            await ift_control.login(username=username, password=password)
+            print(" -- Now trying again correctly.")
+            try:
+                await ift_control.login(username=username, password=password)
+            except LoginException:
+                print(
+                    "-- Could not login - make sure the login vars are correct ... bye --"
+                )
+                exit(1)
 
         print("Logged in:", ift_control.is_logged_in)
+
         # Get location list
         locations = await ift_control.get_locations()
         location_id = locations[0]["location_id"]
-        print("location_id:", location_id)
+        print(" -- Using location_id: ", location_id)
 
         username = await ift_control.get_username()
-        print("username", username)
+        print(" -- Accessing Username Cookie: ", username)
 
         # Extract a fireplace
         fireplaces = await ift_control.get_fireplaces(location_id=location_id)
@@ -60,7 +85,6 @@ async def main() -> None:
         print("Serial:", default_fireplace.serial)
         print("APIKey:", default_fireplace.apikey)
 
-
         # Send a soft reset command?
         ift_control.send_mode = IntellifireSendMode.CLOUD
         await ift_control.soft_reset(fireplace=default_fireplace)
@@ -73,8 +97,6 @@ async def main() -> None:
         # ift_control.send_mode = IntellifireSendMode.CLOUD
         # print('await ift_control.set_flame_height(fireplace=default_fireplace, height=0)')
         # await ift_control.set_flame_height(fireplace=default_fireplace, height=0)
-
-
 
         # sleep_time = 5
         # await ift_control.flame_on(fireplace=fireplace)

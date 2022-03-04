@@ -1,8 +1,8 @@
+"""Test Case."""
+import json
 from unittest import TestCase
 
-from intellifire4py import IntellifirePollData, Intellifire
-import json
-
+from intellifire4py import IntellifirePollData
 from intellifire4py.const import IntellifireErrorCode
 
 JSON1 = """
@@ -71,7 +71,10 @@ d2 = {
 
 
 class TestIntellifire(TestCase):
+    """Test case."""
+
     def test_poll(self):
+        """Test Parsing."""
         print(d2)
         print(d1)
 
@@ -82,10 +85,10 @@ class TestIntellifire(TestCase):
 
             assert ", ".join([x.name for x in d.error_codes]) == "FAN_DELAY, OFFLINE"
 
-        except:
+        except:  # noqa: E722
             self.fail("Couldn't parse D1")
 
         try:
             IntellifirePollData.parse_obj(d2)
-        except:
+        except:  # noqa: E722
             self.fail("Couldn't parse D2")
