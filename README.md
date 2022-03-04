@@ -1,5 +1,3 @@
-<img src="http://raw.githubusercontent.com/home-assistant/brands/master/core_integrations/intellifire/icon.png" height=100 >
-
 ```
     ________________________________________
    [________________________________________]
@@ -24,6 +22,28 @@ _____lc|_|_|/)______)_____)______( \|_|_|_|_____
 - [`Source Code`](https://github.com/jeeftor/intellifire4py)
 
 <!-- toc -->
+
+- [Intellifire (New and Improved)](#intellifire-new-and-improved)
+- [Local Polling](#local-polling)
+- [Auto Discovery](#auto-discovery)
+- [Fireplace Control](#fireplace-control)
+        + [SSL Considerations](#ssl-considerations)
+    * [Local Control](#local-control)
+    * [Cloud Control](#cloud-control)
+- [Control API Overview](#control-api-overview)
+    * [The default fireplace](#the-default-fireplace)
+    * [Power (Flame on/off)](#power-flame-onoff)
+    * [Flame Height](#flame-height)
+    * [Fan Speed](#fan-speed)
+    * [Lights](#lights)
+- [Beep](#beep)
+- [Thermostat](#thermostat)
+- [Sleep Timer](#sleep-timer)
+- [Control Exceptions](#control-exceptions)
+- [Sample Code](#sample-code)
+
+<!-- tocstop -->
+
 # Intellifire (New and Improved)
 
 This is an Python Async Module for dealing with IntelliFire places. This is a 100% unofficial python module for working with the IntelliFire API for Intellifire WIFI Modules.
