@@ -1,5 +1,8 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
+default_language_version:
+  python: python3.9
+exclude: '^$'
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.1.0
@@ -17,7 +20,7 @@ repos:
   rev: 5.10.1
   hooks:
     - id: isort
-      args: ["--profile", "black", "--filter-files"]    
+      args: ["--profile", "black", "--filter-files"]
 - repo: https://github.com/psf/black
   rev: 22.1.0
   hooks:
@@ -37,5 +40,3 @@ repos:
       types: [python]
       files: ^intellifire4py/.+\.py$
       additional_dependencies: [types-requests, pydantic]
-
-
