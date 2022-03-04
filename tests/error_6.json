@@ -19,7 +19,7 @@
   "power_vent": 0,
   "feature_fan": 1,
   "errors": [
-    6
+    6, 642
   ],
   "fw_version": "0x00030100",
   "fw_ver_str": "0.3.1+hw2",

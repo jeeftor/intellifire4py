@@ -1,8 +1,9 @@
 """Intellifire Control Logic."""
+import logging
 from enum import Enum
 from hashlib import sha256
 from types import TracebackType
-from typing import List, Optional, Type
+from typing import Optional
 
 import aiohttp
 from aiohttp import ClientSession, ServerDisconnectedError
@@ -18,8 +19,6 @@ class IntellifireSendMode(Enum):
     LOCAL = "local"
     CLOUD = "cloud"
 
-
-import logging
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -58,14 +57,14 @@ class IntellifireControlAsync:
         """Close socket."""
         return await self._client.close()
 
-    async def __aenter__(self) -> "Client":  # type: ignore
+    async def __aenter__(self) -> "Client":  # noqa: F821 type: ignore
         """Magic Enter Function."""
         # This function may not be needed at all 🤷️
         return self
 
     async def __aexit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Optional[bool]:
@@ -119,7 +118,7 @@ class IntellifireControlAsync:
         self.default_fireplace = fireplaces[0]
         _log.debug(f"configure default fireplace: {self.default_fireplace.serial}")
 
-    async def get_locations(self) -> List:
+    async def get_locations(self) -> list:
         """Enumerate configured locations that a user has access to.
 
         'location_id' can be used to discovery fireplaces
@@ -132,7 +131,7 @@ class IntellifireControlAsync:
             json_data = await resp.json()
             return json_data["locations"]  # type: ignore
 
-    async def get_fireplaces(self, *, location_id: str) -> List[IntellifireFireplace]:
+    async def get_fireplaces(self, *, location_id: str) -> list[IntellifireFireplace]:
         """Get fireplaces at a location with associated API keys!."""
         await self._login_check()
         async with self._client.get(

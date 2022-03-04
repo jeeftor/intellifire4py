@@ -32,7 +32,7 @@ class IntellifirePollData(BaseModel):
     has_thermostat: bool = Field(alias="feature_thermostat")
     has_power_vent: bool = Field(alias="power_vent")
     has_fan: bool = Field(alias="feature_fan")
-    errors: List[int]
+    errors: list[int]
     fw_version: str
     fw_ver_str: str
     downtime: int
@@ -81,7 +81,7 @@ class IntellifireLocationDetails(BaseModel):
 
 
 class IntellifireLocations(BaseModel):
-    locations: List[IntellifireLocationDetails]
+    locations: list[IntellifireLocationDetails]
     email_notifications_enabled: int
 
 
@@ -95,4 +95,4 @@ class IntellifireFireplace(BaseModel):
 
 class IntellifireFireplaces(BaseModel):
     location_name: str
-    fireplaces: List[IntellifireFireplace]
+    fireplaces: list[IntellifireFireplace]

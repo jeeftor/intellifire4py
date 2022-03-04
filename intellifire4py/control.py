@@ -1,5 +1,4 @@
 """Intellifire Control Logic."""
-from typing import List
 
 import requests
 
@@ -56,7 +55,7 @@ class IntellifireControl:
         r = requests.get(url=url, cookies=self._cookie)
         return r.text
 
-    def get_locations(self) -> List:
+    def get_locations(self) -> list:
         """Enumerate configured locations that a user has access to.
 
         'location_id' can be used to discovery fireplaces
@@ -66,7 +65,7 @@ class IntellifireControl:
         p = requests.get(url="http://iftapi.net/a/enumlocations", cookies=self._cookie)
         return p.json()["locations"]  # type: ignore
 
-    def get_fireplaces(self, *, location_id: str) -> List[IntellifireFireplace]:
+    def get_fireplaces(self, *, location_id: str) -> list[IntellifireFireplace]:
         """Get fireplaces at a location with associated API keys!."""
         self._login_check()
         p = requests.get(
