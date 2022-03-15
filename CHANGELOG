@@ -1,5 +1,7 @@
 
 CHANGELOG
+1.0.1
+- Added a string method to return error codes pre-joined together
 1.0.0
 - Removed Sync control/poll code
 - Added pre-commit hooks

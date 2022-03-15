@@ -1,5 +1,4 @@
 """Intellifire Control Logic."""
-import logging
 from enum import Enum
 from hashlib import sha256
 from types import TracebackType

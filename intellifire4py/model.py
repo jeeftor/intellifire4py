@@ -57,6 +57,11 @@ class IntellifirePollData(BaseModel):
     def error_codes(self) -> list[IntellifireErrorCode]:
         return [IntellifireErrorCode(i) for i in self.errors]
 
+    @property
+    def error_codes_string(self) -> str:
+        """Assembled error codes into a formatted string"""
+        return ", ".join([code.name for code in self.error_codes])
+
 
 class UDPResponse(BaseModel):
     mac: str

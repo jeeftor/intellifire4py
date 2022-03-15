@@ -85,6 +85,12 @@ class TestIntellifire(TestCase):
 
             assert ", ".join([x.name for x in d.error_codes]) == "FAN_DELAY, OFFLINE"
 
+            assert (
+                d.error_codes_string
+                == ", ".join([x.name for x in d.error_codes])
+                == "FAN_DELAY, OFFLINE"
+            )
+
         except:  # noqa: E722
             self.fail("Couldn't parse D1")
 
