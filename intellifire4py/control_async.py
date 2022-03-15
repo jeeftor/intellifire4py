@@ -24,7 +24,7 @@ class IntellifireSendMode(Enum):
     CLOUD = "cloud"
 
 
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 
 class IntellifireControlAsync:

@@ -29,7 +29,7 @@ _____lc|_|_|/)______)_____)______( \|_|_|_|_____
 
 <!-- toc -->
 
-- [Intellifire (New and Improved)](#intellifire-new-and-improved)
+- [Intellifire](#intellifire)
 - [Local Polling](#local-polling)
 - [Auto Discovery](#auto-discovery)
 - [Fireplace Control](#fireplace-control)
@@ -50,11 +50,11 @@ _____lc|_|_|/)______)_____)______( \|_|_|_|_____
 
 <!-- tocstop -->
 
-# Intellifire (New and Improved)
+# Intellifire
 
 This is an Python Async Module for dealing with IntelliFire places. This is a 100% unofficial python module for working with the IntelliFire API for Intellifire WIFI Modules.
 
-Intellifire is a wifi module for a variety of fireplaces.
+Intellifire is a wifi module for a variety of fireplaces produced by Hearth and Home Technologies
 
 # Local Polling
 
@@ -100,6 +100,9 @@ The Async Control Interface gives you the ability to directly send commands to y
 - `ip` - Fireplace ip on the network - *used for initial instantiation*
 - `username` - Username (email) used in intellifire app - *used for login*
 - `password` - Password - *used for login*
+
+After the module connects to `iftapi.net` it will pull down a `user_id` which is globally applicable to all fireplaces on a user account and an `api_key` which is fireplace specific.
+
 
 ### SSL Considerations
 
