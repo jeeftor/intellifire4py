@@ -31,6 +31,8 @@ _____lc|_|_|/)______)_____)______( \|_|_|_|_____
 
 - [Intellifire](#intellifire)
 - [Local Polling](#local-polling)
+    * [Status Attributes](#status-attributes)
+    * [Error Codes](#error-codes)
 - [Auto Discovery](#auto-discovery)
 - [Fireplace Control](#fireplace-control)
         + [SSL Considerations](#ssl-considerations)
@@ -78,6 +80,76 @@ if __name__ == "__main__":
     loop.run_until_complete(main())
 
 ```
+## Status Attributes
+
+The following attributes are available on an `IntellifireAsync` object
+
+
+```python
+battery: int
+connection_quality: int
+downtime: int
+ecm_latency: int
+errors: list[int]
+error_codes: list[IntellifireErrorCode]
+error_codes_string: str
+fanspeed: int
+flameheight: int
+fw_ver_str: str
+fw_version: str
+has_fan: bool
+has_light: bool
+has_power_vent: bool
+has_thermostat: bool
+ipv4_address: str
+is_hot: bool
+is_on: bool
+light_level: int
+name: str
+pilot_on: bool
+prepurge: int
+raw_thermostat_setpoint: int
+serial: str
+temperature_c: int
+temperature_f: float
+thermostat_on: bool
+thermostat_setpoint_c: float
+thermostat_setpoint_f: float
+timer_on: bool
+timeremaining_s: int
+uptime: int
+
+```
+
+## Error Codes
+
+There are a variety of methods to pull error information from the module
+
+```python
+fire.error_pilot_flame
+fire.error_flame
+fire.error_fan_delay
+fire.error_maintenance
+fire.error_disabled
+fire.error_fan
+fire.error_lights
+fire.error_accessory
+fire.error_soft_lock_out
+fire.error_ecm_offline
+fire.error_offline
+```
+
+Additionally you can pull an array of `IntellifireErrorCode` objects or strings with:
+
+```python
+fire.error_codes
+fire.error_codes_string
+```
+
+
+
+
+
 # Auto Discovery
 
 The IFT module will respond to the receipt of a udp packet with its ip information. You can run either a Sync or Async version of this functionaly.
@@ -256,7 +328,6 @@ await ift_control.turn_off_sleep_timer(fireplace=default_fp, minutes=120)
 - `LoginException` - problem with the login process (username/password).
 - `InputRangeException` - control value is out of valid range.
 - `ApiCallException` - Some sort of api exception occured.
-
 
 
 # Sample Code

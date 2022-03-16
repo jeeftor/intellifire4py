@@ -91,6 +91,10 @@ class TestIntellifire(TestCase):
                 == "FAN_DELAY, OFFLINE"
             )
 
+            assert d.error_fan_delay is True
+            assert d.error_offline is True
+            assert d.error_accessory is False
+
         except:  # noqa: E722
             self.fail("Couldn't parse D1")
 

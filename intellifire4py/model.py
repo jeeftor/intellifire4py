@@ -62,6 +62,61 @@ class IntellifirePollData(BaseModel):
         """Assembled error codes into a formatted string"""
         return ", ".join([code.name for code in self.error_codes])
 
+    @property
+    def error_pilot_flame(self) -> bool:
+        """Return whether PILOT_FLAME error is present."""
+        return IntellifireErrorCode.PILOT_FLAME in self.error_codes
+
+    @property
+    def error_flame(self) -> bool:
+        """Return whether FLAME error is present."""
+        return IntellifireErrorCode.FLAME in self.error_codes
+
+    @property
+    def error_fan_delay(self) -> bool:
+        """Return whether FAN_DELAY error is present."""
+        return IntellifireErrorCode.FAN_DELAY in self.error_codes
+
+    @property
+    def error_maintenance(self) -> bool:
+        """Return whether MAINTENANCE error is present."""
+        return IntellifireErrorCode.MAINTENANCE in self.error_codes
+
+    @property
+    def error_disabled(self) -> bool:
+        """Return whether DISABLED error is present."""
+        return IntellifireErrorCode.DISABLED in self.error_codes
+
+    @property
+    def error_fan(self) -> bool:
+        """Return whether FAN error is present."""
+        return IntellifireErrorCode.FAN in self.error_codes
+
+    @property
+    def error_lights(self) -> bool:
+        """Return whether LIGHTS error is present."""
+        return IntellifireErrorCode.LIGHTS in self.error_codes
+
+    @property
+    def error_accessory(self) -> bool:
+        """Return whether ACCESSORY error is present."""
+        return IntellifireErrorCode.ACCESSORY in self.error_codes
+
+    @property
+    def error_soft_lock_out(self) -> bool:
+        """Return whether SOFT_LOCK_OUT error is present."""
+        return IntellifireErrorCode.SOFT_LOCK_OUT in self.error_codes
+
+    @property
+    def error_ecm_offline(self) -> bool:
+        """Return whether ECM_OFFLINE error is present."""
+        return IntellifireErrorCode.ECM_OFFLINE in self.error_codes
+
+    @property
+    def error_offline(self) -> bool:
+        """Return whether OFFLINE error is present."""
+        return IntellifireErrorCode.OFFLINE in self.error_codes
+
 
 class UDPResponse(BaseModel):
     mac: str
