@@ -7,7 +7,8 @@ from intellifire4py.const import IntellifireErrorCode
 class TestErrors(TestCase):
     """Test Case."""
 
-    def test_errors(self):
+    def test_errors(self) -> None:
         """Test Function."""
+
         e = IntellifireErrorCode(642)
         assert e == IntellifireErrorCode.OFFLINE
