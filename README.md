@@ -60,7 +60,7 @@ Intellifire is a wifi module for a variety of fireplaces produced by Hearth and 
 
 # Local Polling
 
-Intellifire publishes status information on a `/post` http endpiont.  `IntellifireAsync` will poll an intellifire interface on the local network for a read-only view of the device. All that is required is the ip address.
+Intellifire publishes status information on a `/post` http endpoint.  `IntellifireAsync` will poll an Intellifire interface on the local network for a read-only view of the device. All that is required is the ip address.
 
 A demonstration of how to poll a fireplace is as follows:
 
@@ -152,7 +152,7 @@ fire.error_codes_string
 
 # Auto Discovery
 
-The IFT module will respond to the receipt of a udp packet with its ip information. You can run either a Sync or Async version of this functionaly.
+The IFT module will respond to the receipt of a udp packet with its ip information. You can run either a Sync or Async version of this functionally.
 
 ```python
 print("----- Find Fire Places - Sync Mode  (waiting 3 seconds)-----")
@@ -192,9 +192,9 @@ ift_control = IntellifireControlAsync(
 
 ## Local Control
 
-Local control can take advantage of the units `/post` endpoint. However these commands require an **ApiKey** that must to be retreived from  `iftapi.net`.
+Local control can take advantage of the units `/post` endpoint. However these commands require an **ApiKey** that must to be retrieved from  `iftapi.net`.
 
-*This is currently only implemnted in the [`IntellifireControlAsync`](intellifire4py/control_async.py#L24) control module.*
+*This is currently only implemented in the [`IntellifireControlAsync`](intellifire4py/control_async.py#L24) control module.*
 
 Local control is the default state but if you need to manually set it you can use:
 
@@ -275,7 +275,7 @@ await control_interface.set_flame_height(fireplace=fireplace, height=3)
 
 ## Fan Speed
 
-Fan speed is controled via the `set_fan_speed` method. Valid ranges for `speed` 0 to 4.
+Fan speed is controlled via the `set_fan_speed` method. Valid ranges for `speed` 0 to 4.
 
 ```python
 await control_interface.set_fan_speed(fireplace=fireplace, speed=1)
@@ -327,7 +327,7 @@ await ift_control.turn_off_sleep_timer(fireplace=default_fp, minutes=120)
 
 - `LoginException` - problem with the login process (username/password).
 - `InputRangeException` - control value is out of valid range.
-- `ApiCallException` - Some sort of api exception occured.
+- `ApiCallException` - Some sort of api exception occurred.
 
 
 # Sample Code

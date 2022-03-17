@@ -73,7 +73,7 @@ d2 = {
 class TestIntellifire(TestCase):
     """Test case."""
 
-    def test_poll(self):
+    def test_poll(self) -> None:
         """Test Parsing."""
         print(d2)
         print(d1)

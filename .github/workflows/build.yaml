@@ -1,6 +1,4 @@
----
 name: Build
-
 
 on:
   push:
@@ -10,8 +8,6 @@ on:
   schedule:
     - cron: "17 6 * * *"
   workflow_dispatch:
-
-
 jobs:
   pre-commit:
     runs-on: "ubuntu-latest"

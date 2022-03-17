@@ -1,7 +1,7 @@
 
 CHANGELOG
 1.0.2
-- Added individaul boolean methods for each error code
+- Added individual boolean methods for each error code
 1.0.1
 - Added a string method to return error codes pre-joined together
 1.0.0
@@ -13,7 +13,7 @@ CHANGELOG
 - Error Code processing
 0.9.9
 - Changed an info printout to debug
-- Updated readme wiht example.py which has examples
+- Updated readme with example.py which has examples
 0.9.8
 - Removed all sample code from files ... moved it to the README
 0.9.7

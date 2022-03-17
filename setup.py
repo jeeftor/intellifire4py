@@ -1,5 +1,5 @@
 """Setup.py has to pass linting too."""
-import setuptools  # type: ignore
+import setuptools
 
 with open("README.md") as fh:
     long_description = fh.read()

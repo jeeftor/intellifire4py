@@ -1,18 +1,12 @@
 """Model definitions."""
-# pylint: disable=no-member
-# pylint: disable=C0115
-# pylint: disable=C0116
-# pylint: disable=R0903
-# pylint: disable=E0611
-# flake8: noqa  D101
-from typing import List
-
 from pydantic import BaseModel, Field
 
 from intellifire4py.const import IntellifireErrorCode
 
 
 class IntellifirePollData(BaseModel):
+    """Base model for Intellifire status data."""
+
     name: str
     serial: str
     temperature_c: int = Field(alias="temperature")
@@ -43,23 +37,27 @@ class IntellifirePollData(BaseModel):
 
     @property
     def temperature_f(self) -> float:
+        """Return temperature in fahrenheit."""
         return (self.temperature_c * 9 / 5) + 32
 
     @property
     def thermostat_setpoint_c(self) -> float:
+        """Thermostat set point in celsius."""
         return self.raw_thermostat_setpoint / 100
 
     @property
     def thermostat_setpoint_f(self) -> float:
+        """Thermostat setpoint in fahrenheit."""
         return (self.raw_thermostat_setpoint / 100 * 9 / 5) + 32
 
     @property
     def error_codes(self) -> list[IntellifireErrorCode]:
+        """Error codes returned as IntellifireErrroCodes."""
         return [IntellifireErrorCode(i) for i in self.errors]
 
     @property
     def error_codes_string(self) -> str:
-        """Assembled error codes into a formatted string"""
+        """Assembled error codes into a formatted string."""
         return ", ".join([code.name for code in self.error_codes])
 
     @property
@@ -117,8 +115,15 @@ class IntellifirePollData(BaseModel):
         """Return whether OFFLINE error is present."""
         return IntellifireErrorCode.OFFLINE in self.error_codes
 
+    @property
+    def has_errors(self) -> bool:
+        """If there is any errors this will be true."""
+        return len(self.error_codes) > 0
+
 
 class UDPResponse(BaseModel):
+    """Define response from UDP discovery."""
+
     mac: str
     bssid: str
     channel: int
@@ -132,6 +137,8 @@ class UDPResponse(BaseModel):
 
 
 class IntellifireLocationDetails(BaseModel):
+    """Define iftapi.net location details."""
+
     location_id: str
     location_name: str
     wifi_essid: str
@@ -141,11 +148,15 @@ class IntellifireLocationDetails(BaseModel):
 
 
 class IntellifireLocations(BaseModel):
+    """Define base model for iftapi.net location."""
+
     locations: list[IntellifireLocationDetails]
     email_notifications_enabled: int
 
 
 class IntellifireFireplace(BaseModel):
+    """Define base model for individual iftapi.net fireplace."""
+
     serial: str
     brand: str
     name: str
@@ -154,5 +165,7 @@ class IntellifireFireplace(BaseModel):
 
 
 class IntellifireFireplaces(BaseModel):
+    """Define iftapi.net fireplace list."""
+
     location_name: str
     fireplaces: list[IntellifireFireplace]

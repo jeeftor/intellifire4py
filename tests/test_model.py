@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from intellifire4py import IntellifirePollData
 
 
-def test_json_files():
+def test_json_files() -> None:
     """Test Function."""
     for file_name in ["test1.json", "error_6.json"]:
         file = open(file_name)
