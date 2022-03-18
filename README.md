@@ -123,7 +123,7 @@ uptime: int
 
 ## Error Codes
 
-There are a variety of methods to pull error information from the module
+There are a variety of methods to pull error information from the module. All of these calls return `True` or `False`
 
 ```python
 fire.error_pilot_flame
