@@ -13,10 +13,42 @@ JSON1 = """
   "battery": 0,
   "pilot": 1,
   "light": 0,
-  "height": 0,
+  "height": 2,
   "fanspeed": 1,
   "hot": 0,
   "power": 1,
+  "thermostat": 0,
+  "setpoint": 2100,
+  "timer": 0,
+  "timeremaining": 0,
+  "prepurge": 0,
+  "feature_light": 0,
+  "feature_thermostat": 1,
+  "power_vent": 0,
+  "feature_fan": 1,
+  "errors": [
+    6,642
+  ],
+  "fw_version": "0x00030100",
+  "fw_ver_str": "0.3.1+hw2",
+  "downtime": 0,
+  "uptime": 648,
+  "connection_quality": 984864,
+  "ecm_latency": 0,
+  "ipv4_address": "192.168.1.80"
+}"""
+JSON3 = """
+    {
+  "name": "",
+  "serial": "9CE2E834CE109D849CBB15CDDBAFF381",
+  "temperature": 18,
+  "battery": 0,
+  "pilot": 1,
+  "light": 0,
+  "height": 2,
+  "fanspeed": 1,
+  "hot": 0,
+  "power": 0,
   "thermostat": 0,
   "setpoint": 2100,
   "timer": 0,
@@ -68,10 +100,28 @@ d2 = {
     "ecm_latency": 0,
     "ipv4_address": "192.168.1.80",
 }
+d3 = json.loads(JSON3)
 
 
 class TestIntellifire(TestCase):
     """Test case."""
+
+    def test_flame_heights(self) -> None:
+        """Test the various flame height functions."""
+
+        p1 = IntellifirePollData.parse_obj(d1)
+        p2 = IntellifirePollData.parse_obj(d2)
+        p3 = IntellifirePollData.parse_obj(d3)
+
+        assert p1.raw_flame_height == 2
+        assert p1.flame_height == 3
+
+        assert p2.raw_flame_height == 0
+        assert p2.flame_height == 1
+
+        # Fireplace is off so flame_height should be 0
+        assert p3.raw_flame_height == 2
+        assert p3.flame_height == 0
 
     def test_poll(self) -> None:
         """Test Parsing."""

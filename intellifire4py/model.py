@@ -13,7 +13,7 @@ class IntellifirePollData(BaseModel):
     battery: int
     pilot_on: bool = Field(alias="pilot")
     light_level: int = Field(alias="light")
-    flameheight: int = Field(alias="height")
+    raw_flame_height: int = Field(alias="height")
     fanspeed: int
     is_hot: bool = Field(alias="hot")
     is_on: bool = Field(alias="power")
@@ -49,6 +49,11 @@ class IntellifirePollData(BaseModel):
     def thermostat_setpoint_f(self) -> float:
         """Thermostat setpoint in fahrenheit."""
         return (self.raw_thermostat_setpoint / 100 * 9 / 5) + 32
+
+    @property
+    def flame_height(self) -> int:
+        """Return a mondified flame height 0 is off whereas 1-5 are one with a height."""
+        return self.is_on * (self.raw_flame_height + 1)
 
     @property
     def error_codes(self) -> list[IntellifireErrorCode]:

@@ -8,7 +8,7 @@ from intellifire4py.model import IntellifirePollData
 from .const import _log
 
 
-class IntellifireAsync:
+class IntellifireStatus:
     """Async enabled intellifire parsing class."""
 
     def __init__(self, ip: str) -> None:

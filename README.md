@@ -94,7 +94,8 @@ errors: list[int]
 error_codes: list[IntellifireErrorCode]
 error_codes_string: str
 fanspeed: int
-flameheight: int
+raw_flame_height: int
+flame_height: int
 fw_ver_str: str
 fw_version: str
 has_fan: bool
@@ -194,7 +195,7 @@ ift_control = IntellifireControlAsync(
 
 Local control can take advantage of the units `/post` endpoint. However these commands require an **ApiKey** that must to be retrieved from  `iftapi.net`.
 
-*This is currently only implemented in the [`IntellifireControlAsync`](intellifire4py/control_async.py#L24) control module.*
+*This is currently only implemented in the [`IntellifireControlAsync`](intellifire4py/control.py#L24) control module.*
 
 Local control is the default state but if you need to manually set it you can use:
 
@@ -263,19 +264,33 @@ The following calls will toggle the flame on or off:
 control_interface.flame_on(fireplace=fireplace)
 control_interface.flame_off(fireplace=fireplace)
 ```
+
+
 ## Flame Height
 
-You can control the flame height with `set_flame_height` method. Height ranges from 0 to 4:
+There are two variables for the flame height. `raw_flame_height` uses a range of `0` to `4` where `0` is the lowest setting. This matches what is available on the device itself.
+
+Alternatlivey you can use `flame_height` which is a "user friendly" version of the field.
+
+- A value of `0` means the flame is off
+- A value of `1` is the smallest flame and `5` is the highest
+
 
 ```python
-await control_interface.set_flame_height(fireplace=fireplace, height=3)
-```
+# Turn off the flame
+await control_interface.set_flame_height(fireplace=fireplace, height=0)
+# Set maximum flame
+await control_interface.set_flame_height(fireplace=fireplace, height=5)
 
-*Note that a zero height flame is the "lowest" flame setting supported by the module.*
+# Set maximum flame height (using raw value)
+await control_interface.set_raw_flame_height(fireplace=fireplace, height=4)
+```
 
 ## Fan Speed
 
 Fan speed is controlled via the `set_fan_speed` method. Valid ranges for `speed` 0 to 4.
+
+- A speed of `0` is off
 
 ```python
 await control_interface.set_fan_speed(fireplace=fireplace, speed=1)
@@ -284,7 +299,6 @@ await control_interface.set_fan_speed(fireplace=fireplace, speed=1)
 ## Lights
 
 You can control lights with `set_lights` method. Valid ranges for `level` are 0 to 3.
-
 
 ```python
 await control_interface.set_lights(fireplace=fireplace, speed=1)

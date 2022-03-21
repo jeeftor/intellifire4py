@@ -5,11 +5,11 @@ import time
 
 from intellifire4py import (
     AsyncUDPFireplaceFinder,
-    IntellifireControlAsync,
+    IntellifireControl,
     IntellifireFireplace,
     UDPFireplaceFinder,
 )
-from intellifire4py.control_async import IntellifireSendMode
+from intellifire4py.control import IntellifireSendMode
 from intellifire4py.exceptions import LoginException
 
 
@@ -43,9 +43,7 @@ async def main() -> None:
     password = os.environ["IFT_PASS"]
 
     print("--- Creating Fireplace Controller ---")
-    ift_control = IntellifireControlAsync(
-        fireplace_ip=ip, use_http=True, verify_ssl=False
-    )
+    ift_control = IntellifireControl(fireplace_ip=ip, use_http=True, verify_ssl=False)
 
     try:
         try:

@@ -26,7 +26,7 @@ class IntellifireSendMode(Enum):
 # logging.basicConfig(level=logging.DEBUG)
 
 
-class IntellifireControlAsync:
+class IntellifireControl:
     """Hacked together control API for intellifire modules."""
 
     def __init__(
@@ -271,13 +271,25 @@ class IntellifireControlAsync:
             fireplace=fireplace, command=IntellifireCommand.LIGHT, value=level
         )
 
-    async def set_flame_height(
+    async def set_raw_flame_height(
         self, *, fireplace: IntellifireFireplace, height: int
     ) -> None:
-        """Set flame height."""
+        """Set raw flame height."""
         await self.send_command(
             fireplace=fireplace, command=IntellifireCommand.FLAME_HEIGHT, value=height
         )
+
+    async def set_flame_height(
+        self, *, fireplace: IntellifireFireplace, height: int
+    ) -> None:
+        """Set both flame height and power - using a more "logical" mapping of values."""
+
+        if height == 0:
+            await self.flame_off(fireplace=fireplace)
+            await self.set_raw_flame_height(fireplace=fireplace, height=height - 1)
+        else:
+            await self.flame_on(fireplace=fireplace)
+            await self.set_raw_flame_height(fireplace=fireplace, height=height - 1)
 
     async def set_fan_speed(
         self, *, fireplace: IntellifireFireplace, speed: int
