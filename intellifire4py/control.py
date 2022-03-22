@@ -1,8 +1,10 @@
 """Intellifire Control Logic."""
+from __future__ import annotations
+
 from enum import Enum
 from hashlib import sha256
 from types import TracebackType
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 from aiohttp import ClientSession, ServerDisconnectedError
@@ -21,9 +23,6 @@ class IntellifireSendMode(Enum):
 
     LOCAL = "local"
     CLOUD = "cloud"
-
-
-# logging.basicConfig(level=logging.DEBUG)
 
 
 class IntellifireControl:
@@ -67,10 +66,10 @@ class IntellifireControl:
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ) -> Optional[bool]:
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
         """Magic Exit Function."""
         await self.close()
         return None
@@ -280,7 +279,7 @@ class IntellifireControl:
         )
 
     async def set_flame_height(
-        self, *, fireplace: IntellifireFireplace, height: int
+        self, *, fireplace: IntellifireFireplace, height: int, is_on: bool | None = None
     ) -> None:
         """Set both flame height and power - using a more "logical" mapping of values."""
 
