@@ -34,7 +34,7 @@ async def test_login(mock_aioresponse) -> None:  # type: ignore
         await control.login(username="beef", password="taco")
     assert control.user == "beef"
 
-
+@pytest.mark.asyncio  # type: ignore
 async def test_bad_login(mock_aioresponse) -> None:  # type: ignore
     """Test a login error."""
     control = IntellifireControl(fireplace_ip="192.168.1.1")
