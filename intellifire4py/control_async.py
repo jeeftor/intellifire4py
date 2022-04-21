@@ -221,19 +221,42 @@ class IntellifireControlAsync:
                 min_value=min_value,
                 max_value=max_value,
             )
-        try:
-            if self.send_mode is IntellifireSendMode.LOCAL:
-                await self._send_local_command(
-                    fireplace=fireplace, command=command, value=value
+        retries = 0
+        while retries < 10:
+            try:
+                if self.send_mode is IntellifireSendMode.LOCAL:
+                    await self._send_local_command(
+                        fireplace=fireplace, command=command, value=value
+                    )
+                elif self.send_mode is IntellifireSendMode.CLOUD:
+                    await self._send_cloud_command(
+                        command=command, value=value, serial=fireplace.serial
+                    )
+                retries = 10
+
+            except aiohttp.ClientConnectionError:
+                # something went wrong with the exception, decide on what to do next
+                _log.warning(
+                    "ClientConnectionError - connection dropped before finished command [%s][%s]",
+                    command,
+                    value,
                 )
-            elif self.send_mode is IntellifireSendMode.CLOUD:
-                await self._send_cloud_command(
-                    command=command, value=value, serial=fireplace.serial
+            except aiohttp.ClientError:
+                # something went wrong in general. Not a connection error, that was handled
+                # above.
+                _log.warning(
+                    "ClientError - error with request for command [%s][%s]",
+                    command,
+                    value,
                 )
-        except ServerDisconnectedError:
-            _log.warning("Server Disconnect ... retrying command")
+            except ServerDisconnectedError:
+                _log.warning(
+                    "Server Disconnect ... retrying command [%s][%s]", command, value
+                )
+            finally:
+                retries += 1
+
             # Try again? (will this cause a recursive nightmare)
-            await self.send_command(fireplace=fireplace, command=command, value=value)
 
     async def beep(self, *, fireplace: IntellifireFireplace) -> None:
         """Play a beep - seems to only work if flame is on."""
