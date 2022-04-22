@@ -30,7 +30,13 @@ class IntellifireControlAsync:
     """Hacked together control API for intellifire modules."""
 
     def __init__(
-        self, fireplace_ip: str, *, use_http: bool = False, verify_ssl: bool = True
+        self,
+        fireplace_ip: str,
+        *,
+        use_http: bool = False,
+        verify_ssl: bool = True,
+        api_key: str,
+        user_id: str,
     ) -> None:
         """Init the control class."""
         self.__client = aiohttp.ClientSession()
@@ -145,8 +151,10 @@ class IntellifireControlAsync:
 
     async def get_challenge(self) -> Any:
         """Hit the local challenge endpoint."""
+        _log.debug("Issuing Challenge Request")
         async with self._client.get(f"http://{self._ip}/get_challenge") as resp:
             ret = await resp.text()
+            _log.debug("Challenge Code: %s", ret)
             return ret
 
     async def _send_cloud_command(

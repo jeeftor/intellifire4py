@@ -1,5 +1,7 @@
 
 CHANGELOG
+1.0.4
+- More debugging printouts
 1.0.3
 - Refactor disconnect/retry logic
 1.0.2
