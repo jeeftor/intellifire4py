@@ -35,8 +35,6 @@ class IntellifireControlAsync:
         *,
         use_http: bool = False,
         verify_ssl: bool = True,
-        api_key: str,
-        user_id: str,
     ) -> None:
         """Init the control class."""
         self.__client = aiohttp.ClientSession()
