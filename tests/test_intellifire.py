@@ -73,6 +73,20 @@ d2 = {
 class TestIntellifire(TestCase):
     """Test case."""
 
+    # def test_model_fields(self) -> None:
+    #     """Test fields in the model."""
+    #     d = IntellifirePollData.parse_obj(d1)
+
+    # init_data_dict = d.dict()
+
+    # for data in IntellifireCommand:
+    #     name = data.name
+    #
+    #     field_name: str = data.value['model_field']
+    #     new_dict = {**d.dict(), field_name: 1}
+    #     d.parse_obj(new_dict)
+    #     assert d.dict()[field_name] == 1
+
     def test_poll(self) -> None:
         """Test Parsing."""
         print(d2)

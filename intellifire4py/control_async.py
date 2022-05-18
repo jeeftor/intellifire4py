@@ -1,8 +1,10 @@
 """Intellifire Control Logic."""
+from __future__ import annotations
+
 from enum import Enum
 from hashlib import sha256
 from types import TracebackType
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 from aiohttp import ClientSession, ServerDisconnectedError
@@ -40,7 +42,7 @@ class IntellifireControlAsync:
         self.__client = aiohttp.ClientSession()
         self._cookie = None
         self.send_mode = IntellifireSendMode.LOCAL
-        self.is_logged_in = False
+        self.is_logged_in: bool = False
         self._ip = fireplace_ip
         self.default_fireplace: IntellifireFireplace
         self._last_thermostat_setpoint: int = 2100
@@ -71,12 +73,13 @@ class IntellifireControlAsync:
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ) -> Optional[bool]:
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
         """Magic Exit Function."""
         await self.close()
+
         return None
 
     async def login(self, *, username: str, password: str) -> None:
@@ -102,6 +105,7 @@ class IntellifireControlAsync:
 
     async def _login_check(self) -> None:
         """Check if user is logged in."""
+
         if not self.is_logged_in:
             raise LoginException("Not Logged In")
 
@@ -165,8 +169,12 @@ class IntellifireControlAsync:
             f"{self.prefix}://iftapi.net/a/{serial}//apppost", data=data.encode()
         ) as resp:
             _log.info(
-                f"Sending {self.send_mode.value} Intellifire command: [{command.value['cloud_command']}={value}]"
+                "Sending %s Intellifire command: [%s=%s]",
+                self.send_mode.value,
+                command.value["cloud_command"],
+                value,
             )
+
             if resp.status != 204:
                 raise ApiCallException("Error with API call")
 
@@ -272,6 +280,8 @@ class IntellifireControlAsync:
 
     async def flame_on(self, *, fireplace: IntellifireFireplace) -> None:
         """Turn on the flame."""
+
+        # (await somefunction(x) for _ in '_').__anext__()
         await self.send_command(
             fireplace=fireplace, command=IntellifireCommand.POWER, value=1
         )

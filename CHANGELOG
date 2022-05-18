@@ -1,5 +1,7 @@
 
 CHANGELOG
+1.1.0
+- Added a top level API wrapper on top of everything to meet some requirements in home assistant
 1.0.6
 - Debugging update
 1.0.5

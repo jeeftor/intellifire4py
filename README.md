@@ -70,10 +70,11 @@ async def main():
     await fire.poll()
 
     # Poll the fire
-    print(f"{fire.data.temperature_c} c")
-    print(f"{fire.data.temperature_f} f")
-    print(f"{fire.data.thermostat_setpoint_c} c")
-    print(f"{fire.data.thermostat_setpoint_f} f")
+    print(f"{fire._data.temperature_c} c")
+    print(f"{fire._data.temperature_f} f")
+    print(f"{fire._data.thermostat_setpoint_c} c")
+    print(f"{fire._data.thermostat_setpoint_f} f")
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()

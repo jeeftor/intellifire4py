@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from intellifire4py.const import IntellifireErrorCode
 from intellifire4py.control_async import IntellifireControlAsync
-from intellifire4py.intellifire_async import IntellifireAsync
 from intellifire4py.model import (
     IntellifireFireplace,
     IntellifireFireplaces,
@@ -11,6 +10,8 @@ from intellifire4py.model import (
     IntellifireLocations,
     IntellifirePollData,
 )
+
+# from intellifire4py.read_async import IntellifireAsync
 from intellifire4py.udp import AsyncUDPFireplaceFinder, UDPFireplaceFinder
 
 

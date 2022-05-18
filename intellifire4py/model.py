@@ -7,33 +7,33 @@ from intellifire4py.const import IntellifireErrorCode
 class IntellifirePollData(BaseModel):
     """Base model for Intellifire status data."""
 
-    name: str
-    serial: str
-    temperature_c: int = Field(alias="temperature")
-    battery: int
-    pilot_on: bool = Field(alias="pilot")
-    light_level: int = Field(alias="light")
-    flameheight: int = Field(alias="height")
-    fanspeed: int
-    is_hot: bool = Field(alias="hot")
-    is_on: bool = Field(alias="power")
-    thermostat_on: bool = Field(alias="thermostat")
-    raw_thermostat_setpoint: int = Field(alias="setpoint")
-    timer_on: bool = Field(alias="timer")
-    timeremaining_s: int = Field(alias="timeremaining")
-    prepurge: int
-    has_light: bool = Field(alias="feature_light")
-    has_thermostat: bool = Field(alias="feature_thermostat")
-    has_power_vent: bool = Field(alias="power_vent")
-    has_fan: bool = Field(alias="feature_fan")
-    errors: list[int]
-    fw_version: str
-    fw_ver_str: str
-    downtime: int
-    uptime: int
-    connection_quality: int
-    ecm_latency: int
-    ipv4_address: str
+    name: str = Field(default="unset")
+    serial: str = Field(default="unset")
+    temperature_c: int = Field(alias="temperature", default=18)
+    battery: int = Field(default=0)
+    pilot_on: bool = Field(alias="pilot", default=False)
+    light_level: int = Field(alias="light", default=0)
+    flameheight: int = Field(alias="height", default=0)
+    fanspeed: int = Field(default=0)
+    is_hot: bool = Field(alias="hot", default=False)
+    is_on: bool = Field(alias="power", default=False)
+    thermostat_on: bool = Field(alias="thermostat", default=False)
+    raw_thermostat_setpoint: int = Field(alias="setpoint", default=2200)
+    timer_on: bool = Field(alias="timer", default=False)
+    timeremaining_s: int = Field(alias="timeremaining", default=0)
+    prepurge: int = Field(default=0)
+    has_light: bool = Field(alias="feature_light", default=False)
+    has_thermostat: bool = Field(alias="feature_thermostat", default=False)
+    has_power_vent: bool = Field(alias="power_vent", default=False)
+    has_fan: bool = Field(alias="feature_fan", default=False)
+    errors: list[int] = Field(default=[])
+    fw_version: str = Field(default="unset")
+    fw_ver_str: str = Field(default="unset")
+    downtime: int = Field(default=0)
+    uptime: int = Field(default=0)
+    connection_quality: int = Field(default=0)
+    ecm_latency: int = Field(default=0)
+    ipv4_address: str = Field(default="127.0.0.1")
 
     @property
     def temperature_f(self) -> float:
