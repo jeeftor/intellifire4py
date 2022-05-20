@@ -10,8 +10,6 @@ from intellifire4py.model import (
     IntellifireLocations,
     IntellifirePollData,
 )
-
-# from intellifire4py.read_async import IntellifireAsync
 from intellifire4py.udp import AsyncUDPFireplaceFinder, UDPFireplaceFinder
 
 

@@ -16,8 +16,11 @@ async def main() -> None:
     cloud_api = IntellifireAPICloud(use_http=True, verify_ssl=False)
     await cloud_api.login(username=username, password=password)
 
-    print("UserID = ", cloud_api.get_user_id())
-    print("ApiKey = ", cloud_api.get_fireplace_api_key())
+    cloud_user = cloud_api.get_user_id()
+    cloud_api_key = cloud_api.get_fireplace_api_key()
+
+    print("UserID = ", cloud_user)
+    print("ApiKey = ", cloud_api_key)
 
     api = IntellifireAPILocal(
         fireplace_ip=fireplace_ip,
