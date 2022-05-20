@@ -8,7 +8,7 @@ from json import JSONDecodeError
 from typing import Any
 
 import aiohttp
-from aiohttp import ClientConnectorError, ServerDisconnectedError
+from aiohttp import ClientConnectorError, ClientOSError, ServerDisconnectedError
 
 from intellifire4py.exceptions import InputRangeException, LoginException
 from intellifire4py.model import (
@@ -32,6 +32,9 @@ class IntellifireAPILocal:
         self._user_id = user_id
         self._last_thermostat_setpoint: int = 2100
         self.send_mode = IntellifireSendMode.LOCAL
+        self._is_polling_in_background = False
+        self._should_poll_in_background = False
+        self.failed_poll_attempts = 0
 
     def _needs_login(self) -> bool:
         """Return whether a login is required to iftapi.net."""
@@ -46,16 +49,37 @@ class IntellifireAPILocal:
 
     async def start_background_polling(self, minimum_wait_in_seconds: int = 10) -> None:
         """Start an ensure-future background polling loop."""
-        asyncio.ensure_future(self.__background_poll(minimum_wait_in_seconds))
+        if not self._should_poll_in_background:
+            self._should_poll_in_background = True
+            # asyncio.ensure_future(self.__background_poll(minimum_wait_in_seconds))
+            asyncio.create_task(
+                self.__background_poll(minimum_wait_in_seconds),
+                name="background_polling",
+            )
+
+    def stop_background_polling(self) -> None:
+        """Stop background polling behavior."""
+        self._should_poll_in_background = False
 
     async def __background_poll(self, minimum_wait_in_seconds: int = 10) -> None:
         """Perform a polling loop."""
-        while True:
+        self.failed_poll_attempts = 0
+        self._is_polling_in_background = True
+        while self._should_poll_in_background:
+
             start = time.time()
-            await self.poll()
-            end = time.time()
-            _log.debug("BG Poll Duration: ", (end - start))
-            await asyncio.sleep(minimum_wait_in_seconds - (end - start))
+            try:
+                await self.poll()
+                self.failed_poll_attempts = 0
+                end = time.time()
+                _log.debug("Background poll duration: %.2fs", (end - start))
+                await asyncio.sleep(minimum_wait_in_seconds - (end - start))
+            except (ConnectionError, ClientOSError):
+                self.failed_poll_attempts += 1
+                _log.info(" -- Polling error [x%d]", self.failed_poll_attempts)
+
+        self._is_polling_in_background = False
+        _log.info("Background polling disabled.")
 
     async def poll(self, supress_warnings: bool = False) -> None:
         """Poll the IFT module locally."""
@@ -88,7 +112,7 @@ class IntellifireAPILocal:
                         if not supress_warnings:
                             _log.warning("Connection Error accessing", url)
                         raise ConnectionError("ConnectionError - host not found")
-            except (ServerDisconnectedError, ClientConnectorError):
+            except (ServerDisconnectedError, ClientConnectorError, ClientOSError):
                 raise ConnectionError()
             except Exception as ex:
                 print("Generic Exception ", type(ex))
