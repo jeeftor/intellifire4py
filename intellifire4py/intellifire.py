@@ -1,6 +1,8 @@
 """Unified intellifire API."""
 from __future__ import annotations
 
+import asyncio
+import time
 from hashlib import sha256
 from json import JSONDecodeError
 from typing import Any
@@ -41,6 +43,19 @@ class IntellifireAPILocal:
         if self._data.serial == "unset":
             _log.warning("Returning uninitialized poll data")
         return self._data
+
+    async def start_background_polling(self, minimum_wait_in_seconds: int = 10) -> None:
+        """Start an ensure-future background polling loop."""
+        asyncio.ensure_future(self.__background_poll(minimum_wait_in_seconds))
+
+    async def __background_poll(self, minimum_wait_in_seconds: int = 10) -> None:
+        """Perform a polling loop."""
+        while True:
+            start = time.time()
+            await self.poll()
+            end = time.time()
+            _log.debug("BG Poll Duration: ", (end - start))
+            await asyncio.sleep(minimum_wait_in_seconds - (end - start))
 
     async def poll(self, supress_warnings: bool = False) -> None:
         """Poll the IFT module locally."""
