@@ -25,8 +25,13 @@ from .control_async import IntellifireSendMode
 class IntellifireAPILocal:
     """Top level API for Intellifire Data - local network only."""
 
+    global failed_poll_attempts
+
     def __init__(self, fireplace_ip: str, user_id: str = "", api_key: str = "") -> None:
         """Initialize Intellifire Class."""
+        global failed_poll_attempts
+        global is_sending
+
         self._data = IntellifirePollData()
         self.fireplace_ip = fireplace_ip
         self._api_key = api_key
@@ -35,7 +40,8 @@ class IntellifireAPILocal:
         self.send_mode = IntellifireSendMode.LOCAL
         self._is_polling_in_background = False
         self._should_poll_in_background = False
-        self.failed_poll_attempts = 0
+        is_sending = False
+        failed_poll_attempts = 0
         self._bg_task: Task | None = None
 
     def _needs_login(self) -> bool:
@@ -49,8 +55,12 @@ class IntellifireAPILocal:
             _log.warning("Returning uninitialized poll data")
         return self._data
 
-    async def start_background_polling(self, minimum_wait_in_seconds: int = 10) -> None:
+    async def start_background_polling(self, minimum_wait_in_seconds: int = 15) -> None:
         """Start an ensure-future background polling loop."""
+        if is_sending:
+            _log.info("!! Supressing start_background_polling -- sending mode engaged")
+            return
+
         if not self._should_poll_in_background:
             self._should_poll_in_background = True
             # asyncio.ensure_future(self.__background_poll(minimum_wait_in_seconds))
@@ -59,7 +69,7 @@ class IntellifireAPILocal:
                 name="background_polling",
             )
 
-    def stop_background_polling(self) -> bool:
+    def stop_background_polling(self, is_sending: bool) -> bool:
         """Stop background polling - return whether it had been polling."""
         self._should_poll_in_background = False
         was_running = False
@@ -73,19 +83,21 @@ class IntellifireAPILocal:
 
     async def __background_poll(self, minimum_wait_in_seconds: int = 10) -> None:
         """Perform a polling loop."""
-        self.failed_poll_attempts = 0
+        global failed_poll_attempts
+        failed_poll_attempts = 0
+
         self._is_polling_in_background = True
         while self._should_poll_in_background:
 
             start = time.time()
             try:
                 await self.poll()
-                self.failed_poll_attempts = 0
+                failed_poll_attempts = 0
                 end = time.time()
                 _log.debug("Background poll duration: %.2fs", (end - start))
                 await asyncio.sleep(minimum_wait_in_seconds - (end - start))
             except (ConnectionError, ClientOSError):
-                self.failed_poll_attempts += 1
+                failed_poll_attempts += 1
                 _log.info(" -- Polling error [x%d]", self.failed_poll_attempts)
 
         self._is_polling_in_background = False
@@ -127,20 +139,20 @@ class IntellifireAPILocal:
             except Exception as ex:
                 print("Generic Exception ", type(ex))
 
-    async def get_challenge(self, client: aiohttp.ClientSession) -> Any:
-        """Hit the local challenge endpoint."""
-        _log.debug("Issuing Challenge Request")
-        while True:
-            try:
-                async with client.get(
-                    f"http://{self.fireplace_ip}/get_challenge"
-                ) as resp:
-                    ret = await resp.text()
-                    _log.debug("Challenge Code: %s", ret)
-                    return ret
-            except Exception as generic_exception:
-                print("Got a generic exception: ", type(generic_exception))
-            _log.warning("Challenge failed - trying again")
+    # async def get_challenge(self, client: aiohttp.ClientSession) -> Any:
+    #     """Hit the local challenge endpoint."""
+    #     _log.debug("Issuing Challenge Request")
+    #     while True:
+    #         try:
+    #             async with client.get(
+    #                 f"http://{self.fireplace_ip}/get_challenge"
+    #             ) as resp:
+    #                 ret = await resp.text()
+    #                 _log.debug("Challenge Code: %s", ret)
+    #                 return ret
+    #         except Exception as generic_exception:
+    #             print("Got a generic exception: ", type(generic_exception))
+    #         _log.warning("Challenge failed - trying again")
 
     async def send_command(
         self,
@@ -160,7 +172,7 @@ class IntellifireAPILocal:
                 max_value=max_value,
             )
 
-        was_running = self.stop_background_polling()
+        was_running = self.stop_background_polling(sending=True)
 
         # async with aiohttp.ClientSession() as client:
         await self._send_local_command(command=command, value=value)
@@ -185,6 +197,8 @@ class IntellifireAPILocal:
 
             async with client.get(f"http://{self.fireplace_ip}/get_challenge") as resp:
                 challenge = await resp.text()
+                challenge_time = time.time()
+
                 challenge_bytes = bytes.fromhex(challenge)
                 payload_bytes = payload.encode()
 
@@ -196,61 +210,65 @@ class IntellifireAPILocal:
                 data = f"command={command.value['local_command']}&value={value}&user={self._user_id}&response={response}"
                 url = f"http://{self.fireplace_ip}/post"
 
-                async with client.post(
-                    url=url,
-                    data=data,
-                    headers={"content-type": "application/x-www-form-urlencoded"},
-                ) as resp:
-                    _log.debug(
-                        "Sending Local Intellifire command: [%s=%s]",
-                        command.value["local_command"],
-                        value,
-                    )
+                while (time.time() - challenge_time) < 10:
+                    # There is a 10 second timeout on the challenge response
+                    _log.info(" -- Attempting command via post")
+                    async with client.post(
+                        url=url,
+                        data=data,
+                        headers={"content-type": "application/x-www-form-urlencoded"},
+                        timeout=aiohttp.ClientTimeout(total=1),
+                    ) as resp:
+                        _log.debug(
+                            "Sending Local Intellifire command: [%s=%s]",
+                            command.value["local_command"],
+                            value,
+                        )
 
-                    if resp.status == 404:
-                        _log.warning(f"Failed to post: {url}{data}")
-                    if resp.status == 422:
-                        _log.warning(f"422 Code on: {url}{data}")
+                        if resp.status == 404:
+                            _log.warning(f"Failed to post: {url}{data}")
+                        if resp.status == 422:
+                            _log.warning(f"422 Code on: {url}{data}")
 
-    async def _send_local_command_old(
-        self,
-        client: aiohttp.ClientSession,
-        *,
-        command: IntellifireCommand,
-        value: int,
-    ) -> None:
-        """Send a local command to the /post interface."""
+    # async def _send_local_command_old(
+    #     self,
+    #     client: aiohttp.ClientSession,
+    #     *,
+    #     command: IntellifireCommand,
+    #     value: int,
+    # ) -> None:
+    #     """Send a local command to the /post interface."""
 
-        # Required fields
-        payload = f"post:command={command.value['local_command']}&value={value}"
-        api_bytes = bytes.fromhex(self._api_key)
+    #     # Required fields
+    #     payload = f"post:command={command.value['local_command']}&value={value}"
+    #     api_bytes = bytes.fromhex(self._api_key)
 
-        challenge: str = await self.get_challenge(client=client)
-        challenge_bytes = bytes.fromhex(challenge)
-        payload_bytes = payload.encode()
+    #     challenge: str = await self.get_challenge(client=client)
+    #     challenge_bytes = bytes.fromhex(challenge)
+    #     payload_bytes = payload.encode()
 
-        response = sha256(
-            api_bytes + sha256(api_bytes + challenge_bytes + payload_bytes).digest()
-        ).hexdigest()
+    #     response = sha256(
+    #         api_bytes + sha256(api_bytes + challenge_bytes + payload_bytes).digest()
+    #     ).hexdigest()
 
-        data = f"command={command.value['local_command']}&value={value}&user={self._user_id}&response={response}"
-        url = f"http://{self.fireplace_ip}/post"
+    #     data = f"command={command.value['local_command']}&value={value}&user={self._user_id}&response={response}"
+    #     url = f"http://{self.fireplace_ip}/post"
 
-        async with client.post(
-            url=url,
-            data=data,
-            headers={"content-type": "application/x-www-form-urlencoded"},
-        ) as resp:
-            _log.debug(
-                "Sending Local Intellifire command: [%s=%s]",
-                command.value["local_command"],
-                value,
-            )
+    #     async with client.post(
+    #         url=url,
+    #         data=data,
+    #         headers={"content-type": "application/x-www-form-urlencoded"},
+    #     ) as resp:
+    #         _log.debug(
+    #             "Sending Local Intellifire command: [%s=%s]",
+    #             command.value["local_command"],
+    #             value,
+    #         )
 
-            if resp.status == 404:
-                _log.warning(f"Failed to post: {url}{data}")
-            if resp.status == 422:
-                _log.warning(f"422 Code on: {url}{data}")
+    #         if resp.status == 404:
+    #             _log.warning(f"Failed to post: {url}{data}")
+    #         if resp.status == 422:
+    #             _log.warning(f"422 Code on: {url}{data}")
 
     async def flame_on(self) -> None:
         """Turn on the flame."""
