@@ -1,11 +1,14 @@
+"""Example 3 using a better lib."""
 import asyncio
-from contextlib import suppress
-import os
-import time
 import logging
+import os
+
+# import time
+# from contextlib import suppress
+from intellifire4py.intellifire import IntellifireAPILocal
+
 logging.basicConfig(level=logging.DEBUG)
 
-from intellifire4py.intellifire import IntellifireAPILocal
 
 fireplace_ip = "192.168.1.65"
 username = os.environ["IFT_USER"]
@@ -24,6 +27,7 @@ api_key = os.environ["IFT_API_KEY"]
 
 
 async def main() -> None:
+    """Run main function."""
 
     api = IntellifireAPILocal(
         fireplace_ip=fireplace_ip,
@@ -35,9 +39,25 @@ async def main() -> None:
     await api.start_background_polling()
     await asyncio.sleep(10)
 
-    print("Pilot on")
-    await api.pilot_on()
+    api.log_status()
+    await asyncio.sleep(1)
+    api.log_status()
+    await asyncio.sleep(1)
+    api.log_status()
+    await asyncio.sleep(1)
+    api.log_status()
+    await asyncio.sleep(1)
+    api.log_status()
+    await asyncio.sleep(1)
+    api.log_status()
+    await asyncio.sleep(1)
+    api.log_status()
+    await asyncio.sleep(1)
 
+    # print("Pilot on")
+    # await api.pilot_on()
+
+    api.log_status()
 
     # # asyncio.ensure_future(bg_poll(api))  # fire and forget
     #
@@ -54,8 +74,7 @@ async def main() -> None:
     print("Done sleepy")
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
 
