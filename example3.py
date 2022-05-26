@@ -10,12 +10,13 @@ from intellifire4py.intellifire import IntellifireAPILocal
 logging.basicConfig(level=logging.DEBUG)
 
 
-with open(".env") as f:
+with open(".e1nv") as f:
     for line in f:
         try:
             key, value = line.strip().split("=")
             os.environ[key] = value
-        except:
+        except FileNotFoundError:
+            print("-- Could not find a .env file")
             pass
 
 
@@ -71,6 +72,7 @@ async def main() -> None:
     await api.flame_on()
 
     await asyncio.sleep(5)
+    await api.flame_off()
 
     # # asyncio.ensure_future(bg_poll(api))  # fire and forget
     #
