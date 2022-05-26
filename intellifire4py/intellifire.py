@@ -100,7 +100,7 @@ class IntellifireAPILocal:
 
     async def __background_poll(self, minimum_wait_in_seconds: int = 10) -> None:
         """Perform a polling loop."""
-        _log.debug("!! Background poll !!")
+        _log.debug("__background_poll:: Function Called")
 
         self.failed_poll_attempts = 0
 
@@ -108,7 +108,7 @@ class IntellifireAPILocal:
         while self._should_poll_in_background:
 
             start = time.time()
-            _log.debug("Loop start time %f", start)
+            _log.debug("__background_poll:: Loop start time %f", start)
 
             try:
                 await self.poll()
@@ -118,25 +118,30 @@ class IntellifireAPILocal:
                 duration: float = end - start
                 sleep_time: float = minimum_wait_in_seconds - duration
 
-                _log.debug("[%f] Sleep 4 [%fs]", duration, sleep_time)
+                _log.debug(
+                    "__background_poll:: [%f] Sleeping for [%fs]", duration, sleep_time
+                )
 
                 _log.debug(
-                    "!! Background poll duration: %f, %f, %.2fs",
+                    "__background_poll:: duration: %f, %f, %.2fs",
                     start,
                     end,
                     (end - start),
                 )
                 _log.debug(
-                    "!! Should Sleep For: %f", (minimum_wait_in_seconds - (end - start))
+                    "__background_poll:: Should Sleep For: %f",
+                    (minimum_wait_in_seconds - (end - start)),
                 )
 
                 await asyncio.sleep(minimum_wait_in_seconds - (end - start))
             except (ConnectionError, ClientOSError):
                 self.failed_poll_attempts += 1
-                _log.info(" -- Polling error [x%d]", self.failed_poll_attempts)
+                _log.info(
+                    "__background_poll:: Polling error [x%d]", self.failed_poll_attempts
+                )
 
         self._is_polling_in_background = False
-        _log.info("Background polling disabled.")
+        _log.info("__background_poll:: Background polling disabled.")
 
     async def poll(self, supress_warnings: bool = False) -> None:
         """Poll the IFT module locally."""
@@ -193,14 +198,17 @@ class IntellifireAPILocal:
             )
 
         was_running = self.stop_background_polling(is_sending=True)
-        _log.debug("Stopped backgroudn task which was running? [%s]", was_running)
+        _log.debug(
+            "send_command:: Stopped backgroudn task which was running? [%s]",
+            was_running,
+        )
 
         # async with aiohttp.ClientSession() as client:
         await self._send_local_command(command=command, value=value)
 
         if was_running:
             await self.start_background_polling()
-            _log.info("Restarting background polling")
+            _log.info("send_command:: Restarting background polling")
 
     async def _send_local_command(
         self,
@@ -241,7 +249,7 @@ class IntellifireAPILocal:
                     # There is a 10 second timeout on the challenge response - we'll try for 5
 
                     _log.info(
-                        " -- Attempting command via post %d [%s]",
+                        "_send_local_command:: -- Attempting command via post %d [%s]",
                         (time.time() - challenge_time),
                         challenge,
                     )
@@ -254,20 +262,22 @@ class IntellifireAPILocal:
                         raise_for_status=True,
                     )
                     _log.debug(
-                        "Sending Local Intellifire command: [%s=%s]",
+                        "_send_local_command:: Sending Local Intellifire command: [%s=%s]",
                         command.value["local_command"],
                         value,
                     )
 
                     if resp.status == 404:
-                        _log.warning(f"Failed to post: {url}{data}")
+                        _log.warning(
+                            f"_send_local_command:: Failed to post: {url}{data}"
+                        )
                     if resp.status == 422:
-                        _log.warning(f"422 Code on: {url}{data}")
+                        _log.warning(f"_send_local_command:: 422 Code on: {url}{data}")
                     success = True
                     success = True
 
             _log.debug(
-                "SUCCESS!! - Intellifire Command Sent [%s=%s]",
+                "_send_local_command:: SUCCESS!! - Intellifire Command Sent [%s=%s]",
                 command.value["local_command"],
                 value,
             )  # Unreachable -- no error
@@ -281,13 +291,12 @@ class IntellifireAPILocal:
                 timeout=aiohttp.ClientTimeout(total=3),
             )
             return str(await resp.text())
-        except ClientConnectorError as error:
+        except ClientConnectorError:
             end = time.time()
             _log.error(
                 "time[%.2f] get_challegne returned ClientConnectError [%s]",
                 (end - start),
             )
-            print(error.__cause__)
             pass
         except TimeoutError:
             end = time.time()

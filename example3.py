@@ -10,13 +10,15 @@ from intellifire4py.intellifire import IntellifireAPILocal
 logging.basicConfig(level=logging.DEBUG)
 
 
-with open(".e1nv") as f:
+with open(".env") as f:
     for line in f:
         try:
             key, value = line.strip().split("=")
             os.environ[key] = value
         except FileNotFoundError:
             print("-- Could not find a .env file")
+            pass
+        except ValueError:
             pass
 
 
