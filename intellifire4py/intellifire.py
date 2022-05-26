@@ -43,7 +43,7 @@ class IntellifireAPILocal:
         self._last_thermostat_setpoint: int = 2100
         self.send_mode = IntellifireSendMode.LOCAL
 
-        self._is_polling_in_background = False
+        self.is_polling_in_background = False
         self._should_poll_in_background = False
         self.is_sending = False
         self.failed_poll_attempts = 0
@@ -56,7 +56,7 @@ class IntellifireAPILocal:
             "\tIntellifireAPILocal Status\n\tis_sending\t[%s]\n\tfailed_polls\t[%d]\n\tBG_Running\t[%s]\n\tBG_ShouldRun\t[%s]",
             self.is_sending,
             self.failed_poll_attempts,
-            self._is_polling_in_background,
+            self.is_polling_in_background,
             self._should_poll_in_background,
         )
 
@@ -105,7 +105,7 @@ class IntellifireAPILocal:
 
         self.failed_poll_attempts = 0
 
-        self._is_polling_in_background = True
+        self.is_polling_in_background = True
         while self._should_poll_in_background:
 
             start = time.time()
@@ -141,7 +141,7 @@ class IntellifireAPILocal:
                     "__background_poll:: Polling error [x%d]", self.failed_poll_attempts
                 )
 
-        self._is_polling_in_background = False
+        self.is_polling_in_background = False
         _log.info("__background_poll:: Background polling disabled.")
 
     async def poll(self, supress_warnings: bool = False) -> None:
@@ -306,15 +306,13 @@ class IntellifireAPILocal:
         except ClientConnectorError:
             end = time.time()
             _log.error(
-                "time[%.2f] get_challegne returned ClientConnectError [%s]",
+                "time[%.2f] get_challegne returned ClientConnectError",
                 (end - start),
             )
             pass
-        except TimeoutError:
+        except (TimeoutError, asyncio.exceptions.TimeoutError):
             end = time.time()
-            _log.error(
-                "time[%.2f] get_challegne returned TimeoutError [%s]", (end - start)
-            )
+            _log.error("time[%.2f] get_challegne returned TimeoutError", (end - start))
             pass
         except Exception as error:
             end = time.time()
@@ -326,46 +324,6 @@ class IntellifireAPILocal:
 
         await asyncio.sleep(1)
         return None
-
-    # async def _send_local_command_old(
-    #     self,
-    #     client: aiohttp.ClientSession,
-    #     *,
-    #     command: IntellifireCommand,
-    #     value: int,
-    # ) -> None:
-    #     """Send a local command to the /post interface."""
-
-    #     # Required fields
-    #     payload = f"post:command={command.value['local_command']}&value={value}"
-    #     api_bytes = bytes.fromhex(self._api_key)
-
-    #     challenge: str = await self.get_challenge(client=client)
-    #     challenge_bytes = bytes.fromhex(challenge)
-    #     payload_bytes = payload.encode()
-
-    #     response = sha256(
-    #         api_bytes + sha256(api_bytes + challenge_bytes + payload_bytes).digest()
-    #     ).hexdigest()
-
-    #     data = f"command={command.value['local_command']}&value={value}&user={self._user_id}&response={response}"
-    #     url = f"http://{self.fireplace_ip}/post"
-
-    #     async with client.post(
-    #         url=url,
-    #         data=data,
-    #         headers={"content-type": "application/x-www-form-urlencoded"},
-    #     ) as resp:
-    #         _log.debug(
-    #             "Sending Local Intellifire command: [%s=%s]",
-    #             command.value["local_command"],
-    #             value,
-    #         )
-
-    #         if resp.status == 404:
-    #             _log.warning(f"Failed to post: {url}{data}")
-    #         if resp.status == 422:
-    #             _log.warning(f"422 Code on: {url}{data}")
 
     async def flame_on(self) -> None:
         """Turn on the flame."""
