@@ -11,6 +11,7 @@ import aiohttp
 from aiohttp import (
     ClientConnectorError,
     ClientOSError,
+    ClientResponseError,
     ClientSession,
     ServerDisconnectedError,
 )
@@ -244,37 +245,43 @@ class IntellifireAPILocal:
 
                 data = f"command={command.value['local_command']}&value={value}&user={self._user_id}&response={response}"
                 url = f"http://{self.fireplace_ip}/post"
-
-                while (time.time() - challenge_time) < 5 and not success:
-                    # There is a 10 second timeout on the challenge response - we'll try for 5
-
-                    _log.info(
-                        "_send_local_command:: -- Attempting command via post %d [%s]",
-                        (time.time() - challenge_time),
-                        challenge,
-                    )
-                    await asyncio.sleep(1)
-                    resp = await client.post(
-                        url=url,
-                        data=data,
-                        headers={"content-type": "application/x-www-form-urlencoded"},
-                        timeout=aiohttp.ClientTimeout(total=1),
-                        raise_for_status=True,
-                    )
-                    _log.debug(
-                        "_send_local_command:: Sending Local Intellifire command: [%s=%s]",
-                        command.value["local_command"],
-                        value,
-                    )
-
-                    if resp.status == 404:
-                        _log.warning(
-                            f"_send_local_command:: Failed to post: {url}{data}"
+                try:
+                    while (time.time() - challenge_time) < 5 and not success:
+                        # There is a 10 second timeout on the challenge response - we'll try for 5
+                        _log.info(
+                            "_send_local_command:: -- Attempting command via post %d [%s]",
+                            (time.time() - challenge_time),
+                            challenge,
                         )
-                    if resp.status == 422:
-                        _log.warning(f"_send_local_command:: 422 Code on: {url}{data}")
-                    success = True
-                    success = True
+                        await asyncio.sleep(1)
+                        resp = await client.post(
+                            url=url,
+                            data=data,
+                            headers={
+                                "content-type": "application/x-www-form-urlencoded"
+                            },
+                            timeout=aiohttp.ClientTimeout(total=1),
+                            raise_for_status=True,
+                        )
+                        _log.debug(
+                            "_send_local_command:: Sending Local Intellifire command: [%s=%s]",
+                            command.value["local_command"],
+                            value,
+                        )
+
+                        if resp.status == 404:
+                            _log.warning(
+                                f"_send_local_command:: Failed to post: {url}{data}"
+                            )
+                        if resp.status == 422:
+                            _log.warning(
+                                f"_send_local_command:: 422 Code on: {url}{data}"
+                            )
+                        success = True
+                except ClientResponseError:
+                    _log.debug("_send_local_command: 403 Error - Challenge timed out")
+                except Exception as error:
+                    _log.warning(error)
 
             _log.debug(
                 "_send_local_command:: SUCCESS!! - Intellifire Command Sent [%s=%s]",
