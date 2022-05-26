@@ -493,7 +493,12 @@ class IntellifireAPICloud:
 
     def get_user_id(self) -> str:
         """Get user ID from cloud."""
-        return str(self._cookie.get("user").value)  # type: ignore
+        user_id = str(self._cookie.get("user").value)  # type: ignore
+        if isinstance(user_id, (list, tuple)):
+            return user_id[0]
+        return user_id
+
+        return
 
     def get_fireplace_api_key(
         self, fireplace: IntellifireFireplace | None = None
@@ -501,4 +506,7 @@ class IntellifireAPICloud:
         """Get API key for specific fireplace."""
         if not fireplace:
             return self.default_fireplace.apikey
+
+        if isinstance(fireplace.apikey, (list, tuple)):
+            return fireplace.apikey[0]
         return fireplace.apikey
