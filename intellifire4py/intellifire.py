@@ -222,9 +222,9 @@ class IntellifireAPILocal:
                 # Await a challenge
                 challenge = None
                 while not challenge:
-                    challenge = await self._get_challenge(client) # Unreachable -- no error
+                    challenge = await self._get_challenge(client)
 
-                challenge_time = time.time()  # type: ignore[unreachable]
+                challenge_time = time.time()
 
                 challenge_bytes = bytes.fromhex(challenge)
                 payload_bytes = payload.encode()
@@ -270,7 +270,7 @@ class IntellifireAPILocal:
                 "SUCCESS!! - Intellifire Command Sent [%s=%s]",
                 command.value["local_command"],
                 value,
-            ) # Unreachable -- no error
+            )  # Unreachable -- no error
 
     async def _get_challenge(self, client: ClientSession) -> str | None:
         """Retrieve a challenge result from the fireplace."""
@@ -280,7 +280,7 @@ class IntellifireAPILocal:
                 f"http://{self.fireplace_ip}/get_challenge",
                 timeout=aiohttp.ClientTimeout(total=3),
             )
-            return await str(resp.text())
+            return str(await resp.text())
         except ClientConnectorError as error:
             end = time.time()
             _log.error(
