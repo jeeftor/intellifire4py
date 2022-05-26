@@ -279,9 +279,12 @@ class IntellifireAPILocal:
                             )
                         success = True
                 except ClientResponseError:
-                    _log.debug("_send_local_command: 403 Error - Challenge timed out")
+                    _log.debug(
+                        "_send_local_command: 403 Error - Invalid challenge code (it may have expired) "
+                    )
+                    continue
                 except Exception as error:
-                    _log.warning(error)
+                    _log.error(error)
 
             _log.debug(
                 "_send_local_command:: SUCCESS!! - Intellifire Command Sent [%s=%s]",
@@ -297,7 +300,9 @@ class IntellifireAPILocal:
                 f"http://{self.fireplace_ip}/get_challenge",
                 timeout=aiohttp.ClientTimeout(total=3),
             )
-            return str(await resp.text())
+            text = str(await resp.text())
+            _log.info("Received Challenge %s", text)
+            return text
         except ClientConnectorError:
             end = time.time()
             _log.error(
