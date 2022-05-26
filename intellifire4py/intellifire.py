@@ -8,7 +8,12 @@ from hashlib import sha256
 from json import JSONDecodeError
 
 import aiohttp
-from aiohttp import ClientConnectorError, ClientOSError, ServerDisconnectedError
+from aiohttp import (
+    ClientConnectorError,
+    ClientOSError,
+    ClientSession,
+    ServerDisconnectedError,
+)
 
 from intellifire4py.exceptions import InputRangeException, LoginException
 from intellifire4py.model import (
@@ -74,6 +79,8 @@ class IntellifireAPILocal:
         if not self._should_poll_in_background:
             self._should_poll_in_background = True
             # asyncio.ensure_future(self.__background_poll(minimum_wait_in_seconds))
+            _log.info("!!  start_background_polling !!")
+
             self._bg_task = asyncio.create_task(
                 self.__background_poll(minimum_wait_in_seconds),
                 name="background_polling",
@@ -93,6 +100,7 @@ class IntellifireAPILocal:
 
     async def __background_poll(self, minimum_wait_in_seconds: int = 10) -> None:
         """Perform a polling loop."""
+        _log.debug("!! Background poll !!")
 
         self.failed_poll_attempts = 0
 
@@ -100,11 +108,28 @@ class IntellifireAPILocal:
         while self._should_poll_in_background:
 
             start = time.time()
+            _log.debug("Loop start time %f", start)
+
             try:
                 await self.poll()
                 self.failed_poll_attempts = 0
                 end = time.time()
-                _log.debug("Background poll duration: %.2fs", (end - start))
+
+                duration: float = end - start
+                sleep_time: float = minimum_wait_in_seconds - duration
+
+                _log.debug("[%f] Sleep 4 [%fs]", duration, sleep_time)
+
+                _log.debug(
+                    "!! Background poll duration: %f, %f, %.2fs",
+                    start,
+                    end,
+                    (end - start),
+                )
+                _log.debug(
+                    "!! Should Sleep For: %f", (minimum_wait_in_seconds - (end - start))
+                )
+
                 await asyncio.sleep(minimum_wait_in_seconds - (end - start))
             except (ConnectionError, ClientOSError):
                 self.failed_poll_attempts += 1
@@ -191,14 +216,14 @@ class IntellifireAPILocal:
         success = False
         while not success:
 
+            # Make a client session
             async with aiohttp.ClientSession() as client:
 
-                resp = client.get(
-                    # async with client.get(
-                    f"http://{self.fireplace_ip}/get_challenge",
-                    timeout=aiohttp.ClientTimeout(total=1),
-                )  # as resp:
-                challenge = await resp.text()
+                # Await a challenge
+                challenge = None
+                while not challenge:
+                    challenge = await self._get_challenge(client)
+
                 challenge_time = time.time()
 
                 challenge_bytes = bytes.fromhex(challenge)
@@ -212,20 +237,22 @@ class IntellifireAPILocal:
                 data = f"command={command.value['local_command']}&value={value}&user={self._user_id}&response={response}"
                 url = f"http://{self.fireplace_ip}/post"
 
-                while (time.time() - challenge_time) < 10:
-                    # There is a 10 second timeout on the challenge response
+                while (time.time() - challenge_time) < 5 and not success:
+                    # There is a 10 second timeout on the challenge response - we'll try for 5
 
                     _log.info(
-                        " -- Attempting command via post %d",
+                        " -- Attempting command via post %d [%s]",
                         (time.time() - challenge_time),
+                        challenge,
                     )
+                    await asyncio.sleep(1)
                     resp = await client.post(
                         url=url,
                         data=data,
                         headers={"content-type": "application/x-www-form-urlencoded"},
                         timeout=aiohttp.ClientTimeout(total=1),
+                        raise_for_status=True,
                     )
-                    # ) as resp:
                     _log.debug(
                         "Sending Local Intellifire command: [%s=%s]",
                         command.value["local_command"],
@@ -237,6 +264,46 @@ class IntellifireAPILocal:
                     if resp.status == 422:
                         _log.warning(f"422 Code on: {url}{data}")
                     success = True
+                    success = True
+
+            _log.debug(
+                "SUCCESS!! - Intellifire Command Sent [%s=%s]",
+                command.value["local_command"],
+                value,
+            )
+
+    async def _get_challenge(self, client: ClientSession) -> str | None:
+        start = time.time()
+        try:
+            resp = await client.get(
+                f"http://{self.fireplace_ip}/get_challenge",
+                timeout=aiohttp.ClientTimeout(total=3),
+            )
+            return await resp.text()
+        except ClientConnectorError as error:
+            end = time.time()
+            _log.error(
+                "time[%.2f] get_challegne returned ClientConnectError [%s]",
+                (end - start),
+            )
+            print(error.__cause__)
+            pass
+        except TimeoutError:
+            end = time.time()
+            _log.error(
+                "time[%.2f] get_challegne returned TimeoutError [%s]", (end - start)
+            )
+            pass
+        except Exception as error:
+            end = time.time()
+            _log.error(
+                "time[%.2f] get_challegne returned exception [%s]",
+                (end - start),
+                str(type(error)),
+            )
+
+        await asyncio.sleep(1)
+        return None
 
     # async def _send_local_command_old(
     #     self,
