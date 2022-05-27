@@ -1,5 +1,9 @@
 
 CHANGELOG
+2.0.1
+- Updated error handling for DHCP discovery in HA
+2.0.0
+- Added New classes to refactor the local API into a single class and cloud api into a single class
 1.1.0
 - Added a top level API wrapper on top of everything to meet some requirements in home assistant
 1.0.6

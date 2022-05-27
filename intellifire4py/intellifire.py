@@ -167,7 +167,8 @@ class IntellifireAPILocal:
                             json_data = await response.json(content_type=None)
                             _log.debug("Received: %s", json_data)
                         except JSONDecodeError:
-                            _log.warning("Error decoding JSON: [%s]", response.text)
+                            if not supress_warnings:
+                                _log.warning("Error decoding JSON: [%s]", response.text)
 
                         _log.debug("Updating self._data")
                         self._data = IntellifirePollData(**json_data)
@@ -175,10 +176,16 @@ class IntellifireAPILocal:
                         if not supress_warnings:
                             _log.warning("Connection Error accessing", url)
                         raise ConnectionError("ConnectionError - host not found")
-            except (ServerDisconnectedError, ClientConnectorError, ClientOSError):
+            except (
+                ServerDisconnectedError,
+                ClientConnectorError,
+                ClientOSError,
+                ConnectionError,
+                UnboundLocalError,
+            ):
                 raise ConnectionError()
-            except Exception as ex:
-                print("Generic Exception ", type(ex))
+            except Exception as unknown_error:
+                _log.error("Unhandled Exception %s", type(unknown_error))
 
     async def send_command(
         self,
