@@ -29,7 +29,8 @@ _____lc|_|_|/)______)_____)______( \|_|_|_|_____
 
 <!-- toc -->
 
-- [Intellifire](#intellifire)
+- [Intellifire V2](#intellifire-v2)
+- [Intellifire V1](#intellifire-v1)
 - [Local Polling](#local-polling)
     * [Status Attributes](#status-attributes)
     * [Error Codes](#error-codes)
@@ -52,7 +53,14 @@ _____lc|_|_|/)______)_____)______( \|_|_|_|_____
 
 <!-- tocstop -->
 
-# Intellifire
+# Intellifire V2
+
+The Version 2 refactor of this lib has moved to two main classes `IntellifireAPILocal` and `IntellifireAPICloud` which happen to deal with local communications and cloud based communications accordingly.
+
+
+
+
+# Intellifire V1
 
 This is an Python Async Module for dealing with IntelliFire places. This is a 100% unofficial python module for working with the IntelliFire API for Intellifire WIFI Modules.
 

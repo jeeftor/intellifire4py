@@ -48,9 +48,10 @@ async def main() -> None:
     )
 
     print("Start BG Actions")
-    await api.start_background_polling()
+    # await api.start_background_polling()
 
-    await asyncio.sleep(10)
+    # await asyncio.sleep(10)
+    await api.flame_on()
 
     # api.log_status()
     # await asyncio.sleep(1)
@@ -71,10 +72,9 @@ async def main() -> None:
     # await api.pilot_on()
 
     api.log_status()
-    await api.flame_on()
 
     await asyncio.sleep(5)
-    await api.flame_off()
+    # await api.flame_off()
 
     # # asyncio.ensure_future(bg_poll(api))  # fire and forget
     #

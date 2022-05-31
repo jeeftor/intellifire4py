@@ -285,6 +285,9 @@ class IntellifireAPILocal:
                                 f"_send_local_command:: 422 Code on: {url}{data}"
                             )
                         success = True
+                        _log.debug(
+                            "_send_local_command:: Response Code [%d]", resp.status
+                        )
                 except ClientResponseError:
                     _log.debug(
                         "_send_local_command: 403 Error - Invalid challenge code (it may have expired) "
