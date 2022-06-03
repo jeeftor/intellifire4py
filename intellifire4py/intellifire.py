@@ -409,6 +409,7 @@ class IntellifireAPILocal:
             command=IntellifireCommand.TIME_REMAINING,
             value=minutes * 60,  # api requires seconds - but we will work in minutes
         )
+        self._data.timeremaining_s = 60 * minutes
 
     async def stop_sleep_timer(self) -> None:
         """Stop the sleep timer."""

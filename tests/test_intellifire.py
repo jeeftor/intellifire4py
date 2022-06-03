@@ -1,4 +1,5 @@
 """Intellifire Tester."""
+import asyncio
 from unittest.mock import AsyncMock
 
 import pytest
@@ -29,18 +30,18 @@ def mock_get_challenge(mocker):  # type: ignore
 
 
 @pytest.fixture()
-def mock_background_poll(mocker):  # type: ignore
+def mock_poll(mocker):  # type: ignore
     """Mock poll."""
     async_mock = AsyncMock()
     mocker.patch(
-        "intellifire4py.intellifire.IntellifireAPILocal.__background_poll",
+        "intellifire4py.intellifire.IntellifireAPILocal.poll",
         side_effect=async_mock,
     )
     return async_mock
 
 
 @pytest.mark.asyncio
-async def test_send_local(mock_send_command, mock_background_poll):  # type: ignore
+async def test_send_local(mock_send_command):  # type: ignore
     """Test local command sending."""
     api = IntellifireAPILocal(fireplace_ip="192.168.1.5")
     await api.pilot_on()
@@ -62,6 +63,27 @@ async def test_send_local(mock_send_command, mock_background_poll):  # type: ign
     assert api.data.flameheight == 1
     await api.set_fan_speed(speed=1)
     assert api.data.fanspeed == 1
+
+    api.log_status()
+
+
+@pytest.mark.asyncio
+async def test_polling_good(mock_poll):  # type: ignore
+    """Test the polling with a mock function."""
+    api = IntellifireAPILocal(fireplace_ip="192.168.1.5")
+
+    mock_poll.return_value = None
+
+    api.is_sending = True
+    await api.start_background_polling()
+
+    api.is_sending = False
+    await api.start_background_polling(minimum_wait_in_seconds=1)
+    await asyncio.sleep(3)
+    assert api._should_poll_in_background is True
+    api.stop_background_polling(is_sending=True)
+
+    assert api._should_poll_in_background is False
 
 
 def test_needs_login() -> None:
