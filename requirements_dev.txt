@@ -2,3 +2,14 @@
 
 coverage>=6.3.2
 pytest>=7.0.0
+pytest-cov==3.0.0
+pytest-forked==1.4.0
+pytest-freezegun==0.4.2
+pytest-mock==3.7.0
+pytest-rerunfailures==10.2
+pytest-runner==6.0.0
+pytest-socket==0.5.1
+pytest-sugar==0.9.4
+pytest-test-groups==1.0.3
+pytest-timeout==2.1.0
+pytest-xdist==2.5.0
