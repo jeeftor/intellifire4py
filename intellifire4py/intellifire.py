@@ -144,7 +144,7 @@ class IntellifireAPILocal:
         self.is_polling_in_background = False
         _log.info("__background_poll:: Background polling disabled.")
 
-    async def poll(self, supress_warnings: bool = False) -> None:
+    async def poll(self, suppress_warnings: bool = False) -> None:
         """Poll the IFT module locally."""
         async with aiohttp.ClientSession() as session:
             url = f"http://{self.fireplace_ip}/poll"
@@ -157,7 +157,7 @@ class IntellifireAPILocal:
                         if response.status == 404:
                             # Valid address - but poll endpoint not found
 
-                            if not supress_warnings:
+                            if not suppress_warnings:
                                 # During DHCP Auto discovery may want to suppress error messages
                                 _log.warning(
                                     "--Intellifire:: Error accessing %s - 404", url
@@ -167,13 +167,13 @@ class IntellifireAPILocal:
                             json_data = await response.json(content_type=None)
                             _log.debug("Received: %s", json_data)
                         except JSONDecodeError:
-                            if not supress_warnings:
+                            if not suppress_warnings:
                                 _log.warning("Error decoding JSON: [%s]", response.text)
 
                         _log.debug("Updating self._data")
                         self._data = IntellifirePollData(**json_data)
                     except ConnectionError:
-                        if not supress_warnings:
+                        if not suppress_warnings:
                             _log.warning("Connection Error accessing", url)
                         raise ConnectionError("ConnectionError - host not found")
             except (
@@ -207,7 +207,7 @@ class IntellifireAPILocal:
 
         was_running = self.stop_background_polling(is_sending=True)
         _log.debug(
-            "send_command:: Stopped backgroudn task which was running? [%s]",
+            "send_command:: Stopped background task which was running? [%s]",
             was_running,
         )
 
@@ -316,18 +316,18 @@ class IntellifireAPILocal:
         except ClientConnectorError:
             end = time.time()
             _log.error(
-                "time[%.2f] get_challegne returned ClientConnectError",
+                "time[%.2f] get_challenge returned ClientConnectError",
                 (end - start),
             )
             pass
         except (TimeoutError, asyncio.exceptions.TimeoutError):
             end = time.time()
-            _log.error("time[%.2f] get_challegne returned TimeoutError", (end - start))
+            _log.error("time[%.2f] get_challenge returned TimeoutError", (end - start))
             pass
         except Exception as error:
             end = time.time()
             _log.error(
-                "time[%.2f] get_challegne returned exception [%s]",
+                "time[%.2f] get_challenge returned exception [%s]",
                 (end - start),
                 str(type(error)),
             )

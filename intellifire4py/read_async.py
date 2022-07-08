@@ -18,7 +18,7 @@ class IntellifireAsync:
         self.ip = ip
         self.__data: IntellifirePollData = None  # type: ignore
 
-    async def poll(self, supress_warnings: bool = False) -> None:
+    async def poll(self, suppress_warnings: bool = False) -> None:
         """Poll the IFT module for data."""
         async with aiohttp.ClientSession() as session:
             url = f"http://{self.ip}/poll"
@@ -31,7 +31,7 @@ class IntellifireAsync:
                         if response.status == 404:
                             # Valid address - but poll endpoint not found
 
-                            if not supress_warnings:
+                            if not suppress_warnings:
                                 # During DHCP Auto discovery may want to suppress error messages
                                 _log.warning(
                                     "--Intellifire:: Error accessing %s - 404", url
@@ -45,7 +45,7 @@ class IntellifireAsync:
 
                         self.__data = IntellifirePollData(**json_data)
                     except ConnectionError:
-                        if not supress_warnings:
+                        if not suppress_warnings:
                             _log.warning("Connection Error accessing", url)
                         raise ConnectionError("ConnectionError - host not found")
             except (ServerDisconnectedError, ClientConnectorError):

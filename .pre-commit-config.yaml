@@ -26,6 +26,15 @@ repos:
           - csv
           - json
         exclude: ^tests/fixtures/
+  - repo: https://github.com/streetsidesoftware/cspell-cli
+    rev: v6
+    hooks:
+      - id: cspell
+        args:
+          - --gitignore
+        exclude_types:
+          - csv
+          - json
   - repo: 'https://github.com/asottile/pyupgrade'
     rev: v2.34.0
     hooks:
@@ -41,7 +50,7 @@ repos:
           - black
           - '--filter-files'
   - repo: 'https://github.com/psf/black'
-    rev: 22.3.0
+    rev: 22.6.0
     hooks:
       - id: black
   - repo: 'https://github.com/PyCQA/flake8'
@@ -88,3 +97,8 @@ repos:
     hooks:
       - id: prettier
         stages: [manual]
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v1.3.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]

@@ -168,7 +168,7 @@ print("----- Find Fire Places - Sync Mode  (waiting 3 seconds)-----")
 finder = UDPFireplaceFinder()
 print(finder.search_fireplace(timeout=3))
 
-print("----- Find Fire Places - Aync Mode  (waiting 3 seconds)-----")
+print("----- Find Fire Places - Async Mode  (waiting 3 seconds)-----")
 af = AsyncUDPFireplaceFinder()
 await af.search_fireplace(timeout=3)
 ```
@@ -314,13 +314,13 @@ await control_interface.beep(fireplace=fireplace)
 
 ```python
 # Set to 70 and store the value internally
-await ift_control.set_thermostat_f(fireplace=defualt_fireplace, temp_f=70)
+await ift_control.set_thermostat_f(fireplace=default_fireplace, temp_f=70)
 # Set to 23 and store value internally
-await ift_control.set_thermostat_c(fireplace=defualt_fireplace, temp_c=23)
+await ift_control.set_thermostat_c(fireplace=default_fireplace, temp_c=23)
 # Turn off thermostat
-await ift_control.turn_off_thermostat(fireplace=defualt_fireplace)
+await ift_control.turn_off_thermostat(fireplace=default_fireplace)
 # Turn on thermostat and set temp to 23c as this was the last temp
-await ift_control.turn_on_thermostat(fireplace=defualt_fireplace)
+await ift_control.turn_on_thermostat(fireplace=default_fireplace)
 ```
 
 ## Sleep Timer

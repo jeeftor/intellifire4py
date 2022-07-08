@@ -1,0 +1,32 @@
+version: "0.2"
+ignorePaths:
+  - "**/*.yaml"
+  - "**/requirements.txt"
+  - "**/*.toml"
+  - "**/*.ini"
+  - "**/.gitignore"
+dictionaryDefinitions: []
+dictionaries: []
+words:
+  - aenum
+  - aiohttp
+  - apikey
+  - asyncio
+  - asynctest
+  - decompiled
+  - devcontainer
+  - DGRAM
+  - enumfireplaces
+  - enumlocations
+  - fanspeed
+  - flameheight
+  - iftapi
+  - intellifire
+  - Intellifire
+  - prepurge
+  - setpoint
+  - SETPOINT
+  - timeremaining
+  - tocstop
+ignoreWords: []
+import: []
