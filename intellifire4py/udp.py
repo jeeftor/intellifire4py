@@ -34,16 +34,16 @@ class UDPFireplaceFinder:
     def _pong(self, *, timeout_in_seconds: int) -> [str]:  # type: ignore
         """Receive a Fireplace "I EXIST" result."""
         s = socket(AF_INET, SOCK_DGRAM)
-        s.settimeout(5000)
+        s.settimeout(timeout_in_seconds)
         s.bind(("0.0.0.0", self.recv_port))
 
         _log.info(
             f"Waiting {timeout_in_seconds} seconds to see which fireplaces respond"
         )
-
         # Reset ip's
         ip_set: set[str] = set()
         t_end = time.time() + timeout_in_seconds
+        t_start = time.time()
         while time.time() < t_end:
             data, addr = s.recvfrom(1024)
             if data:
@@ -52,6 +52,7 @@ class UDPFireplaceFinder:
                 ip = json.loads(data.decode())["ip"]
                 ip_set.add(ip)
         return list(ip_set)
+
 
 
 class AsyncUDPFireplaceFinder:
@@ -78,15 +79,14 @@ class AsyncUDPFireplaceFinder:
         _log.info("Sending Ping!")
 
     async def _pong(self, *, timeout_in_seconds: int) -> None:
-        """Receive a Fireplace "I EXIST" result."""
+        """Receive a Fireplace "I EXIST" result"."""
         s = socket(AF_INET, SOCK_DGRAM)
-        s.settimeout(5000)
+        s.settimeout(timeout_in_seconds)
         s.bind(("0.0.0.0", self.recv_port))
 
         _log.info(
             f"Waiting {timeout_in_seconds} seconds to see which fireplaces respond"
         )
-
         # Reset ip's
         ip_set: set[str] = set()
         t_end = time.time() + timeout_in_seconds

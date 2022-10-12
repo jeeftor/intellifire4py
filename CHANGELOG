@@ -1,5 +1,7 @@
 
 CHANGELOG
+2.1.0
+- Fixed timeout error from 5000 seconds to whatever is passed in
 2.0.1
 - Updated error handling for DHCP discovery in HA
 2.0.0
