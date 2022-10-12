@@ -22,7 +22,7 @@ async def main() -> None:
 
     print("----- Find Fire Places - Aync Mode  (waiting 3 seconds)-----")
     af = AsyncUDPFireplaceFinder()
-    await af.search_fireplace(timeout=3)
+    print(await af.search_fireplace(timeout=3))
 
     ip = af.ips[0]
     print(f"-- Found fireplace at [{ip}] --")

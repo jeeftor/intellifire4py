@@ -20,9 +20,12 @@ class UDPFireplaceFinder:
 
     def search_fireplace(self, *, timeout: int) -> list[str]:
         """Search the network for fireplaces."""
-        self._ping()
-        data = self._pong(timeout_in_seconds=timeout)
-        return data  # type: ignore
+        try:
+            self._ping()
+            data = self._pong(timeout_in_seconds=timeout)        
+            return data  # type: ignore
+        except TimeoutError:
+            return []
 
     def _ping(self) -> None:
         """Send a UDP request to find fireplaces."""
@@ -66,9 +69,11 @@ class AsyncUDPFireplaceFinder:
 
     async def search_fireplace(self, *, timeout: int) -> list[str]:
         """Search the network for fireplaces."""
-        await self._ping()
-        await self._pong(timeout_in_seconds=timeout)
-
+        try:
+            await self._ping()
+            await self._pong(timeout_in_seconds=timeout)
+        except TimeoutError:
+            _log.info("Discovery timed out - returning empty ip list")
         return self.ips  # type: ignore
 
     async def _ping(self) -> None:
