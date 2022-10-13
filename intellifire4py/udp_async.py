@@ -22,6 +22,7 @@ class IFTDiscoveryReaderProtocol(asyncio.DatagramProtocol):
     def connection_made(self, transport: asyncio.BaseTransport) -> None:
         """Protocol method for connection made."""
         self.transport = transport
+        _log.debug("UDP Discovery Listen - Socket connection created")
 
     def datagram_received(self, data: bytes, addr: tuple[Union[str, Any], int]) -> None:
         """Process datagram data."""
@@ -31,11 +32,12 @@ class IFTDiscoveryReaderProtocol(asyncio.DatagramProtocol):
 
     def connection_lost(self, exc):  # type: ignore
         """Warn the connection closed."""
-        _log.info("IFT Discovery connection closed after %s seconds", self.timeout)
+        _log.debug("UDP Discovery Listen - Closed after %s seconds", self.timeout)
 
     def process_message(self, data: Any) -> None:
         """Process incoming data."""
         ip = json.loads(data)["ip"]
+        _log.debug("UDP Discovery Listen - Received data: %s", data)
         self.ip_set.add(ip)
 
 
@@ -46,6 +48,7 @@ class IFTDiscoverySenderProtocol(asyncio.DatagramProtocol):
         """Initialize the protocol."""
         self.message = message
         self.on_con_lost = on_con_lost
+        self.transport = None
 
     def connection_made(self, transport) -> None:  # type: ignore
         """Configure socket and send message on connection."""
@@ -57,16 +60,17 @@ class IFTDiscoverySenderProtocol(asyncio.DatagramProtocol):
 
     def datagram_received(self, data, addr):  # type: ignore
         """Print out data."""
-        _log.info("Sending discovery message [%s]", data.decode())
+        _log.info("UDP Discovery Send - Sent discovery message [%s]", data.decode())
         self.transport.close()
 
     def error_received(self, exc):  # type: ignore
         """Display error."""
-        _log.warning("Error received:", exc)
+        _log.warning("UDP Discovery Send - Error received:", exc)
 
     def connection_lost(self, exc):  # type: ignore
         """Close connection."""
-        self.on_con_lost.set_result(True)
+        if not self.on_con_lost:
+            self.on_con_lost.set_result(True)
 
 
 class AsyncUDPFireplaceFinder:
@@ -89,27 +93,27 @@ class AsyncUDPFireplaceFinder:
         """Send out the UDP Discovery packet."""
         on_con_lost = self.loop.create_future()
         message = "IFT-search"
-
+        _log.debug("UDP Discovery Send - Attempting to send discovery packet")
         transport, protocol = await self.loop.create_datagram_endpoint(
             lambda: IFTDiscoverySenderProtocol(message, on_con_lost),
             local_addr=("0.0.0.0", 3785),
         )
-
         try:
-            await on_con_lost
+            await asyncio.wait_for(on_con_lost, timeout=self.timeout)
+            _log.debug("UDP Discovery Send - Discovery packet sent")
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            _log.debug("UDP Discovery Send - Discovery packet could not send")
         finally:
             transport.close()
 
     async def start_discovery_reader(self) -> None:
         """Start the discovery reader."""
-
         transport, protocol = await self.loop.create_datagram_endpoint(
             lambda: IFTDiscoveryReaderProtocol(
                 timeout=self.timeout, ip_set=self.ip_set
             ),
             local_addr=("0.0.0.0", self.recv_port),
         )
-
         try:
             await asyncio.sleep(self.timeout)
         finally:
@@ -118,6 +122,7 @@ class AsyncUDPFireplaceFinder:
     async def search_fireplace(self, *, timeout: int) -> list[str]:
         """Search the network for fireplaces."""
         self.timeout = timeout
+
         await asyncio.gather(
             self.send_discovery_packet(), self.start_discovery_reader()
         )
