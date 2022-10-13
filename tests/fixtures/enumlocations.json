@@ -1,0 +1,13 @@
+{
+  "locations": [
+    {
+      "location_id": "11118333339267293392",
+      "location_name": "home",
+      "wifi_essid": "wifiNetwork",
+      "wifi_password": "shitty_password",
+      "postal_code": "22102",
+      "user_class": "1"
+    }
+  ],
+  "email_notifications_enabled": 0
+}

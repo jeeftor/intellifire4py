@@ -1,0 +1,12 @@
+{
+  "location_name": "home",
+  "fireplaces": [
+    {
+      "serial": "XXXXXE834CE109D849CBB15CDDBAFF381",
+      "brand": "H&G",
+      "name": "Living Room",
+      "apikey": "12345BDB2D97B3DC7CEE8A8B05DD5FFA",
+      "power": "0"
+    }
+  ]
+}
