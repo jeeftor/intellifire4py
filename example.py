@@ -16,17 +16,18 @@ from intellifire4py.exceptions import LoginException
 async def main() -> None:
     """Run main function."""
 
-    print("----- Find Fire Places - Sync Mode  (waiting 3 seconds)-----")
+    print("----- Find Fire Places - Sync Mode  (waiting 12 seconds)-----")
     finder = UDPFireplaceFinder()
-    print(finder.search_fireplace(timeout=3))
+    print(finder.search_fireplace(timeout=12))
 
-    print("----- Find Fire Places - Aync Mode  (waiting 3 seconds)-----")
+    print("----- Find Fire Places - Aync Mode  (waiting 12 seconds)-----")
     af = AsyncUDPFireplaceFinder()
-    print(await af.search_fireplace(timeout=3))
+    print(await af.search_fireplace(timeout=12))
 
     ip = af.ips[0]
     print(f"-- Found fireplace at [{ip}] --")
 
+    exit(0)
     """Run main function."""
     print(
         """
