@@ -50,7 +50,7 @@ class IntelliFireAPICloud:
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(
-                    f"{self.prefix}://iftapi.net/a//login",
+                    f"{self.prefix}://iftapi.net/a/login",
                     data=data,  # .encode(),
                 )
 
@@ -124,3 +124,48 @@ class IntelliFireAPICloud:
         if not fireplace:
             return self.default_fireplace.apikey
         return fireplace.apikey
+
+    def p2(self):
+        """Set thermostat value in fahrenheit.
+
+        .. code:: javascript
+
+            { key : value,
+              key2: value,
+              }
+        """
+
+    def poll(self):
+        """Returns a fireplace’s status in JSON.
+
+        Example:
+
+        .. code-block:: javascript
+
+            {
+            "name":"undefined",
+            "temperature":"22",
+            "battery":"0",
+            "pilot":"0",
+            "light":"3",
+            "height":"4",
+            "fanspeed":"0",
+            "hot":"0",
+            "power":"0",
+            "schedule_enable":"0",
+            "thermostat":"0",
+            "setpoint":"0",
+            "timer":"0",
+            "timeremaining":"0",
+            "prepurge":"0",
+            "feature_light":"1",
+            "feature_thermostat":"1",
+            "power_vent":"0",
+            "feature_fan":"1",
+            "errors":[3269],
+            "firmware_version":"0x01000000"
+            "brand":"H&G"
+            }
+
+        """
+        pass
