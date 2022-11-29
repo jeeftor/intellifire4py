@@ -11,26 +11,12 @@ from typing import Union
 
 import httpx
 
-from intellifire4py.exceptions import InputRangError
 from intellifire4py.model import IntelliFirePollData
 
 from .const import IntelliFireCommand
 from .const import _log
 from .control import IntelliFireSendMode
-
-
-def _range_check(command: IntelliFireCommand, value: int) -> None:
-    """Perform a value range check."""
-    # Validate the range on input
-    min_value: int = command.value["min"]  # type: ignore
-    max_value: int = command.value["max"]  # type: ignore
-
-    if value > max_value or value < min_value:
-        raise InputRangError(
-            field=str(command.name),
-            min_value=min_value,
-            max_value=max_value,
-        )
+from .utils import _range_check
 
 
 class IntelliFireAPILocal:
@@ -186,7 +172,6 @@ class IntelliFireAPILocal:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(url)
-                print(response)
                 if response.status_code == 404:
                     if not suppress_warnings:
                         # During DHCP Auto discovery may want to suppress error messages

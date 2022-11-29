@@ -58,6 +58,9 @@ myst-parser = {version = ">=0.16.1"}
 [tool.poetry.scripts]
 intellifire4py = "intellifire4py.__main__:main"
 
+[tool.poetry.group.dev.dependencies]
+mypy = {extras = ["d"], version = "^0.991"}
+
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
 tests = ["tests", "*/tests"]

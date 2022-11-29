@@ -3,6 +3,7 @@ import asyncio
 import logging
 import os
 
+import rich
 from rich import print
 from rich.console import Console
 from rich.logging import RichHandler
@@ -67,6 +68,10 @@ async def main() -> None:
     )
     console = Console()
     console.print(table)
+
+    await cloud_api.poll()
+    # console.print(cloud_api.data)
+    rich.inspect(cloud_api.data)
 
 
 if __name__ == "__main__":

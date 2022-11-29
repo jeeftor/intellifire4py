@@ -4,11 +4,15 @@ from __future__ import annotations
 import httpx
 from httpx import Cookies
 
+from intellifire4py.exceptions import ApiCallError
 from intellifire4py.exceptions import LoginError
 from intellifire4py.model import IntelliFireFireplace
 from intellifire4py.model import IntelliFireFireplaces
+from intellifire4py.model import IntelliFirePollData
 
+from .const import IntelliFireCommand
 from .const import _log
+from .utils import _range_check
 
 
 class IntelliFireAPICloud:
@@ -31,6 +35,16 @@ class IntelliFireAPICloud:
         else:
             self.prefix = "https"
         self._verify_ssl = verify_ssl
+
+        # Cloud data
+        self._data = IntelliFirePollData()
+
+    @property
+    def data(self) -> IntelliFirePollData:
+        """Return data to the user."""
+        if self._data.serial == "unset":
+            _log.warning("Returning uninitialized poll data")
+        return self._data
 
     async def login(self, *, username: str, password: str) -> None:
         """Login to Cloud API.
@@ -125,18 +139,114 @@ class IntelliFireAPICloud:
             return self.default_fireplace.apikey
         return fireplace.apikey
 
-    def p2(self):
-        """Set thermostat value in fahrenheit.
+    async def _send_cloud_command(
+        self,
+        fireplace: IntelliFireFireplace | None = None,
+        *,
+        command: IntelliFireCommand,
+        value: int,
+    ) -> None:
+        await self._login_check()
+        async with httpx.AsyncClient(cookies=self._cookie) as client:
 
-        .. code:: javascript
+            if not fireplace:
+                serial = self.default_fireplace.serial
+            else:
+                serial = fireplace.serial
+            # Validate inputs
+            _range_check(command, value)
 
-            { key : value,
-              key2: value,
-              }
+            # Construct body
+            content = f"{command.value['local_command']}={value}".encode()
+            response = await client.post(
+                f"{self.prefix}://iftapi.net/a/{serial}//applongpoll", content=content
+            )
+
+            if response.status_code == 204:
+                return
+            elif (
+                response.status_code == 403
+            ):  # Not authorized (bad email address or authorization cookie)
+                raise ApiCallError("Not authorized")
+            elif response.status_code == 404:
+                raise ApiCallError("Fireplace not found (bad serial number)")
+            elif response.status_code == 422:
+                raise ApiCallError(
+                    "Invalid Parameter (invalid command id or command value)"
+                )
+            else:
+                raise Exception("Unexpected return code")
+
+        """
+        204 Success – command accepted
+        403 Not authorized (bad email address or authorization cookie)
+        404 Fireplace not found (bad serial number)
+        422 Invalid Parameter (invalid command id or command value)
         """
 
-    def poll(self):
+    async def long_poll(self, fireplace: IntelliFireFireplace | None = None) -> bool:
+        """Performs a LongPoll to wait for a Status update.
+
+        Only returns a status update when the fireplace’s status actually changes (excluding normal periodic
+        decreases in the “time remaining” field). If the fireplace status does not change during the time period,
+        the server returns status code `408` after the time limit is exceeded. The app can then immediately issue
+        another request on this function. If the status changes, then the server returns a `200` status code,
+        the status content (in the same format as for apppoll), and an Etag header. The Etag should be sent in an
+        If-None- Match header for the next request, so the server knows where in the queue to look for the next
+        command to return. The correct order to do this is first issue an apppoll request (or equivalently,
+        an enumuserfireplaces request), and then issue applongpoll requests for as long as the status is needed.
+        Although this may seem to create a race condition, the server puts fireplace status updates in a queue where
+        they last for `30` seconds. Therefore, as long as the Internet connection isn’t unusably slow,
+        no status updates will be lost. If the connection goes down, then the process needs to be restarted. The time
+        limit is nominally `60` seconds. After `57` seconds, the server will send a `408` response, and after `61` seconds,
+        the mobile app should assume that the connection has been dropped.
+
+        Args:
+            fireplace (IntelliFireFireplace | None, optional): _description_. Defaults to None.
+
+        Raises:
+            ApiCallError: Issue with the API call, either bad credentials or a bad serial number
+
+        Returns:
+            bool: `True` if status changed, `False` if it did not
+        """
+
+        await self._login_check()
+        async with httpx.AsyncClient(cookies=self._cookie) as client:
+
+            if not fireplace:
+                serial = self.default_fireplace.serial
+            else:
+                serial = fireplace.serial
+            response = await client.get(
+                f"{self.prefix}://iftapi.net/a/{serial}//applongpoll"
+            )
+            if response.status_code == 200:
+                return True
+            elif response.status_code == 408:
+                return False
+            elif (
+                response.status_code == 403
+            ):  # Not authorized (bad email address or authorization cookie)
+                raise ApiCallError("Not authorized")
+            elif response.status_code == 404:
+                raise ApiCallError("Fireplace not found (bad serial number)")
+            else:
+                raise Exception("Unexpected return code")
+
+    async def poll(self, fireplace: IntelliFireFireplace | None = None) -> None:
         """Returns a fireplace’s status in JSON.
+
+        Args:
+            fireplace (IntelliFireFireplace | None, optional): _description_. Defaults to None.
+
+        Raises:
+            ApiCallError: _description_
+            ApiCallError: _description_
+            Exception: _description_
+
+        Returns:
+            _type_: _description_
 
         Example:
 
@@ -168,4 +278,25 @@ class IntelliFireAPICloud:
             }
 
         """
-        pass
+        await self._login_check()
+        async with httpx.AsyncClient(cookies=self._cookie) as client:
+
+            if not fireplace:
+                serial = self.default_fireplace.serial
+            else:
+                serial = fireplace.serial
+            response = await client.get(
+                f"{self.prefix}://iftapi.net/a/{serial}//apppoll"
+            )
+            if response.status_code == 200:
+                json_data = response.json()
+                self._data = IntelliFirePollData(**json_data)
+
+            elif (
+                response.status_code == 403
+            ):  # Not authorized (bad email address or authorization cookie)
+                raise ApiCallError("Not authorized")
+            elif response.status_code == 404:
+                raise ApiCallError("Fireplace not found (bad serial number)")
+            else:
+                raise Exception("Unexpected return code")
