@@ -308,7 +308,7 @@ class IntellifireAPILocal:
         try:
             resp = await client.get(
                 f"http://{self.fireplace_ip}/get_challenge",
-                timeout=aiohttp.ClientTimeout(total=3),
+                timeout=aiohttp.ClientTimeout(total=6),
             )
             text = str(await resp.text())
             _log.info("Received Challenge %s", text)
