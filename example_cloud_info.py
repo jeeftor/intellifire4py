@@ -50,7 +50,7 @@ def get_creds() -> None:
 
 
 async def main() -> None:
-    """Main function."""
+    """Define main function."""
     username, password = get_creds()
 
     cloud_api = IntelliFireAPICloud(use_http=True, verify_ssl=False)
@@ -70,7 +70,8 @@ async def main() -> None:
     console.print(table)
 
     await cloud_api.poll()
-    # console.print(cloud_api.data)
+    await cloud_api.long_poll()
+    await asyncio.sleep(70)
     rich.inspect(cloud_api.data)
 
 

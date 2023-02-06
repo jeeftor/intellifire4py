@@ -1,67 +1,96 @@
 repos:
-  - repo: local
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.3.1
+    hooks:
+      - id: pyupgrade
+        args: [--py39-plus]
+  - repo: https://github.com/psf/black
+    rev: 23.1.0
     hooks:
       - id: black
-        name: black
-        entry: black
-        language: system
-        types: [python]
-        require_serial: true
-      - id: check-added-large-files
-        name: Check for added large files
-        entry: check-added-large-files
-        language: system
-      - id: check-toml
-        name: Check Toml
-        entry: check-toml
-        language: system
-        types: [toml]
-      - id: check-yaml
-        name: Check Yaml
-        entry: check-yaml
-        language: system
-        types: [yaml]
-      - id: darglint
-        name: darglint
-        entry: darglint
-        language: system
-        types: [python]
-        stages: [manual]
-      - id: end-of-file-fixer
-        name: Fix End of Files
-        entry: end-of-file-fixer
-        language: system
-        types: [text]
-        stages: [commit, push, manual]
-      - id: flake8
-        name: flake8
-        entry: flake8
-        language: system
-        types: [python]
-        require_serial: true
-        args: [--darglint-ignore-regex, .*]
+        args:
+          - --quiet
+        # files: ^((homeassistant|pylint|script|tests)/.+)?[^/]+\.py$
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.2
+    hooks:
+      - id: codespell
+        args:
+          - --ignore-words-list=additionals,alle,alot,ba,bre,bund,datas,dof,dur,ether,farenheit,falsy,fo,haa,hass,hist,iam,iff,iif,incomfort,ines,ist,lightsensor,mut,nam,nd,pres,pullrequests,referer,resset,rime,ser,serie,sur,te,technik,ue,uint,unsecure,visability,wan,wanna,withing,zar
+          - --skip="./.*,*.csv,*.json"
+          - --quiet-level=2
+        exclude_types: [csv, json]
+        exclude: ^tests/fixtures/|homeassistant/generated/
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    # Ruff version.
+    rev: "v0.0.241"
+    hooks:
+      - id: ruff
 
-      - id: isort
-        name: isort
-        entry: isort
-        require_serial: true
-        language: system
-        types_or: [cython, pyi, python]
-        args: ["--filter-files"]
-      - id: pyupgrade
-        name: pyupgrade
-        description: Automatically upgrade syntax for newer versions.
-        entry: pyupgrade
-        language: system
-        types: [python]
-        args: [--py39-plus, --keep-runtime-typing]
-      - id: trailing-whitespace
-        name: Trim Trailing Whitespace
-        entry: trailing-whitespace-fixer
-        language: system
-        types: [text]
-        stages: [commit, push, manual]
+  # repos:
+  #   - repo: local
+  #     hooks:
+  #       - id: black
+  #         name: black
+  #         entry: black
+  #         language: system
+  #         types: [python]
+  #         require_serial: true
+  #       - id: check-added-large-files
+  #         name: Check for added large files
+  #         entry: check-added-large-files
+  #         language: system
+  #       - id: check-toml
+  #         name: Check Toml
+  #         entry: check-toml
+  #         language: system
+  #         types: [toml]
+  #       - id: check-yaml
+  #         name: Check Yaml
+  #         entry: check-yaml
+  #         language: system
+  #         types: [yaml]
+  #       - id: darglint
+  #         name: darglint
+  #         entry: darglint
+  #         language: system
+  #         types: [python]
+  #         stages: [manual]
+  #       - id: end-of-file-fixer
+  #         name: Fix End of Files
+  #         entry: end-of-file-fixer
+  #         language: system
+  #         types: [text]
+  #         stages: [commit, push, manual]
+  #       # - id: flake8
+  #       #   name: flake8
+  #       #   entry: flake8
+  #       #   language: system
+  #       #   types: [python]
+  #       #   require_serial: true
+  #       #   args: [--darglint-ignore-regex, .*]
+  #       - id: isort
+  #         name: isort
+  #         entry: isort
+  #         require_serial: true
+  #         language: system
+  #         types_or: [cython, pyi, python]
+  #         args: ["--filter-files"]
+  #       - id: pyupgrade
+  #         name: pyupgrade
+  #         description: Automatically upgrade syntax for newer versions.
+  #         entry: pyupgrade
+  #         language: system
+  #         types: [python]
+  #         args: [--py39-plus, --keep-runtime-typing]
+  #       - id: trailing-whitespace
+  #         name: Trim Trailing Whitespace
+  #         entry: trailing-whitespace-fixer
+  #         language: system
+  #         types: [text]
+  #         stages: [commit, push, manual]
+
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.6.0
+    rev: v3.0.0-alpha.4
     hooks:
       - id: prettier
