@@ -1,8 +1,13 @@
 """IntelliFire CLoud API."""
 from __future__ import annotations
 
+import asyncio
+
 import httpx
 from httpx import Cookies
+from asyncio import Task
+from typing import Any
+import time
 
 from intellifire4py.exceptions import ApiCallError
 from intellifire4py.exceptions import LoginError
@@ -12,11 +17,14 @@ from intellifire4py.model import IntelliFirePollData
 
 from .const import IntelliFireCommand
 from .const import _log
+from .control import IntelliFireController, IntelliFireControlMode
 from .utils import _range_check
 
 
-class IntelliFireAPICloud:
+class IntelliFireAPICloud(IntelliFireController):
     """Api for cloud access."""
+
+    _control_mode = IntelliFireControlMode.CLOUD
 
     def __init__(self, *, use_http: bool = False, verify_ssl: bool = True):
         """Initialize the class.
@@ -38,6 +46,10 @@ class IntelliFireAPICloud:
 
         # Cloud data
         self._data = IntelliFirePollData()
+
+        self.is_polling_in_background = False
+        self._should_poll_in_background = False
+        self._bg_task: Task[Any] | None = None
 
     @property
     def data(self) -> IntelliFirePollData:
@@ -139,6 +151,25 @@ class IntelliFireAPICloud:
             return self.default_fireplace.apikey
         return fireplace.apikey
 
+    async def send_command(
+        self,
+        *,
+        command: IntelliFireCommand,
+        value: int,
+    ) -> None:
+        """Send a command (cloud based)."""
+        _range_check(command, value)
+
+        if not self._is_logged_in:
+            _log.warning(
+                "Unable to control fireplace with command [%s=%s] Both `api_key` and `user_id` fields must be set.",
+                command.name,
+                value,
+            )
+            return
+
+        await self._send_cloud_command(command=command, value=value)
+
     async def _send_cloud_command(
         self,
         fireplace: IntelliFireFireplace | None = None,
@@ -146,20 +177,16 @@ class IntelliFireAPICloud:
         command: IntelliFireCommand,
         value: int,
     ) -> None:
-        await self._login_check()
         async with httpx.AsyncClient(cookies=self._cookie) as client:
-
             if not fireplace:
                 serial = self.default_fireplace.serial
             else:
                 serial = fireplace.serial
-            # Validate inputs
-            _range_check(command, value)
 
             # Construct body
-            content = f"{command.value['local_command']}={value}".encode()
+            content = f"{command.value['cloud_command']}={value}".encode()
             response = await client.post(
-                f"{self.prefix}://iftapi.net/a/{serial}//applongpoll", content=content
+                f"{self.prefix}://iftapi.net/a/{serial}/apppost", content=content
             )
 
             if response.status_code == 204:
@@ -185,7 +212,7 @@ class IntelliFireAPICloud:
         """
 
     async def long_poll(self, fireplace: IntelliFireFireplace | None = None) -> bool:
-        """Performs a LongPoll to wait for a Status update.
+        """Perform a LongPoll to wait for a Status update.
 
         Only returns a status update when the fireplace’s status actually changes (excluding normal periodic
         decreases in the “time remaining” field). If the fireplace status does not change during the time period,
@@ -212,18 +239,18 @@ class IntelliFireAPICloud:
         """
 
         await self._login_check()
-        async with httpx.AsyncClient(cookies=self._cookie) as client:
-
+        async with httpx.AsyncClient(cookies=self._cookie, timeout=61) as client:
             if not fireplace:
                 serial = self.default_fireplace.serial
             else:
                 serial = fireplace.serial
             response = await client.get(
-                f"{self.prefix}://iftapi.net/a/{serial}//applongpoll"
+                f"{self.prefix}://iftapi.net/a/{serial}/applongpoll"
             )
             if response.status_code == 200:
                 return True
             elif response.status_code == 408:
+                _log.debug("Long Poll returned 408 - no data changed")
                 return False
             elif (
                 response.status_code == 403
@@ -235,7 +262,7 @@ class IntelliFireAPICloud:
                 raise Exception("Unexpected return code")
 
     async def poll(self, fireplace: IntelliFireFireplace | None = None) -> None:
-        """Returns a fireplace’s status in JSON.
+        """Return a fireplace’s status in JSON.
 
         Args:
             fireplace (IntelliFireFireplace | None, optional): _description_. Defaults to None.
@@ -280,7 +307,6 @@ class IntelliFireAPICloud:
         """
         await self._login_check()
         async with httpx.AsyncClient(cookies=self._cookie) as client:
-
             if not fireplace:
                 serial = self.default_fireplace.serial
             else:
@@ -300,3 +326,56 @@ class IntelliFireAPICloud:
                 raise ApiCallError("Fireplace not found (bad serial number)")
             else:
                 raise Exception("Unexpected return code")
+
+    async def start_background_polling(self) -> None:
+        """Start an ensure-future background polling loop."""
+
+        if not self._should_poll_in_background:
+            self._should_poll_in_background = True
+            _log.info("!!  start_background_polling !!")
+
+            self._bg_task = asyncio.create_task(
+                self.__background_poll(), name="background_cloud_polling"
+            )
+
+    def stop_background_polling(self) -> bool:
+        """Stop background polling - return whether it had been polling."""
+        self._should_poll_in_background = False
+        was_running = False
+        if self._bg_task:
+            if not self._bg_task.cancelled():
+                was_running = True
+                self._bg_task.cancel()
+                _log.info("Stopping background task to issue a command")
+        return was_running
+
+    async def __background_poll(self, minimum_wait_in_seconds: int = 10) -> None:
+        """Start a looping background longpoll task."""
+        _log.debug("__background_poll:: Function Called")
+        self.is_polling_in_background = True
+        while self._should_poll_in_background:
+            start = time.time()
+            _log.debug("__background_poll:: Loop start time %f", start)
+
+            try:
+                new_data = await self.long_poll()
+                if new_data:
+                    _log.debug(self.data)
+
+                end = time.time()
+                duration: float = end - start
+                sleep_time: float = minimum_wait_in_seconds - duration
+                _log.debug(
+                    "__background_poll:: [%f] Sleeping for [%fs]", duration, sleep_time
+                )
+                _log.debug(
+                    "__background_poll:: duration: %f, %f, %.2fs",
+                    start,
+                    end,
+                    (end - start),
+                )
+                await asyncio.sleep(minimum_wait_in_seconds - (end - start))
+            except Exception as ex:
+                _log.error(ex)
+        self.is_polling_in_background = False
+        _log.info("__background_poll:: Background polling disabled.")

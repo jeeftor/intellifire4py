@@ -68,11 +68,22 @@ async def main() -> None:
     )
     console = Console()
     console.print(table)
-
     await cloud_api.poll()
-    await cloud_api.long_poll()
-    await asyncio.sleep(70)
     rich.inspect(cloud_api.data)
+    await cloud_api.set_flame_height(height=1)
+    await cloud_api.poll()
+    rich.inspect(cloud_api.data)
+
+    # await cloud_api.start_background_polling()
+    #
+    # await cloud_api.set_flame_height(height=1)
+    # await asyncio.sleep(10)
+    # await cloud_api.set_flame_height(height=2)
+    # await asyncio.sleep(10)
+    # rich.inspect(cloud_api.data)
+    # await cloud_api.long_poll()
+    await asyncio.sleep(70)
+    # rich.inspect(cloud_api.data)
 
 
 if __name__ == "__main__":

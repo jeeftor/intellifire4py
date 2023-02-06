@@ -41,7 +41,7 @@ async def main() -> None:
     if fireplace_ip is None:
         print("Env variable IFT_IP was not set - will try to search for fireplace")
         af = UDPFireplaceFinder()
-        ips = await (af.search_fireplace(timeout=1))
+        ips = await af.search_fireplace(timeout=1)
         if len(ips) > 1:
             print("IP detected")
             fireplace_ip = ips[0]

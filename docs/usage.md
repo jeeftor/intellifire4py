@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
 ## Cloud Credentials
 
-In order to actuall control the unit you will need to access the cloud in order to pull down some credentials. This is demonstrated in `example_cloud_info.py` however the key usage is as follows:
+In order to actually control the unit you will need to access the cloud in order to pull down some credentials. This is demonstrated in `example_cloud_info.py` however the key usage is as follows:
 
 ```python
 cloud_api = IntelliFireAPICloud(use_http=True, verify_ssl=False)
