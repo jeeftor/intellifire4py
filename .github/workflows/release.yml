@@ -32,6 +32,7 @@ jobs:
           pip install --constraint=.github/workflows/constraints.txt poetry
           poetry --version
           poetry version
+          cat pyproject.toml
 
       - name: Check if there is a parent commit
         id: check-parent-commit
