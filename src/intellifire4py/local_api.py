@@ -41,13 +41,11 @@ class IntelliFireAPILocal(IntelliFireController):
             - :func:`IntelliFireAPICloud.get_fireplace_api_key`
 
         """
-        self._data = IntelliFirePollData()
         self.fireplace_ip = fireplace_ip
         self._api_key = api_key
         self._user_id = user_id
         self._last_thermostat_setpoint: int = 2100
         self.send_mode = IntelliFireControlMode.LOCAL
-
         self.is_polling_in_background = False
         self._should_poll_in_background = False
         self.is_sending = False

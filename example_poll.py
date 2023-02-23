@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 async def main() -> None:
-    """Main function."""
+    """Define main function."""
     print(
         """
     Accessing IFT_IP environment variable to connect to fireplace

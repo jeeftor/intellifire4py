@@ -2,7 +2,12 @@
 from __future__ import annotations
 
 from enum import Enum
+
+
 from intellifire4py.const import IntelliFireCommand
+from abc import ABC, abstractmethod
+
+from intellifire4py.model import IntelliFirePollData
 
 
 class IntelliFireControlMode(Enum):
@@ -12,12 +17,13 @@ class IntelliFireControlMode(Enum):
     CLOUD = "cloud"
 
 
-class IntelliFireController:
+class IntelliFireController(ABC):
     """Base class to allow for the control of a fireplace."""
 
     def __init__(self, control_mode: IntelliFireControlMode):
         """Initialize the controller knowing whether its local or cloud based."""
         self._control_mode = control_mode
+        self._data = IntelliFirePollData()
 
     async def flame_on(self) -> None:
         """Turn on the flame."""
@@ -121,3 +127,13 @@ class IntelliFireController:
         await self.send_command(command=IntelliFireCommand.TIME_REMAINING, value=0)
         self._data.timer_on = False
         self._data.timeremaining_s = 0
+
+    @abstractmethod
+    async def send_command(
+        self,
+        *,
+        command: IntelliFireCommand,
+        value: int,
+    ) -> None:
+        """Send command stub."""
+        return

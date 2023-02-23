@@ -43,10 +43,6 @@ class IntelliFireAPICloud(IntelliFireController):
         else:
             self.prefix = "https"
         self._verify_ssl = verify_ssl
-
-        # Cloud data
-        self._data = IntelliFirePollData()
-
         self.is_polling_in_background = False
         self._should_poll_in_background = False
         self._bg_task: Task[Any] | None = None
@@ -188,7 +184,12 @@ class IntelliFireAPICloud(IntelliFireController):
             response = await client.post(
                 f"{self.prefix}://iftapi.net/a/{serial}/apppost", content=content
             )
-
+            """
+            204 Success – command accepted
+            403 Not authorized (bad email address or authorization cookie)
+            404 Fireplace not found (bad serial number)
+            422 Invalid Parameter (invalid command id or command value)
+            """
             if response.status_code == 204:
                 return
             elif (
@@ -203,13 +204,6 @@ class IntelliFireAPICloud(IntelliFireController):
                 )
             else:
                 raise Exception("Unexpected return code")
-
-        """
-        204 Success – command accepted
-        403 Not authorized (bad email address or authorization cookie)
-        404 Fireplace not found (bad serial number)
-        422 Invalid Parameter (invalid command id or command value)
-        """
 
     async def long_poll(self, fireplace: IntelliFireFireplace | None = None) -> bool:
         """Perform a LongPoll to wait for a Status update.
@@ -316,7 +310,7 @@ class IntelliFireAPICloud(IntelliFireController):
             )
             if response.status_code == 200:
                 json_data = response.json()
-                self._data = IntelliFirePollData(**json_data)
+                self._data: IntelliFirePollData = IntelliFirePollData(**json_data)
 
             elif (
                 response.status_code == 403
