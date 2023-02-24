@@ -53,7 +53,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
     @property
     def data(self) -> IntelliFirePollData:
         """Return data to the user."""
-        if self._data.serial == "unset":
+        if self._data.ipv4_address == "127.0.0.1":
             _log.warning("Returning uninitialized poll data")
         return self._data
 
