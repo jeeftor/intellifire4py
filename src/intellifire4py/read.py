@@ -31,7 +31,7 @@ class IntelliFireDataProvider(ABC):
         pass
 
     @abstractmethod
-    def stop_background_polling(self) -> bool:
+    async def stop_background_polling(self) -> bool:
         """Abstract stop polling."""
         return False
 
