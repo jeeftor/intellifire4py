@@ -51,6 +51,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
         self._should_poll_in_background = False
         self.is_sending = False
         self.failed_poll_attempts = 0
+        self._data = IntelliFirePollData()
 
         self._bg_task: Task[Any] | None = None
 

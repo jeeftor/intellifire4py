@@ -47,6 +47,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         self._is_polling_in_background = False
         self._should_poll_in_background = False
         self._bg_task: Task[Any] | None = None
+        self._data = IntelliFirePollData()
 
     @property
     def data(self) -> IntelliFirePollData:
