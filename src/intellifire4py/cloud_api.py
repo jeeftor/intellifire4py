@@ -327,7 +327,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             else:
                 raise Exception("Unexpected return code")
 
-    async def start_background_polling(self) -> None:
+    async def start_background_polling(self, minimum_wait_in_seconds: int = 10) -> None:
         """Start an ensure-future background polling loop."""
 
         if not self._should_poll_in_background:
@@ -335,7 +335,8 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             _log.info("!!  start_background_polling !!")
 
             self._bg_task = asyncio.create_task(
-                self.__background_poll(), name="background_cloud_polling"
+                self.__background_poll(minimum_wait_in_seconds=minimum_wait_in_seconds),
+                name="background_cloud_polling",
             )
 
     def stop_background_polling(self) -> bool:

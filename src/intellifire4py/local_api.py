@@ -106,7 +106,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 name="background_polling",
             )
 
-    def stop_background_polling(self, is_sending: bool) -> bool:
+    def stop_background_polling(self) -> bool:
         """Stop background polling - return whether it had been polling."""
         self._should_poll_in_background = False
         was_running = False

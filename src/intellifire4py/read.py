@@ -20,3 +20,13 @@ class IntelliFireDataProvider(ABC):
     def is_polling_in_background(self) -> bool:
         """Return whether api is polling."""
         return False
+
+    @abstractmethod
+    async def start_background_polling(self, minimum_wait_in_seconds: int = 15) -> None:
+        """Abstract start polling."""
+        pass
+
+    @abstractmethod
+    def stop_background_polling(self) -> bool:
+        """Abstract stop polling."""
+        return False
