@@ -47,7 +47,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
         self._user_id = user_id
         self._last_thermostat_setpoint: int = 2100
         self.send_mode = IntelliFireControlMode.LOCAL
-        self.is_polling_in_background = False
+        self._is_polling_in_background = False
         self._should_poll_in_background = False
         self.is_sending = False
         self.failed_poll_attempts = 0
@@ -71,7 +71,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
             "\tIntelliFireAPILocal Status\n\tis_sending\t[%s]\n\tfailed_polls\t[%d]\n\tBG_Running\t[%s]\n\tBG_ShouldRun\t[%s]",
             self.is_sending,
             self.failed_poll_attempts,
-            self.is_polling_in_background,
+            self._is_polling_in_background,
             self._should_poll_in_background,
         )
 
@@ -85,6 +85,11 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
         if self._data.serial == "unset":
             _log.warning("Returning uninitialized poll data")
         return self._data
+
+    @property
+    def is_polling_in_background(self) -> bool:
+        """Return whether api is polling."""
+        return self._is_polling_in_background
 
     async def start_background_polling(self, minimum_wait_in_seconds: int = 15) -> None:
         """Start an ensure-future background polling loop."""
@@ -119,7 +124,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
 
         self.failed_poll_attempts = 0
 
-        self.is_polling_in_background = True
+        self._is_polling_in_background = True
         while self._should_poll_in_background:
             start = time.time()
             _log.debug("__background_poll:: Loop start time %f", start)
@@ -154,7 +159,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                     "__background_poll:: Polling error [x%d]", self.failed_poll_attempts
                 )
 
-        self.is_polling_in_background = False
+        self._is_polling_in_background = False
         _log.info("__background_poll:: Background polling disabled.")
 
     async def poll(self, suppress_warnings: bool = False) -> None:

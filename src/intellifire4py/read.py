@@ -14,3 +14,9 @@ class IntelliFireDataProvider(ABC):
     def data(self) -> IntelliFirePollData:
         """Return data to the user."""
         return IntelliFirePollData()
+
+    @property
+    @abstractmethod
+    def is_polling_in_background(self) -> bool:
+        """Return whether api is polling."""
+        return False

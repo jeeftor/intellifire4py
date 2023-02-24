@@ -44,7 +44,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         else:
             self.prefix = "https"
         self._verify_ssl = verify_ssl
-        self.is_polling_in_background = False
+        self._is_polling_in_background = False
         self._should_poll_in_background = False
         self._bg_task: Task[Any] | None = None
 
@@ -54,6 +54,11 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         if self._data.serial == "unset":
             _log.warning("Returning uninitialized poll data")
         return self._data
+
+    @property
+    def is_polling_in_background(self) -> bool:
+        """Return whether api is polling."""
+        return self._is_polling_in_background
 
     async def login(self, *, username: str, password: str) -> None:
         """Login to Cloud API.
@@ -347,7 +352,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
     async def __background_poll(self, minimum_wait_in_seconds: int = 10) -> None:
         """Start a looping background longpoll task."""
         _log.debug("__background_poll:: Function Called")
-        self.is_polling_in_background = True
+        self._is_polling_in_background = True
         while self._should_poll_in_background:
             start = time.time()
             _log.debug("__background_poll:: Loop start time %f", start)
@@ -372,5 +377,5 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 await asyncio.sleep(minimum_wait_in_seconds - (end - start))
             except Exception as ex:
                 _log.error(ex)
-        self.is_polling_in_background = False
+        self._is_polling_in_background = False
         _log.info("__background_poll:: Background polling disabled.")
