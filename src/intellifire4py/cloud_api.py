@@ -36,6 +36,8 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             use_http (bool, optional): whether to use HTTP or HTTPS mode. Defaults to False.
             verify_ssl (bool, optional): Enable/Disable SSL Verification. Defaults to True.
         """
+        super(IntelliFireController, self).__init__()
+        super(IntelliFireDataProvider, self).__init__()
         self._cookie: Cookies = Cookies()
         self._is_logged_in = False
         self.default_fireplace: IntelliFireFireplace
@@ -47,7 +49,6 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         self._is_polling_in_background = False
         self._should_poll_in_background = False
         self._bg_task: Task[Any] | None = None
-        self._data = IntelliFirePollData()
 
     @property
     def data(self) -> IntelliFirePollData:

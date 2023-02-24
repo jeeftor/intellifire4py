@@ -42,6 +42,9 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
             - :func:`IntelliFireAPICloud.get_fireplace_api_key`
 
         """
+        super(IntelliFireController, self).__init__()
+        super(IntelliFireDataProvider, self).__init__()
+
         self.fireplace_ip = fireplace_ip
         self._api_key = api_key
         self._user_id = user_id
@@ -51,7 +54,6 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
         self._should_poll_in_background = False
         self.is_sending = False
         self.failed_poll_attempts = 0
-        self._data = IntelliFirePollData()
 
         self._bg_task: Task[Any] | None = None
 
@@ -211,7 +213,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
             )
             return
 
-        was_running = self.stop_background_polling(is_sending=True)
+        was_running = self.stop_background_polling()
         _log.debug(
             "send_command:: Stopped background task which was running? [%s]",
             was_running,

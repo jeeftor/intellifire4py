@@ -9,7 +9,7 @@ from intellifire4py.model import IntelliFirePollData
 class IntelliFireDataProvider(ABC):
     """Abstract base class to provide read logic."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Define simple initializer."""
         self._data = IntelliFirePollData()
 
