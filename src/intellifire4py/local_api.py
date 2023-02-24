@@ -123,14 +123,14 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
 
     async def __background_poll(self, minimum_wait_in_seconds: int = 10) -> None:
         """Perform a polling loop."""
-        _log.debug("__background_poll:: Function Called")
+        _log.debug("LOCAL::__background_poll:: Function Called")
 
         self.failed_poll_attempts = 0
 
         self._is_polling_in_background = True
         while self._should_poll_in_background:
             start = time.time()
-            _log.debug("__background_poll:: Loop start time %f", start)
+            _log.debug("LOCAL::__background_poll:: Loop start time %f", start)
 
             try:
                 await self.poll()
@@ -141,17 +141,19 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 sleep_time: float = minimum_wait_in_seconds - duration
 
                 _log.debug(
-                    "__background_poll:: [%f] Sleeping for [%fs]", duration, sleep_time
+                    "LOCAL::__background_poll:: [%f] Sleeping for [%fs]",
+                    duration,
+                    sleep_time,
                 )
 
                 _log.debug(
-                    "__background_poll:: duration: %f, %f, %.2fs",
+                    "LOCAL::__background_poll:: duration: %f, %f, %.2fs",
                     start,
                     end,
                     (end - start),
                 )
                 _log.debug(
-                    "__background_poll:: Should Sleep For: %f",
+                    "LOCAL::__background_poll:: Should Sleep For: %f",
                     (minimum_wait_in_seconds - (end - start)),
                 )
 
@@ -159,11 +161,12 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
             except httpx.ReadTimeout:
                 self.failed_poll_attempts += 1
                 _log.info(
-                    "__background_poll:: Polling error [x%d]", self.failed_poll_attempts
+                    "LOCAL::__background_poll:: Polling error [x%d]",
+                    self.failed_poll_attempts,
                 )
 
         self._is_polling_in_background = False
-        _log.info("__background_poll:: Background polling disabled.")
+        _log.info("LOCAL::__background_poll:: Background polling disabled.")
 
     async def poll(self, suppress_warnings: bool = False) -> None:
         """Read the /poll endpoint.

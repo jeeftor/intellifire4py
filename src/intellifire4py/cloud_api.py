@@ -359,11 +359,11 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
 
     async def __background_poll(self, minimum_wait_in_seconds: int = 10) -> None:
         """Start a looping cloud background longpoll task."""
-        _log.debug("__background_poll:: Function Called")
+        _log.debug("CLOUD::__background_poll:: Function Called")
         self._is_polling_in_background = True
         while self._should_poll_in_background:
             start = time.time()
-            _log.debug("__background_poll:: Loop start time %f", start)
+            _log.debug("CLOUD::__background_poll:: Loop start time %f", start)
 
             try:
                 new_data = await self.long_poll()
@@ -374,10 +374,12 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 duration: float = end - start
                 sleep_time: float = minimum_wait_in_seconds - duration
                 _log.debug(
-                    "__background_poll:: [%f] Sleeping for [%fs]", duration, sleep_time
+                    "CLOUD::__background_poll:: [%f] Sleeping for [%fs]",
+                    duration,
+                    sleep_time,
                 )
                 _log.debug(
-                    "__background_poll:: duration: %f, %f, %.2fs",
+                    "CLOUD::__background_poll:: duration: %f, %f, %.2fs",
                     start,
                     end,
                     (end - start),
@@ -386,4 +388,4 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             except Exception as ex:
                 _log.error(ex)
         self._is_polling_in_background = False
-        _log.info("__background_poll:: Background polling disabled.")
+        _log.info("CLOUD::__background_poll:: Background polling disabled.")
