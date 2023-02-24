@@ -9,6 +9,10 @@ from intellifire4py.model import IntelliFirePollData
 class IntelliFireDataProvider(ABC):
     """Abstract base class to provide read logic."""
 
+    def __init__(self):
+        """Define simple initializer."""
+        self._data = IntelliFirePollData()
+
     @property
     @abstractmethod
     def data(self) -> IntelliFirePollData:
@@ -30,3 +34,7 @@ class IntelliFireDataProvider(ABC):
     def stop_background_polling(self) -> bool:
         """Abstract stop polling."""
         return False
+
+    def overwrite_data(self, new_data: IntelliFirePollData) -> None:
+        """Overwrite existing poll data."""
+        self._data = new_data
