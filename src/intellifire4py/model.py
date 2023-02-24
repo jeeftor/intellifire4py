@@ -8,33 +8,38 @@ from intellifire4py.const import IntelliFireErrorCode
 class IntelliFirePollData(BaseModel):
     """Base model for IntelliFire status data."""
 
-    name: str = Field(default="unset")
-    serial: str = Field(default="unset")
-    temperature_c: int = Field(alias="temperature", default=18)
     battery: int = Field(default=0)
-    pilot_on: bool = Field(alias="pilot", default=False)
-    light_level: int = Field(alias="light", default=0)
-    flameheight: int = Field(alias="height", default=0)
+    connection_quality: int = Field(default=0, alias="remote_connection_quality")
+    downtime: int = Field(default=0, alias="remote_downtime")
+    ecm_latency: int = Field(default=0)
+    errors: list[int] = Field(default=[])
     fanspeed: int = Field(default=0)
+    flameheight: int = Field(alias="height", default=0)
+    fw_ver_str: str = Field(default="unset", alias="firmware_version_string")
+    fw_version: str = Field(default="unset", alias="firmware_version")
+    has_fan: bool = Field(alias="feature_fan", default=False)
+    has_light: bool = Field(alias="feature_light", default=False)
+    has_power_vent: bool = Field(alias="power_vent", default=False)
+    has_thermostat: bool = Field(alias="feature_thermostat", default=False)
+    ipv4_address: str = Field(default="127.0.0.1")
     is_hot: bool = Field(alias="hot", default=False)
     is_on: bool = Field(alias="power", default=False)
-    thermostat_on: bool = Field(alias="thermostat", default=False)
+    light_level: int = Field(alias="light", default=0)
+    name: str = Field(default="unset")  # Not available in local api
+    pilot_on: bool = Field(alias="pilot", default=False)
+    prepurge: int = Field(default=0)
     raw_thermostat_setpoint: int = Field(alias="setpoint", default=2200)
+    serial: str = Field(default="unset")  # Not available in cloud api
+    temperature_c: int = Field(alias="temperature", default=18)
+    thermostat_on: bool = Field(alias="thermostat", default=False)
     timer_on: bool = Field(alias="timer", default=False)
     timeremaining_s: int = Field(alias="timeremaining", default=0)
-    prepurge: int = Field(default=0)
-    has_light: bool = Field(alias="feature_light", default=False)
-    has_thermostat: bool = Field(alias="feature_thermostat", default=False)
-    has_power_vent: bool = Field(alias="power_vent", default=False)
-    has_fan: bool = Field(alias="feature_fan", default=False)
-    errors: list[int] = Field(default=[])
-    fw_version: str = Field(default="unset")
-    fw_ver_str: str = Field(default="unset")
-    downtime: int = Field(default=0)
-    uptime: int = Field(default=0)
-    connection_quality: int = Field(default=0)
-    ecm_latency: int = Field(default=0)
-    ipv4_address: str = Field(default="127.0.0.1")
+    uptime: int = Field(default=0, alias="remote_uptime")
+
+    class Config:
+        """Set configuration values for pydantic."""
+
+        allow_population_by_field_name = True
 
     @property
     def temperature_f(self) -> float:

@@ -338,10 +338,13 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             self._should_poll_in_background = True
             _log.info("!! CLOUD::start_background_polling !!")
 
-        self._bg_task = asyncio.create_task(
-            self.__background_poll(minimum_wait_in_seconds=minimum_wait_in_seconds),
-            name="background_cloud_polling",
-        )
+            # Do an initial poll to set data first
+            await self.poll()
+
+            self._bg_task = asyncio.create_task(
+                self.__background_poll(minimum_wait_in_seconds=minimum_wait_in_seconds),
+                name="background_cloud_polling",
+            )
 
     def stop_background_polling(self) -> bool:
         """Stop background polling - return whether it had been polling."""
