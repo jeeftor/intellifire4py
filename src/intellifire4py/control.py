@@ -128,6 +128,14 @@ class IntelliFireController(ABC):
         self._data.timer_on = False
         self._data.timeremaining_s = 0
 
+    async def soft_reset(self) -> None:
+        """Issue a soft reset command (Cloud Only)."""
+        await self.send_command(command=IntelliFireCommand.SOFT_RESET, value=1)
+
+    async def beep(self) -> None:
+        """Issue a beep command (Cloud Only)."""
+        await self.send_command(command=IntelliFireCommand.BEEP, value=1)
+
     @abstractmethod
     async def send_command(
         self,
