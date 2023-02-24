@@ -15,10 +15,11 @@ from intellifire4py.model import IntelliFirePollData
 from .const import IntelliFireCommand
 from .const import _log
 from .control import IntelliFireControlMode, IntelliFireController
+from .read import IntelliFireDataProvider
 from .utils import _range_check
 
 
-class IntelliFireAPILocal(IntelliFireController):
+class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
     """Top level API for IntelliFire Data - local network only."""
 
     _control_mode = IntelliFireControlMode.LOCAL

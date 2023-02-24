@@ -18,10 +18,11 @@ from intellifire4py.model import IntelliFirePollData
 from .const import IntelliFireCommand
 from .const import _log
 from .control import IntelliFireController, IntelliFireControlMode
+from .read import IntelliFireDataProvider
 from .utils import _range_check
 
 
-class IntelliFireAPICloud(IntelliFireController):
+class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
     """Api for cloud access."""
 
     _control_mode = IntelliFireControlMode.CLOUD

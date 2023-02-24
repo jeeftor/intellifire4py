@@ -18,7 +18,7 @@ class IntelliFireControlMode(Enum):
 
 
 class IntelliFireController(ABC):
-    """Base class to allow for the control of a fireplace."""
+    """Abstract base class to allow for the control of a fireplace."""
 
     def __init__(self, control_mode: IntelliFireControlMode):
         """Initialize the controller knowing whether its local or cloud based."""
