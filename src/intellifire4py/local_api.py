@@ -102,7 +102,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
 
         if not self._should_poll_in_background:
             self._should_poll_in_background = True
-            _log.info("!!  start_background_polling !!")
+            _log.info("!! LOCAL::start_background_polling !!")
 
             self._bg_task = asyncio.create_task(
                 self.__background_poll(minimum_wait_in_seconds),

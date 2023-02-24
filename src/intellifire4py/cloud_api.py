@@ -246,13 +246,15 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 serial = self.default_fireplace.serial
             else:
                 serial = fireplace.serial
+            _log.debug("Long Poll: Start")
             response = await client.get(
                 f"{self.prefix}://iftapi.net/a/{serial}/applongpoll"
             )
             if response.status_code == 200:
+                _log.debug("Long poll: 200 - Received data ")
                 return True
             elif response.status_code == 408:
-                _log.debug("Long Poll returned 408 - no data changed")
+                _log.debug("Long poll: 408 - No Data changed")
                 return False
             elif (
                 response.status_code == 403
@@ -334,12 +336,12 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
 
         if not self._should_poll_in_background:
             self._should_poll_in_background = True
-            _log.info("!!  start_background_polling !!")
+            _log.info("!! CLOUD::start_background_polling !!")
 
-            self._bg_task = asyncio.create_task(
-                self.__background_poll(minimum_wait_in_seconds=minimum_wait_in_seconds),
-                name="background_cloud_polling",
-            )
+        self._bg_task = asyncio.create_task(
+            self.__background_poll(minimum_wait_in_seconds=minimum_wait_in_seconds),
+            name="background_cloud_polling",
+        )
 
     def stop_background_polling(self) -> bool:
         """Stop background polling - return whether it had been polling."""
@@ -353,7 +355,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         return was_running
 
     async def __background_poll(self, minimum_wait_in_seconds: int = 10) -> None:
-        """Start a looping background longpoll task."""
+        """Start a looping cloud background longpoll task."""
         _log.debug("__background_poll:: Function Called")
         self._is_polling_in_background = True
         while self._should_poll_in_background:
