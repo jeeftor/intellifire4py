@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "intellifire4py"
-version = "3.1.4"
+version = "3.1.5"
 description = "Intellifire4Py"
 authors = ["Jeff Stein <jeffstein@gmail.com>"]
 license = "MIT"
@@ -19,7 +19,7 @@ pydantic = "^1.10.2"
 aenum = "^3.1.11"
 httpx = "^0.23.0"
 # Rich is needed
-rich = "11.0.0"
+rich = "10.16.2"
 
 
 [tool.poetry.dev-dependencies] # rich <11.0.0,>=10.1.0, but you have rich 12.6.0.
