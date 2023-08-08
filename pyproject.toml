@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "intellifire4py"
-version = "3.1.5"
+version = "3.1.6"
 description = "Intellifire4Py"
 authors = ["Jeff Stein <jeffstein@gmail.com>"]
 license = "MIT"
@@ -15,9 +15,9 @@ Changelog = "https://github.com/jeeftor/intellifire4py/releases"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-pydantic = "^1.10.2"
-aenum = "^3.1.11"
-httpx = "^0.23.0"
+pydantic = ">=1.10.2"
+aenum = ">=3.1.11"
+httpx = ">=0.23.0"
 # Rich is needed
 rich = "10.16.2"
 
