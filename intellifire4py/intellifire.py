@@ -107,7 +107,6 @@ class IntellifireAPILocal:
 
         self.is_polling_in_background = True
         while self._should_poll_in_background:
-
             start = time.time()
             _log.debug("__background_poll:: Loop start time %f", start)
 
@@ -152,7 +151,6 @@ class IntellifireAPILocal:
             _log.debug(f"--Intellifire:: Querying {url}")
             try:
                 async with session.get(url) as response:
-
                     try:
                         if response.status == 404:
                             # Valid address - but poll endpoint not found
@@ -231,10 +229,8 @@ class IntellifireAPILocal:
         api_bytes = bytes.fromhex(self._api_key)
         success = False
         while not success:
-
             # Make a client session
             async with aiohttp.ClientSession() as client:
-
                 # Await a challenge
                 challenge = None
                 while not challenge:
@@ -443,7 +439,6 @@ class IntellifireAPICloud:
                     data=data.encode(),
                     ssl=False,
                 ) as response:
-
                     if response.status != 204:
                         raise LoginException()
 

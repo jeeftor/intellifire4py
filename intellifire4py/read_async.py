@@ -26,7 +26,6 @@ class IntellifireAsync:
             _log.debug(f"--Intellifire:: Querying {url}")
             try:
                 async with session.get(url) as response:
-
                     try:
                         if response.status == 404:
                             # Valid address - but poll endpoint not found

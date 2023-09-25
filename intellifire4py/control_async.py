@@ -66,7 +66,7 @@ class IntellifireControlAsync:
         """Close socket."""
         return await self._client.close()
 
-    async def __aenter__(self) -> "Client":  # type: ignore # noqa: F821
+    async def __aenter__(self) -> Client:  # type: ignore # noqa: F821
         """Magic Enter Function."""
         # This function may not be needed at all 🤷️
         return self

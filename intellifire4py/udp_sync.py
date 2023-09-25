@@ -1,8 +1,8 @@
 """Fire finder module."""
 import json
 import time
+from collections.abc import Sequence
 from socket import AF_INET, SOCK_DGRAM, socket
-from typing import Sequence
 
 from _socket import SO_BROADCAST, SOL_SOCKET
 
