@@ -2,7 +2,7 @@
 import pytest
 from pytest_httpx import HTTPXMock
 
-from intellifire4py.cloud_api import IntelliFireAPICloud
+from src.intellifire4py.cloud_api import IntelliFireAPICloud
 
 
 @pytest.mark.asyncio

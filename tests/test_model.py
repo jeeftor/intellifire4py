@@ -2,7 +2,7 @@
 
 from pydantic import ValidationError
 
-from intellifire4py.model import IntelliFirePollData
+from src.intellifire4py.model import IntelliFirePollData
 
 
 def test_json_files(
