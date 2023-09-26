@@ -6,7 +6,6 @@ from pytest_httpx import HTTPXMock
 
 from intellifire4py.local_api import IntelliFireAPILocal
 
-
 IP = "192.168.1.1"
 # Load good poll data (should be a fixutre)
 BAD_JSON_TEXT = "abcd1234"

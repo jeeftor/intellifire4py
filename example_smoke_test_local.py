@@ -5,9 +5,9 @@ import os
 
 from rich import print
 from rich.logging import RichHandler
+from intellifire4py.local_api import IntelliFireAPILocal
 
-from intellifire4py import IntelliFireAPILocal
-from intellifire4py import UDPFireplaceFinder
+from intellifire4py.udp import UDPFireplaceFinder
 
 
 FORMAT = "%(message)s"

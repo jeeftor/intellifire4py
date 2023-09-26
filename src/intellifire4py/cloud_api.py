@@ -9,11 +9,11 @@ from asyncio import Task
 from typing import Any
 import time
 
-from intellifire4py.exceptions import ApiCallError
-from intellifire4py.exceptions import LoginError
-from intellifire4py.model import IntelliFireFireplace
-from intellifire4py.model import IntelliFireFireplaces
-from intellifire4py.model import IntelliFirePollData
+from .exceptions import ApiCallError
+from .exceptions import LoginError
+from .model import IntelliFireFireplace
+from .model import IntelliFireFireplaces
+from .model import IntelliFirePollData
 
 from .const import IntelliFireCommand, IntelliFireApiMode, _log
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from intellifire4py.model import IntelliFirePollData
+from .model import IntelliFirePollData
 
 
 class IntelliFireDataProvider(ABC):

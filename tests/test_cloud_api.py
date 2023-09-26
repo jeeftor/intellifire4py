@@ -19,7 +19,7 @@ async def test_cloud_login(
     password = "pass"  # noqa: S105
     httpx_mock.add_response(
         method="POST",
-        url="https://iftapi.net/a//login",
+        url="https://iftapi.net/a/login",
         status_code=204,
         headers=cookies,
     )

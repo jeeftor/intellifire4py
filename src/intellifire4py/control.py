@@ -2,12 +2,10 @@
 from __future__ import annotations
 
 
-from intellifire4py.const import IntelliFireCommand
+from .const import IntelliFireCommand, IntelliFireApiMode
 from abc import ABC, abstractmethod
 
-from intellifire4py.model import IntelliFirePollData
-
-from src.intellifire4py.const import IntelliFireApiMode
+from .model import IntelliFirePollData
 
 
 class IntelliFireController(ABC):

@@ -9,7 +9,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
 
-from intellifire4py import IntelliFireAPICloud
+from intellifire4py.cloud_api import IntelliFireAPICloud
 
 
 FORMAT = "%(message)s"

@@ -2,7 +2,7 @@
 from pydantic import BaseModel
 from pydantic import Field
 
-from intellifire4py.const import IntelliFireErrorCode
+from .const import IntelliFireErrorCode
 
 
 class IntelliFirePollData(BaseModel):

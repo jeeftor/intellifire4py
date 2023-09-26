@@ -1,6 +1,6 @@
 """Utility functions."""
-from intellifire4py.const import IntelliFireCommand
-from intellifire4py.exceptions import InputRangError
+from .const import IntelliFireCommand
+from .exceptions import InputRangError
 
 
 def _range_check(command: IntelliFireCommand, value: int) -> None:

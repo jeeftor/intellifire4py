@@ -27,6 +27,15 @@ repos:
     hooks:
       - id: ruff
 
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: scripts/run-in-env.sh mypy
+        language: script
+        types: [python]
+        require_serial: true
+
   # repos:
   #   - repo: local
   #     hooks:
