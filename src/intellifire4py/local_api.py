@@ -13,8 +13,8 @@ import httpx
 from intellifire4py.model import IntelliFirePollData
 
 from .const import IntelliFireCommand
-from .const import _log
-from .control import IntelliFireControlMode, IntelliFireController
+from .const import _log, IntelliFireApiMode
+from .control import IntelliFireController
 from .read import IntelliFireDataProvider
 from .utils import _range_check
 
@@ -22,7 +22,7 @@ from .utils import _range_check
 class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
     """Top level API for IntelliFire Data - local network only."""
 
-    _control_mode = IntelliFireControlMode.LOCAL
+    _control_mode = IntelliFireApiMode.LOCAL
 
     # Initialize the global vars
     failed_poll_attempts = 0
@@ -49,7 +49,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
         self._api_key = api_key
         self._user_id = user_id
         self._last_thermostat_setpoint: int = 2100
-        self.send_mode = IntelliFireControlMode.LOCAL
+        self.send_mode = IntelliFireApiMode.LOCAL
         self._is_polling_in_background = False
         self._should_poll_in_background = False
         self.is_sending = False

@@ -15,9 +15,9 @@ from intellifire4py.model import IntelliFireFireplace
 from intellifire4py.model import IntelliFireFireplaces
 from intellifire4py.model import IntelliFirePollData
 
-from .const import IntelliFireCommand
-from .const import _log
-from .control import IntelliFireController, IntelliFireControlMode
+from .const import IntelliFireCommand, IntelliFireApiMode, _log
+
+from .control import IntelliFireController
 from .read import IntelliFireDataProvider
 from .utils import _range_check
 
@@ -25,7 +25,7 @@ from .utils import _range_check
 class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
     """Api for cloud access."""
 
-    _control_mode = IntelliFireControlMode.CLOUD
+    _control_mode = IntelliFireApiMode.CLOUD
 
     def __init__(self, *, use_http: bool = False, verify_ssl: bool = True):
         """Initialize the class.

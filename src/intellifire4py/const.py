@@ -8,6 +8,13 @@ from aenum import MultiValueEnum  # type: ignore
 _log = logging.getLogger(__package__)
 
 
+class IntelliFireApiMode(Enum):
+    """API Operation Mode (Local or Cloud)."""
+
+    LOCAL = "local"
+    CLOUD = "cloud"
+
+
 class IntelliFireErrorCode(MultiValueEnum):  # type: ignore
     """The following is a description of various error codes. These were obtained by decompiling the Android APK.
 

@@ -1,26 +1,19 @@
 """IntelliFire Control Logic."""
 from __future__ import annotations
 
-from enum import Enum
-
 
 from intellifire4py.const import IntelliFireCommand
 from abc import ABC, abstractmethod
 
 from intellifire4py.model import IntelliFirePollData
 
-
-class IntelliFireControlMode(Enum):
-    """Command send mode config."""
-
-    LOCAL = "local"
-    CLOUD = "cloud"
+from src.intellifire4py.const import IntelliFireApiMode
 
 
 class IntelliFireController(ABC):
     """Abstract base class to allow for the control of a fireplace."""
 
-    def __init__(self, control_mode: IntelliFireControlMode):
+    def __init__(self, control_mode: IntelliFireApiMode):
         """Initialize the controller knowing whether its local or cloud based."""
         self._control_mode = control_mode
         self._data = IntelliFirePollData()
