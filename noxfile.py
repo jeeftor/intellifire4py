@@ -160,6 +160,10 @@ def mypy(session: Session) -> None:
 @session(python=python_versions)
 def tests(session: Session) -> None:
     """Run the test suite."""
+
+    requirements = session.poetry.export_requirements()
+    session.run("pip", "install", "-r", f"{requirements}")
+
     session.install(".")
     session.install("coverage[toml]", "pytest", "pygments")
     try:
