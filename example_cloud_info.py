@@ -18,7 +18,7 @@ logging.basicConfig(
 )
 
 
-def parse_env_file():
+def parse_env_file() -> None:
     """Parse .env file."""
     with open(".env") as f:
         for line in f:
@@ -32,7 +32,7 @@ def parse_env_file():
                 pass
 
 
-def get_creds() -> None:
+def get_creds() -> tuple[str, str]:
     """Get credentials."""
     parse_env_file()
     username = os.environ.get("IFT_USER", None)

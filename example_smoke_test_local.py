@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 
 
-def parse_env_file():
+def parse_env_file() -> None:
     """Parse .env file."""
     with open(".env") as f:
         for line in f:
@@ -34,7 +34,7 @@ def parse_env_file():
 async def main() -> None:
     """Run main function."""
     parse_env_file()
-    fireplace_ip = os.getenv("IFT_IP", None)  # type: ignore
+    fireplace_ip = os.getenv("IFT_IP", None)
     user_id = os.environ["IFT_USER_ID"]
     api_key = os.environ["IFT_API_KEY"]
 
