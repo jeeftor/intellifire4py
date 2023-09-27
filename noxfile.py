@@ -212,6 +212,9 @@ def docs_build(session: Session) -> None:
     if not session.posargs and "FORCE_COLOR" in os.environ:
         args.insert(0, "--color")
 
+    requirements = session.poetry.export_requirements()
+    session.run("pip", "install", "-r", f"{requirements}")
+
     session.install(".")
     session.install("sphinx", "sphinx-click", "furo", "myst-parser")
 
