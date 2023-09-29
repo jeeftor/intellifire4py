@@ -123,6 +123,7 @@ def precommit(session: Session) -> None:
         "black",
         "darglint",
         "flake8",
+        "mypy",
         "flake8-bandit",
         "flake8-bugbear",
         "flake8-docstrings",
