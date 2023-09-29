@@ -119,21 +119,25 @@ def precommit(session: Session) -> None:
         "--hook-stage=manual",
         "--show-diff-on-failure",
     ]
-    session.install(
-        "black",
-        "darglint",
-        "flake8",
-        "mypy",
-        "flake8-bandit",
-        "flake8-bugbear",
-        "flake8-docstrings",
-        "flake8-rst-docstrings",
-        "isort",
-        "pep8-naming",
-        "pre-commit",
-        "pre-commit-hooks",
-        "pyupgrade",
-    )
+
+    requirements = session.poetry.export_requirements()
+    session.run("pip", "install", "-r", f"{requirements}")
+
+    # session.install(
+    #     "black",
+    #     "darglint",
+    #     "flake8",
+    #     "mypy",
+    #     "flake8-bandit",
+    #     "flake8-bugbear",
+    #     "flake8-docstrings",
+    #     "flake8-rst-docstrings",
+    #     "isort",
+    #     "pep8-naming",
+    #     "pre-commit",
+    #     "pre-commit-hooks",
+    #     "pyupgrade",
+    # )
     session.run("pre-commit", *args)
     if args and args[0] == "install":
         activate_virtualenv_in_precommit_hooks(session)
