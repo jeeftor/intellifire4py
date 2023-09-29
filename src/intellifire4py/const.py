@@ -70,7 +70,7 @@ class IntelliFireErrorCode(MultiValueEnum):  # type: ignore
             return "Your appliance is currently offline."
         if self.name == "ECM_OFFLINE":
             return "ECM is offline."
-        return "Unknown Error."
+        return "Unknown Error."  # pragma: no cover
 
 
 class IntelliFireCommand(Enum):
