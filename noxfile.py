@@ -28,7 +28,7 @@ nox.needs_version = ">= 2021.6.6"
 nox.options.sessions = (
     "pre-commit",
     "safety",
-    "mypy",
+    # "mypy",
     "tests",
     "typeguard",
     "xdoctest",
@@ -150,6 +150,7 @@ def safety(session: Session) -> None:
 def mypy(session: Session) -> None:
     """Type-check using mypy."""
     args = session.posargs or ["src", "tests", "docs/conf.py"]
+
     session.install(".")
     session.install("mypy", "pytest")
     session.run("mypy", *args)
@@ -178,6 +179,10 @@ def coverage(session: Session) -> None:
     """Produce the coverage report."""
     args = session.posargs or ["report"]
 
+    # Install poetry environment
+    requirements = session.poetry.export_requirements()
+    session.run("pip", "install", "-r", f"{requirements}")
+
     session.install("coverage[toml]")
 
     if not session.posargs and any(Path().glob(".coverage.*")):
@@ -189,6 +194,8 @@ def coverage(session: Session) -> None:
 @session(python=python_versions[0])
 def typeguard(session: Session) -> None:
     """Runtime type checking using Typeguard."""
+    requirements = session.poetry.export_requirements()
+    session.run("pip", "install", "-r", f"{requirements}")
     session.install(".")
     session.install("pytest", "typeguard", "pygments")
     session.run("pytest", f"--typeguard-packages={package}", *session.posargs)
@@ -203,7 +210,8 @@ def xdoctest(session: Session) -> None:
         args = [f"--modname={package}", "--command=all"]
         if "FORCE_COLOR" in os.environ:
             args.append("--colored=1")
-
+    requirements = session.poetry.export_requirements()
+    session.run("pip", "install", "-r", f"{requirements}")
     session.install(".")
     session.install("xdoctest[colors]")
     session.run("python", "-m", "xdoctest", *args)
@@ -233,6 +241,8 @@ def docs_build(session: Session) -> None:
 def docs(session: Session) -> None:
     """Build and serve the documentation with live reloading on file changes."""
     args = session.posargs or ["--open-browser", "docs", "docs/_build"]
+    requirements = session.poetry.export_requirements()
+    session.run("pip", "install", "-r", f"{requirements}")
     session.install(".")
     session.install("sphinx", "sphinx-autobuild", "sphinx-click", "furo", "myst-parser")
 

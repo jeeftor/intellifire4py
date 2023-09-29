@@ -246,15 +246,15 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 serial = self.default_fireplace.serial
             else:
                 serial = fireplace.serial
-            _log.debug("Long Poll: Start")
+            _log.debug("CLOUD::Long Poll: Start")
             response = await client.get(
                 f"{self.prefix}://iftapi.net/a/{serial}/applongpoll"
             )
             if response.status_code == 200:
-                _log.debug("Long poll: 200 - Received data ")
+                _log.debug("CLOUD::Long poll: 200 - Received data ")
                 return True
             elif response.status_code == 408:
-                _log.debug("Long poll: 408 - No Data changed")
+                _log.debug("CLOUD::Long poll: 408 - No Data changed")
                 return False
             elif (
                 response.status_code == 403

@@ -216,7 +216,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
             )
             return
 
-        was_running = self.stop_background_polling()
+        was_running = await self.stop_background_polling()
         _log.debug(
             "send_command:: Stopped background task which was running? [%s]",
             was_running,
