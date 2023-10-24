@@ -88,7 +88,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
     def data(self) -> IntelliFirePollData:
         """Return data to the user."""
         if self._data.serial == "unset":
-            self._log.warning("LOCAL::Returning uninitialized poll data")
+            self._log.warning("Returning uninitialized poll data")
         return self._data
 
     @property
@@ -106,7 +106,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
 
         if not self._should_poll_in_background:
             self._should_poll_in_background = True
-            self._log.info("!! LOCAL::start_background_polling !!")
+            self._log.info("!! start_background_polling !!")
 
             self._bg_task = asyncio.create_task(
                 self.__background_poll(minimum_wait_in_seconds),
@@ -127,14 +127,14 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
 
     async def __background_poll(self, minimum_wait_in_seconds: int = 10) -> None:
         """Perform a polling loop."""
-        self._log.debug("LOCAL::__background_poll:: Function Called")
+        self._log.debug("__background_poll:: Function Called")
 
         self.failed_poll_attempts = 0
 
         self._is_polling_in_background = True
         while self._should_poll_in_background:
             start = time.time()
-            self._log.debug("LOCAL::__background_poll:: Loop start time %f", start)
+            self._log.debug("__background_poll:: Loop start time %f", start)
 
             try:
                 await self.poll()
@@ -145,19 +145,19 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 sleep_time: float = minimum_wait_in_seconds - duration
 
                 self._log.debug(
-                    "LOCAL::__background_poll:: [%f] Sleeping for [%fs]",
+                    "__background_poll:: [%f] Sleeping for [%fs]",
                     duration,
                     sleep_time,
                 )
 
                 self._log.debug(
-                    "LOCAL::__background_poll:: duration: %f, %f, %.2fs",
+                    "__background_poll:: duration: %f, %f, %.2fs",
                     start,
                     end,
                     (end - start),
                 )
                 self._log.debug(
-                    "LOCAL::__background_poll:: Should Sleep For: %f",
+                    "__background_poll:: Should Sleep For: %f",
                     (minimum_wait_in_seconds - (end - start)),
                 )
 
@@ -165,12 +165,12 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
             except httpx.ReadTimeout:
                 self.failed_poll_attempts += 1
                 self._log.info(
-                    "LOCAL::__background_poll:: Polling error [x%d]",
+                    "__background_poll:: Polling error [x%d]",
                     self.failed_poll_attempts,
                 )
 
         self._is_polling_in_background = False
-        self._log.info("LOCAL::__background_poll:: Background polling disabled.")
+        self._log.info("__background_poll:: Background polling disabled.")
 
     async def poll(self, suppress_warnings: bool = False) -> None:
         """Read the /poll endpoint.
