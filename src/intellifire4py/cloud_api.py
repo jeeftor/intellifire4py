@@ -273,6 +273,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             response = await client.get(
                 f"{self.prefix}://iftapi.net/a/{serial}/applongpoll"
             )
+            self._log.debug("Long Poll Status Code %d", response.status_code)
             if response.status_code == 200:
                 self._log.debug("Long poll: 200 - Received data ")
                 return True
@@ -391,6 +392,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
 
             try:
                 new_data = await self.long_poll()
+
                 if new_data:
                     self._log.debug(self.data)
 
