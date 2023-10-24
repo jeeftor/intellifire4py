@@ -326,6 +326,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             )
             if response.status_code == 200:
                 json_data = response.json()
+                self._log.debug(response.text)
                 self._data: IntelliFirePollData = IntelliFirePollData(**json_data)
 
             elif (
