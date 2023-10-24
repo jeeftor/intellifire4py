@@ -7,13 +7,14 @@ from asyncio import Task
 from hashlib import sha256
 from json import JSONDecodeError
 from typing import Any
+import logging
 
 import httpx
 
 from intellifire4py.model import IntelliFirePollData
 
 from .const import IntelliFireCommand
-from .const import _log, IntelliFireApiMode
+from .const import IntelliFireApiMode
 from .control import IntelliFireController
 from .read import IntelliFireDataProvider
 from .utils import _range_check
@@ -44,6 +45,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
         """
         super(IntelliFireController, self).__init__()
         super(IntelliFireDataProvider, self).__init__()
+        self._log = logging.getLogger(__name__)
 
         self.fireplace_ip = fireplace_ip
         self._api_key = api_key
@@ -58,19 +60,19 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
         self._bg_task: Task[Any] | None = None
 
         if user_id == "":
-            _log.warning(
+            self._log.warning(
                 "Instantiating IntelliFireAPILocal without 'user_id' parameter will inhibit the ability to "
                 "control the device. "
             )
         if api_key == "":
-            _log.warning(
+            self._log.warning(
                 "Instantiating IntelliFireAPILocal without 'api_key' parameter will inhibit the ability to "
                 "control the device. "
             )
 
     def log_status(self) -> None:
         """Log a status message."""
-        _log.info(
+        self._log.info(
             "\tIntelliFireAPILocal Status\n\tis_sending\t[%s]\n\tfailed_polls\t[%d]\n\tBG_Running\t[%s]\n\tBG_ShouldRun\t[%s]",
             self.is_sending,
             self.failed_poll_attempts,
@@ -86,7 +88,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
     def data(self) -> IntelliFirePollData:
         """Return data to the user."""
         if self._data.serial == "unset":
-            _log.warning("Returning uninitialized poll data")
+            self._log.warning("LOCAL::Returning uninitialized poll data")
         return self._data
 
     @property
@@ -97,12 +99,14 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
     async def start_background_polling(self, minimum_wait_in_seconds: int = 15) -> None:
         """Start an ensure-future background polling loop."""
         if self.is_sending:
-            _log.info("!! Suppressing start_background_polling -- sending mode engaged")
+            self._log.info(
+                "!! Suppressing start_background_polling -- sending mode engaged"
+            )
             return
 
         if not self._should_poll_in_background:
             self._should_poll_in_background = True
-            _log.info("!! LOCAL::start_background_polling !!")
+            self._log.info("!! LOCAL::start_background_polling !!")
 
             self._bg_task = asyncio.create_task(
                 self.__background_poll(minimum_wait_in_seconds),
@@ -117,20 +121,20 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
             if not self._bg_task.cancelled():
                 was_running = True
                 self._bg_task.cancel()
-                _log.info("Stopping background task to issue a command")
+                self._log.info("Stopping background task to issue a command")
 
         return was_running
 
     async def __background_poll(self, minimum_wait_in_seconds: int = 10) -> None:
         """Perform a polling loop."""
-        _log.debug("LOCAL::__background_poll:: Function Called")
+        self._log.debug("LOCAL::__background_poll:: Function Called")
 
         self.failed_poll_attempts = 0
 
         self._is_polling_in_background = True
         while self._should_poll_in_background:
             start = time.time()
-            _log.debug("LOCAL::__background_poll:: Loop start time %f", start)
+            self._log.debug("LOCAL::__background_poll:: Loop start time %f", start)
 
             try:
                 await self.poll()
@@ -140,19 +144,19 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 duration: float = end - start
                 sleep_time: float = minimum_wait_in_seconds - duration
 
-                _log.debug(
+                self._log.debug(
                     "LOCAL::__background_poll:: [%f] Sleeping for [%fs]",
                     duration,
                     sleep_time,
                 )
 
-                _log.debug(
+                self._log.debug(
                     "LOCAL::__background_poll:: duration: %f, %f, %.2fs",
                     start,
                     end,
                     (end - start),
                 )
-                _log.debug(
+                self._log.debug(
                     "LOCAL::__background_poll:: Should Sleep For: %f",
                     (minimum_wait_in_seconds - (end - start)),
                 )
@@ -160,13 +164,13 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 await asyncio.sleep(minimum_wait_in_seconds - (end - start))
             except httpx.ReadTimeout:
                 self.failed_poll_attempts += 1
-                _log.info(
+                self._log.info(
                     "LOCAL::__background_poll:: Polling error [x%d]",
                     self.failed_poll_attempts,
                 )
 
         self._is_polling_in_background = False
-        _log.info("LOCAL::__background_poll:: Background polling disabled.")
+        self._log.info("LOCAL::__background_poll:: Background polling disabled.")
 
     async def poll(self, suppress_warnings: bool = False) -> None:
         """Read the /poll endpoint.
@@ -178,26 +182,28 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
             ConnectionError: _description_
         """
         url = f"http://{self.fireplace_ip}/poll"
-        _log.debug(f"--IntelliFire:: Querying {url}")
+        self._log.debug(f"--IntelliFire:: Querying {url}")
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(url)
                 if response.status_code == 404:
                     if not suppress_warnings:
                         # During DHCP Auto discovery may want to suppress error messages
-                        _log.warning("--IntelliFire:: Error accessing %s - 404", url)
+                        self._log.warning(
+                            "--IntelliFire:: Error accessing %s - 404", url
+                        )
                     raise ConnectionError("Fireplace Endpoint Not Found - 404")
                 try:
                     json_data = response.json()
                     self._data = IntelliFirePollData(**json_data)
                 except JSONDecodeError:
                     if not suppress_warnings:
-                        _log.warning("Error decoding JSON: [%s]", response.text)
+                        self._log.warning("Error decoding JSON: [%s]", response.text)
                 except httpx.ReadTimeout:
                     if not suppress_warnings:
-                        _log.warning("Timeout error on polling")
+                        self._log.warning("Timeout error on polling")
         except httpx.ReadTimeout:
-            _log.warning(f"Timeout on reading {url}")
+            self._log.warning(f"Timeout on reading {url}")
 
     async def send_command(
         self,
@@ -209,7 +215,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
         _range_check(command, value)
 
         if self._needs_login():
-            _log.warning(
+            self._log.warning(
                 "Unable to control fireplace with command [%s=%s] Both `api_key` and `user_id` fields must be set.",
                 command.name,
                 value,
@@ -217,7 +223,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
             return
 
         was_running = await self.stop_background_polling()
-        _log.debug(
+        self._log.debug(
             "send_command:: Stopped background task which was running? [%s]",
             was_running,
         )
@@ -226,7 +232,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
 
         if was_running:
             await self.start_background_polling()
-            _log.info("send_command:: Restarting background polling")
+            self._log.info("send_command:: Restarting background polling")
 
     def _construct_payload(self, command: str, value: int, challenge: str) -> str:
         """Construct a payload."""
@@ -280,7 +286,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 try:
                     while (time.time() - challenge_time) < 5 and not success:
                         # There is a 10 second timeout on the challenge response - we'll try for 5
-                        _log.info(
+                        self._log.info(
                             "_send_local_command:: -- Attempting command via post %d [%s]",
                             (time.time() - challenge_time),
                             challenge,
@@ -294,40 +300,40 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                             },
                             timeout=1.0,
                         )
-                        _log.debug(
+                        self._log.debug(
                             "_send_local_command:: Sending Local IntelliFire command: [%s=%s]",
                             command.value["local_command"],
                             value,
                         )
                         if resp.status_code == 403:
-                            _log.warning(
+                            self._log.warning(
                                 f"_send_local_command:: : 403 Error - Invalid challenge code (it may have expired): {url}{data}"
                             )
                         if resp.status_code == 404:
-                            _log.warning(
+                            self._log.warning(
                                 f"_send_local_command:: Failed to post: {url}{data}"
                             )
                         if resp.status_code == 422:
-                            _log.warning(
+                            self._log.warning(
                                 f"_send_local_command:: 422 Code on: {url}{data}"
                             )
                         success = True
-                        _log.debug(
+                        self._log.debug(
                             "_send_local_command:: Response Code [%d]", resp.status_code
                         )
                 # except ClientResponseError:
-                #     _log.debug(
+                #     self._log.debug(
                 #         "_send_local_command: 403 Error - Invalid challenge code (it may have expired) "
                 #     )
                 #     continue
                 except httpx.ReadTimeout as error:
-                    _log.warning("Control Endpoint Timeout Error %s", error)
+                    self._log.warning("Control Endpoint Timeout Error %s", error)
                     continue
                 except Exception as error:
-                    _log.error("Unhandled exception %s", error)
-                    _log.error(error)
+                    self._log.error("Unhandled exception %s", error)
+                    self._log.error(error)
 
-            _log.debug(  # type: ignore
+            self._log.debug(  # type: ignore
                 "_send_local_command:: SUCCESS!! - IntelliFire Command Sent [%s=%s]",
                 command.value["local_command"],
                 value,
@@ -344,24 +350,24 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
             )
             text = response.text
             # text = str(await response.text)
-            _log.info("Received Challenge %s", text)
+            self._log.info("Received Challenge %s", text)
             return text
         except httpx.ConnectError:
             end = time.time()
-            _log.error(
+            self._log.error(
                 "time[%.2f] get_challenge returned ClientConnectError",
                 (end - start),
             )
             pass
         except (httpx.ReadTimeout, TimeoutError, asyncio.exceptions.TimeoutError):
             end = time.time()
-            _log.warning(
+            self._log.warning(
                 "time[%.2f] get_challenge returned TimeoutError", (end - start)
             )
             pass
         except Exception as error:
             end = time.time()
-            _log.error(
+            self._log.error(
                 "time[%.2f] get_challenge returned exception [%s]",
                 (end - start),
                 str(type(error)),

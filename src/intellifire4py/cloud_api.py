@@ -15,11 +15,12 @@ from .model import IntelliFireFireplace
 from .model import IntelliFireFireplaces
 from .model import IntelliFirePollData
 
-from .const import IntelliFireCommand, IntelliFireApiMode, _log
+from .const import IntelliFireCommand, IntelliFireApiMode
 
 from .control import IntelliFireController
 from .read import IntelliFireDataProvider
 from .utils import _range_check
+import logging
 
 
 class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
@@ -38,6 +39,9 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         """
         super(IntelliFireController, self).__init__()
         super(IntelliFireDataProvider, self).__init__()
+
+        self._log = logging.getLogger(__name__)
+
         self._cookie: Cookies = Cookies()
         self._is_logged_in = False
         self.default_fireplace: IntelliFireFireplace
@@ -56,7 +60,9 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         if (
             self._data.ipv4_address == "127.0.0.1"
         ):  # pragma: no cover - the tests SHOULD be hitting this but dont appear to be
-            _log.warning("Returning uninitialized poll data")  # pragma: no cover
+            self._log.warning(
+                "CLOUD::Returning uninitialized poll data"
+            )  # pragma: no cover
         return self._data
 
     @property
@@ -90,15 +96,15 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                     raise LoginError()
 
                 self._cookie = response.cookies
-                _log.debug(response.cookies)
+                self._log.debug(response.cookies)
                 self._is_logged_in = True
-                _log.info("Success - Logged into IFTAPI")
+                self._log.info("Success - Logged into IFTAPI")
 
                 # Now set the default fireplace
                 await self._set_default_fireplace(client)
 
             except LoginError as ex:
-                _log.warning("Login failure")
+                self._log.warning("Login failure")
                 raise ex
             return None
 
@@ -113,7 +119,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             client=client, location_id=locations[0]["location_id"]
         )
         self.default_fireplace = fireplaces[0]
-        _log.debug(f"configure default fireplace: {self.default_fireplace.serial}")
+        self._log.debug(f"configure default fireplace: {self.default_fireplace.serial}")
 
     async def get_locations(self, client: httpx.AsyncClient) -> list[dict[str, str]]:
         """Enumerate configured locations that a user has access to.
@@ -136,7 +142,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             url=f"{self.prefix}://iftapi.net/a/enumfireplaces?location_id={location_id}"
         )
         json_data = response.json()
-        _log.debug(json_data)
+        self._log.debug(json_data)
         return IntelliFireFireplaces(**json_data).fireplaces
 
     async def _login_check(self) -> None:
@@ -167,7 +173,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         _range_check(command, value)
 
         if not self._is_logged_in:
-            _log.warning(
+            self._log.warning(
                 "Unable to control fireplace with command [%s=%s] Both `api_key` and `user_id` fields must be set.",
                 command.name,
                 value,
@@ -248,15 +254,15 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 serial = self.default_fireplace.serial
             else:
                 serial = fireplace.serial
-            _log.debug("CLOUD::Long Poll: Start")
+            self._log.debug("CLOUD::Long Poll: Start")
             response = await client.get(
                 f"{self.prefix}://iftapi.net/a/{serial}/applongpoll"
             )
             if response.status_code == 200:
-                _log.debug("CLOUD::Long poll: 200 - Received data ")
+                self._log.debug("CLOUD::Long poll: 200 - Received data ")
                 return True
             elif response.status_code == 408:
-                _log.debug("CLOUD::Long poll: 408 - No Data changed")
+                self._log.debug("CLOUD::Long poll: 408 - No Data changed")
                 return False
             elif (
                 response.status_code == 403
@@ -338,7 +344,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
 
         if not self._should_poll_in_background:
             self._should_poll_in_background = True
-            _log.info("!! CLOUD::start_background_polling !!")
+            self._log.info("!! CLOUD::start_background_polling !!")
 
             # Do an initial poll to set data first
             await self.poll()
@@ -356,31 +362,31 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             if not self._bg_task.cancelled():
                 was_running = True
                 self._bg_task.cancel()
-                _log.info("Stopping background task to issue a command")
+                self._log.info("Stopping background task to issue a command")
         return was_running
 
     async def __background_poll(self, minimum_wait_in_seconds: int = 10) -> None:
         """Start a looping cloud background longpoll task."""
-        _log.debug("CLOUD::__background_poll:: Function Called")
+        self._log.debug("CLOUD::__background_poll:: Function Called")
         self._is_polling_in_background = True
         while self._should_poll_in_background:
             start = time.time()
-            _log.debug("CLOUD::__background_poll:: Loop start time %f", start)
+            self._log.debug("CLOUD::__background_poll:: Loop start time %f", start)
 
             try:
                 new_data = await self.long_poll()
                 if new_data:
-                    _log.debug(self.data)
+                    self._log.debug(self.data)
 
                 end = time.time()
                 duration: float = end - start
                 sleep_time: float = minimum_wait_in_seconds - duration
-                _log.debug(
+                self._log.debug(
                     "CLOUD::__background_poll:: [%f] Sleeping for [%fs]",
                     duration,
                     sleep_time,
                 )
-                _log.debug(
+                self._log.debug(
                     "CLOUD::__background_poll:: duration: %f, %f, %.2fs",
                     start,
                     end,
@@ -388,6 +394,6 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 )
                 await asyncio.sleep(minimum_wait_in_seconds - (end - start))
             except Exception as ex:
-                _log.error(ex)
+                self._log.error(ex)
         self._is_polling_in_background = False
-        _log.info("CLOUD::__background_poll:: Background polling disabled.")
+        self._log.info("CLOUD::__background_poll:: Background polling disabled.")
