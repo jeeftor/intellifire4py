@@ -97,6 +97,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 self._log.debug(response.cookies)
                 self._is_logged_in = True
                 self._log.info("Success - Logged into IFTAPI")
+                self._log.debug("Cookie Info: %S", self._cookie)
 
                 # Now set the default fireplace
                 await self._set_default_fireplace(client)
