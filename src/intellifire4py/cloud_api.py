@@ -194,10 +194,12 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 serial = fireplace.serial
 
             # Construct body
+            url = f"{self.prefix}://iftapi.net/a/{serial}/apppost"
             content = f"{command.value['cloud_command']}={value}".encode()
-            response = await client.post(
-                f"{self.prefix}://iftapi.net/a/{serial}/apppost", content=content
-            )
+            response = await client.post(url, content=content)
+
+            log_msg = f"POST {url} [{content.decode()}]"
+            self._log.debug(log_msg)
             """
             204 Success – command accepted
             403 Not authorized (bad email address or authorization cookie)
