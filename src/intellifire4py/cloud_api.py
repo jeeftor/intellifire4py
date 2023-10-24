@@ -382,7 +382,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 self._log.info("Stopping background task to issue a command")
         return was_running
 
-    async def __background_poll(self, minimum_wait_in_seconds: int = 10) -> None:
+    async def __background_poll(self, minimum_wait_in_seconds: int = 15) -> None:
         """Start a looping cloud background longpoll task."""
         self._log.debug("__background_poll:: Function Called")
         self._is_polling_in_background = True
@@ -391,11 +391,13 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             self._log.debug("__background_poll:: Loop start time %f", start)
 
             try:
-                new_data = await self.long_poll()
-
-                if new_data:
-                    self._log.debug(self.data)
-
+                #     new_data = await self.long_poll()
+                #
+                #     if new_data:
+                #         self._log.debug(self.data)
+                #
+                # Long poll didn't seem to be working so switched to normal polling again
+                await self.poll()
                 end = time.time()
                 duration: float = end - start
                 sleep_time: float = minimum_wait_in_seconds - duration
