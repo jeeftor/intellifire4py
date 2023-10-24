@@ -198,7 +198,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             content = f"{command.value['cloud_command']}={value}".encode()
             response = await client.post(url, content=content)
 
-            log_msg = f"POST {url} [{content.decode()}]"
+            log_msg = f"POST {url} [{content.decode()}]  [{self._cookie}]"
             self._log.debug(log_msg)
             """
             204 Success – command accepted
