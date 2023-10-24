@@ -196,7 +196,21 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             # Construct body
             url = f"{self.prefix}://iftapi.net/a/{serial}/apppost"
             content = f"{command.value['cloud_command']}={value}".encode()
-            response = await client.post(url, content=content)
+            response = await client.post(url, content=content, cookies=self._cookie)
+
+            # Log request details
+            req = response.request
+
+            headers = " ".join([f"-H '{k}: {v}'" for k, v in req.headers.items()])
+            cookies = " ".join(
+                [f"-b '{k}={v}'" for k, v in response.cookies.items()]
+            )  # assuming httpx supports this in the future version
+            data = f"--data '{req.content.decode()}'"
+            curl_cmd = f"curl -X {req.method} {headers} {cookies} {data} {req.url}"
+            self._log.debug(f"Generated curl command: {curl_cmd}")
+
+            log_msg = f"POST {url} [{content.decode()}]  [{self._cookie}]"
+            self._log.debug(log_msg)
 
             log_msg = f"POST {url} [{content.decode()}]  [{self._cookie}]"
             self._log.debug(log_msg)
