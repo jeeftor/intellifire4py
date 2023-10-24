@@ -195,7 +195,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 serial = fireplace.serial
 
             # Construct body
-            url = f"{self.prefix}://iftapi.net/a/{serial}/apppost"
+            url = f"{self.prefix}://iftapi.net/a/{serial}//apppost"
             content = f"{command.value['cloud_command']}={value}".encode()
             response = await client.post(url, content=content, cookies=self._cookie)
 
