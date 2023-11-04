@@ -339,9 +339,13 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 serial = self.default_fireplace.serial
             else:
                 serial = fireplace.serial
-            response = await client.get(
-                f"{self.prefix}://iftapi.net/a/{serial}//apppoll"
-            )
+
+            poll_url = f"{self.prefix}://iftapi.net/a/{serial}//apppoll"
+
+            self._log.debug(f"Poll Url: {poll_url}")
+            self._log.debug(f"Poll Cookies: {self._cookie}")
+
+            response = await client.get(poll_url)
             if response.status_code == 200:
                 json_data = response.json()
                 self._log.debug(response.text)
