@@ -29,6 +29,12 @@ def enum_fireplaces_json() -> str:
 
 
 @pytest.fixture
+def cloud_poll_json() -> str:
+    """Define a fixture to hold response data."""
+    return open(f"{os.path.dirname(__file__)}/fixtures/cloud_poll.json").read()
+
+
+@pytest.fixture
 def user_id() -> str:
     """Return mock user id."""
     return "XXXXE5DA5C74BD88ED1BC00716791092DE495232B69B4631CD79F90ADC10580E"

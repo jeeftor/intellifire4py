@@ -12,6 +12,7 @@ class IntelliFireDataProvider(ABC):
     def __init__(self) -> None:
         """Define simple initializer."""
         self._data = IntelliFirePollData()
+        pass
 
     @property
     @abstractmethod

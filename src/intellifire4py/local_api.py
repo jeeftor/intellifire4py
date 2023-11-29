@@ -11,7 +11,9 @@ import logging
 
 import httpx
 
-from intellifire4py.model import IntelliFirePollData
+from intellifire4py.model import (
+    IntelliFirePollData,
+)
 
 from .const import IntelliFireCommand
 from .const import IntelliFireApiMode

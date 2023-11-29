@@ -9,10 +9,12 @@ from asyncio import Task
 from typing import Any
 import time
 
+
 from .exceptions import ApiCallError
-from .exceptions import LoginError
-from .model import IntelliFireFireplace
-from .model import IntelliFireFireplaces
+from .model import (
+    IntelliFireFireplaceCloud,
+    IntelliFireUserData,
+)
 from .model import IntelliFirePollData
 
 from .const import IntelliFireCommand, IntelliFireApiMode
@@ -28,23 +30,47 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
 
     _control_mode = IntelliFireApiMode.CLOUD
 
-    def __init__(self, *, use_http: bool = False, verify_ssl: bool = True):
-        """Initialize the class.
+    def __init__(
+        self,
+        *,
+        serial: str,
+        use_http: bool = False,
+        verify_ssl: bool = True,
+        cookies: Cookies,
+    ):
+        """Initialize the class with specific configuration for fireplace communication.
 
-        In most cases you should not specify either the `use_http` or `verify_ssl` parameters - however in some special cases such as protected networks you may need these options.
+        This constructor sets up the class with necessary details for interacting with a fireplace.
+        It allows for configuring the communication protocol (HTTP/HTTPS) and SSL verification based
+        on the network environment and security requirements. The `use_http` and `verify_ssl` parameters
+        are optional and should be modified only in special cases, such as operating within protected networks
+        or environments with specific security protocols.
 
         Args:
-            use_http (bool, optional): whether to use HTTP or HTTPS mode. Defaults to False.
-            verify_ssl (bool, optional): Enable/Disable SSL Verification. Defaults to True.
+            serial (str): Serial number of the fireplace. This is a mandatory parameter used to uniquely
+                          identify the fireplace.
+            use_http (bool, optional): Whether to use HTTP or HTTPS for communication. Defaults to False,
+                          indicating HTTPS is used by default. Set to True to switch to HTTP.
+            verify_ssl (bool, optional): Enable or disable SSL certificate verification. Defaults to True,
+                          indicating that SSL verification is enabled by default. Set to False to disable
+                          verification, which may be necessary in certain network environments with
+                          self-signed certificates or lack of SSL support.
+            cookies (Cookies): A `Cookies` object containing authentication or session cookies required for
+                          communicating with the fireplace. This is essential for maintaining a secure and
+                          authenticated session.
+
+        Note:
+            Modifying `use_http` and `verify_ssl` from their default values should be done with caution, as
+            it can affect the security and reliability of the communication with the fireplace.
         """
         super(IntelliFireController, self).__init__()
         super(IntelliFireDataProvider, self).__init__()
 
+        self._serial = serial
         self._log = logging.getLogger(__name__)
 
-        self._cookie: Cookies = Cookies()
-        self._is_logged_in = False
-        self.default_fireplace: IntelliFireFireplace
+        self._cookie = cookies
+
         if use_http:
             self.prefix = "http"  # pragma: no cover
         else:
@@ -54,8 +80,13 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         self._should_poll_in_background = False
         self._bg_task: Task[Any] | None = None
 
-    @property
-    def data(self) -> IntelliFirePollData:
+        # Data is organized by Fireplace Serial Number
+        self._data: IntelliFirePollData = IntelliFirePollData()
+
+        # Full data set on the user
+        self._user_data: IntelliFireUserData = IntelliFireUserData()
+
+    def get_data(self) -> IntelliFirePollData:
         """Return data to the user."""
         if (
             self._data.ipv4_address == "127.0.0.1"
@@ -68,110 +99,11 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         """Return whether api is polling."""
         return self._is_polling_in_background
 
-    async def login(self, *, username: str, password: str) -> None:
-        """Login to Cloud API.
-
-        Args:
-            username (str): IFTAPI.net Username (usually email)
-            password (str): IFTAPI.net Password
-
-        Raises:
-            LoginError: _description_
-
-        Returns:
-            None
-
-        """
-        data = {"username": username, "password": password}
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(
-                    f"{self.prefix}://iftapi.net/a/login",
-                    data=data,  # .encode(),
-                )
-
-                if response.status_code != 204:
-                    raise LoginError()
-
-                self._cookie = response.cookies
-                self._log.debug(response.cookies)
-                self._is_logged_in = True
-                self._log.info("Success - Logged into IFTAPI")
-                self._log.debug("Cookie Info: %S", self._cookie)
-
-                # Now set the default fireplace
-                await self._set_default_fireplace(client)
-
-            except LoginError as ex:
-                self._log.warning("Login failure")
-                raise ex
-            return None
-
-    async def _set_default_fireplace(self, client: httpx.AsyncClient) -> None:
-        """Set default_fireplace value assuming 1 fireplace and 1 location.
-
-        This function will call get_locations and get_fireplaces in order to preset the default fireplace value.
-        This will probably cover most home installs where people only have a single IFT fireplace.
-        """
-        locations = await self.get_locations(client=client)
-        fireplaces = await self.get_fireplaces(
-            client=client, location_id=locations[0]["location_id"]
-        )
-        self.default_fireplace = fireplaces[0]
-        self._log.debug(f"configure default fireplace: {self.default_fireplace.serial}")
-
-    async def get_locations(self, client: httpx.AsyncClient) -> list[dict[str, str]]:
-        """Enumerate configured locations that a user has access to.
-
-        'location_id' can be used to discovery fireplaces
-        and associated serial numbers + api keys at a give location.
-        """
-        await self._login_check()
-        response = await client.get(url=f"{self.prefix}://iftapi.net/a/enumlocations")
-        json_data = response.json()
-        locations: list[dict[str, str]] = json_data["locations"]
-        return locations
-
-    async def get_fireplaces(
-        self, client: httpx.AsyncClient, *, location_id: str
-    ) -> list[IntelliFireFireplace]:
-        """Get fireplaces at a location with associated API keys!."""
-        await self._login_check()
-        response = await client.get(
-            url=f"{self.prefix}://iftapi.net/a/enumfireplaces?location_id={location_id}"
-        )
-        json_data = response.json()
-        self._log.debug(json_data)
-        return IntelliFireFireplaces(**json_data).fireplaces
-
-    async def _login_check(self) -> None:
-        """Check if user is logged in."""
-        if not self._is_logged_in:
-            raise LoginError("Not Logged In")
-
-    def get_user_id(self) -> str:
-        """Get user ID from cloud."""
-        user_id = str(self._cookie.get("user"))
-        return user_id
-
-    def get_fireplace_api_key(
-        self, fireplace: IntelliFireFireplace | None = None
-    ) -> str:
-        """Get API key for specific fireplace."""
-        if not fireplace:
-            return self.default_fireplace.apikey
-        return fireplace.apikey
-
-    async def send_command(
-        self,
-        *,
-        command: IntelliFireCommand,
-        value: int,
-    ) -> None:
+    async def send_command(self, *, command: IntelliFireCommand, value: int) -> None:
         """Send a command (cloud based)."""
         _range_check(command, value)
 
-        if not self._is_logged_in:
+        if not self._cookie:
             self._log.warning(
                 "Unable to control fireplace with command [%s=%s] Both `api_key` and `user_id` fields must be set.",
                 command.name,
@@ -183,19 +115,13 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
 
     async def _send_cloud_command(
         self,
-        fireplace: IntelliFireFireplace | None = None,
         *,
         command: IntelliFireCommand,
         value: int,
     ) -> None:
         async with httpx.AsyncClient(cookies=self._cookie) as client:
-            if not fireplace:
-                serial = self.default_fireplace.serial
-            else:
-                serial = fireplace.serial
-
             # Construct body
-            url = f"{self.prefix}://iftapi.net/a/{serial}//apppost"
+            url = f"{self.prefix}://iftapi.net/a/{self._serial}//apppost"
             content = f"{command.value['cloud_command']}={value}".encode()
             response = await client.post(url, content=content, cookies=self._cookie)
 
@@ -209,9 +135,6 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             data = f"--data '{req.content.decode()}'"
             curl_cmd = f"curl -X {req.method} {headers} {cookies} {data} {req.url}"
             self._log.debug(f"Generated curl command: {curl_cmd}")
-
-            log_msg = f"POST {url} [{content.decode()}]  [{self._cookie}]"
-            self._log.debug(log_msg)
 
             log_msg = f"POST {url} [{content.decode()}]  [{self._cookie}]"
             self._log.debug(log_msg)
@@ -236,7 +159,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             else:
                 raise Exception("Unexpected return code")
 
-    async def long_poll(self, fireplace: IntelliFireFireplace | None = None) -> bool:
+    async def long_poll(self, fireplace: IntelliFireFireplaceCloud) -> bool:
         """Perform a LongPoll to wait for a Status update.
 
         Only returns a status update when the fireplace’s status actually changes (excluding normal periodic
@@ -263,15 +186,10 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             bool: `True` if status changed, `False` if it did not
         """
 
-        await self._login_check()
         async with httpx.AsyncClient(cookies=self._cookie, timeout=61) as client:
-            if not fireplace:
-                serial = self.default_fireplace.serial
-            else:
-                serial = fireplace.serial
             self._log.debug("Long Poll: Start")
             response = await client.get(
-                f"{self.prefix}://iftapi.net/a/{serial}/applongpoll"
+                f"{self.prefix}://iftapi.net/a/{self._serial}/applongpoll"
             )
             self._log.debug("Long Poll Status Code %d", response.status_code)
             if response.status_code == 200:
@@ -289,7 +207,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             else:
                 raise Exception("Unexpected return code")
 
-    async def poll(self, fireplace: IntelliFireFireplace | None = None) -> None:
+    async def poll(self) -> None:
         """Return a fireplace’s status in JSON.
 
         Args:
@@ -333,12 +251,8 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             }
 
         """
-        await self._login_check()
         async with httpx.AsyncClient(cookies=self._cookie) as client:
-            if not fireplace:
-                serial = self.default_fireplace.serial
-            else:
-                serial = fireplace.serial
+            serial = self._serial
 
             poll_url = f"{self.prefix}://iftapi.net/a/{serial}//apppoll"
 
@@ -349,7 +263,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             if response.status_code == 200:
                 json_data = response.json()
                 self._log.debug(response.text)
-                self._data: IntelliFirePollData = IntelliFirePollData(**json_data)
+                self._data = IntelliFirePollData(**json_data)
 
             elif (
                 response.status_code == 403
@@ -401,7 +315,9 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 #         self._log.debug(self.data)
                 #
                 # Long poll didn't seem to be working so switched to normal polling again
+
                 await self.poll()
+
                 end = time.time()
                 duration: float = end - start
                 sleep_time: float = minimum_wait_in_seconds - duration
@@ -421,3 +337,12 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 self._log.error(ex)
         self._is_polling_in_background = False
         self._log.info("__background_poll:: Background polling disabled.")
+
+    @property
+    def data(self) -> IntelliFirePollData:
+        """Return data to the user."""
+        if (
+            self._data.ipv4_address == "127.0.0.1"
+        ):  # pragma: no cover - the tests SHOULD be hitting this but dont appear to be
+            self._log.warning("Returning uninitialized poll data")  # pragma: no cover
+        return self._data
