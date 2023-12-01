@@ -267,7 +267,7 @@ class IntelliFireUserData(IntelliFireCookieData):
     username: str | None = None
     password: str | None = None
 
-    def data_for_serial(self, serial: str) -> IntelliFireCommonFireplaceData | None:
+    def get_data_for_serial(self, serial: str) -> IntelliFireCommonFireplaceData | None:
         """Retrieve fireplace data based on the provided serial number.
 
         This method uses a generator expression with `next` to find the first matching fireplace,
