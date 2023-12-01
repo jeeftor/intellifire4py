@@ -280,3 +280,17 @@ class IntelliFireUserData(IntelliFireCookieData):
             IntelliFireCommonFireplaceData | None: Fireplace data if found, None otherwise.
         """
         return next((fp for fp in self.fireplaces if fp.serial == serial), None)
+
+    def get_data_for_ip(self, ip_address: str) -> IntelliFireCommonFireplaceData | None:
+        """Retrieve fireplace data based on the provided ip address.
+
+        This method uses a generator expression with `next` to find the first matching fireplace,
+        which is more efficient than looping through all fireplaces.
+
+        Args:
+            ip_address (str): The serial number of the fireplace to search for.
+
+        Returns:
+            IntelliFireCommonFireplaceData | None: Fireplace data if found, None otherwise.
+        """
+        return next((fp for fp in self.fireplaces if fp.ip_address == ip_address), None)
