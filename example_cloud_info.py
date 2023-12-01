@@ -4,12 +4,11 @@ import asyncio
 import logging
 import os
 
+from httpx import Cookies
 from rich import print
 from rich.logging import RichHandler
 
-from intellifire4py import UnifiedFireplace
 from intellifire4py.cloud_interface import IntelliFireCloudInterface
-from intellifire4py.const import IntelliFireApiMode
 
 FORMAT = "%(message)s"
 logging.basicConfig(
@@ -54,25 +53,26 @@ async def main() -> None:
 
     cloud_api_interface = IntelliFireCloudInterface(use_http=True, verify_ssl=False)
 
-    user_json: str = os.getenv("USER_JSON")  # type: ignore
-
-    cloud_api_interface.load_user_data(json_str=user_json)
-
-    # await cloud_api_interface.login(username=username, password=password)
-
-    user_data = cloud_api_interface.user_data
-    print(user_data.model_dump_json(indent=2))
-
-    fireplaces: UnifiedFireplace = (
-        await UnifiedFireplace.build_fireplaces_from_user_data(user_data)
-    )
-    fireplace = fireplaces[0]
-
-    await fireplace.set_read_mode(IntelliFireApiMode.LOCAL)
-    await fireplace.set_control_mode(IntelliFireApiMode.CLOUD)
-
-    print(fireplace.user_data_json)
-    exit(0)
+    await cloud_api_interface.login_with_cookie(cookie=Cookies())
+    # user_json: str = os.getenv("USER_JSON")  # type: ignore
+    #
+    # cloud_api_interface.load_user_data(json_str=user_json)
+    #
+    # # await cloud_api_interface.login(username=username, password=password)
+    #
+    # user_data = cloud_api_interface.user_data
+    # print(user_data.model_dump_json(indent=2))
+    #
+    # fireplaces: UnifiedFireplace = (
+    #     await UnifiedFireplace.build_fireplaces_from_user_data(user_data)
+    # )
+    # fireplace = fireplaces[0]
+    #
+    # await fireplace.set_read_mode(IntelliFireApiMode.LOCAL)
+    # await fireplace.set_control_mode(IntelliFireApiMode.CLOUD)
+    #
+    # print(fireplace.user_data_json)
+    # exit(0)
 
     # fireplace[0].debug()
     # await asyncio.sleep(10)

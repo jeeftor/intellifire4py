@@ -51,7 +51,57 @@ class IntelliFireCloudInterface:
         else:
             self.prefix = "https"
 
-    async def login(self, *, username: str, password: str) -> None:
+    async def login_with_cookie_vars(
+        self, *, user_id: str, auth_cookie: str, web_client_id: str
+    ) -> None:
+        """Logs in using individual cookie components instead of a pre-formed cookie object.
+
+        This method constructs a cookie using the provided user_id, auth_cookie, and web_client_id,
+        then proceeds with the login process using this cookie. It's an alternative way to authenticate
+        when you have the cookie components instead of a full cookie string.
+
+        Args:
+            user_id (str): The user ID part of the cookie.
+            auth_cookie (str): The authentication token part of the cookie.
+            web_client_id (str): The web client ID part of the cookie.
+
+        Returns:
+            None: This method does not return anything. It sets the authenticated state internally.
+        """
+        cookie = Cookies()
+        cookie.set("user", user_id)
+        cookie.set("auth_cookie", auth_cookie)
+        cookie.set("web_client_id", web_client_id)
+        return await self.login_with_cookie(cookie=cookie)
+
+    async def login_with_cookie(self, *, cookie: Cookies) -> None:
+        """Uses a cookie 🍪️ to simulate the login flow, bypassing the need for username and password.
+
+        Sets the user as logged in if the cookie is valid and can successfully fetch user data.
+        """
+        self._user_data.username = "UNSET"
+        self._user_data.password = "UNSET"  # noqa: S105
+
+        self._cookie = cookie
+        self._user_data.parse_cookie(self._cookie)
+
+        # Must be set for future methods to pass -> if cookie is invalid will be set to false
+        self._is_logged_in = True
+
+        async with httpx.AsyncClient() as client:
+            try:
+                self._log.info("Using cookie data to poll IFTAPI")
+                await self._parse_user_data(client=client)
+            except httpx.HTTPError as http_err:
+                self._log.error(f"HTTP error occurred: {http_err}")
+                self._is_logged_in = False
+                # raise
+            except Exception as err:
+                self._log.error(f"An error occurred: {err}")
+                self._is_logged_in = False
+                raise
+
+    async def login_with_credentials(self, *, username: str, password: str) -> None:
         """Authenticates with the IntelliFire Cloud API using the provided username and password.
 
         This method performs a login operation to the cloud API, storing the session cookies
@@ -174,28 +224,33 @@ class IntelliFireCloudInterface:
     async def _get_locations(self, client: httpx.AsyncClient) -> IntelliFireLocations:
         """Retrieves a list of locations accessible to the user from the cloud API.
 
-        This method makes an API call to gather details about locations that the user has access to.
-        The retrieved locations are used to discover fireplaces and their respective data.
-
         Args:
             client (httpx.AsyncClient): The HTTP client used for making the request.
 
         Returns:
             IntelliFireLocations: An object representing the locations accessible to the user.
+
+        Raises:
+            httpx.HTTPError: If there's an HTTP error during the request.
         """
         await self._login_check()
-        response = await client.get(url=f"{self.prefix}://iftapi.net/a/enumlocations")
-        json_data = response.json()
-        locations = IntelliFireLocations(**json_data)
-        return locations
+
+        try:
+            response = await client.get(
+                url=f"{self.prefix}://iftapi.net/a/enumlocations"
+            )
+            response.raise_for_status()  # Raises an HTTPError for 4xx/5xx responses
+            json_data = response.json()
+            locations = IntelliFireLocations(**json_data)
+            return locations
+        except httpx.HTTPError as e:
+            self._log.error(f"HTTP error occurred while fetching locations: {e}")
+            raise
 
     async def _get_fireplaces(
         self, client: httpx.AsyncClient, *, location_id: str
     ) -> IntelliFireFireplaces:
         """Retrieves a list of fireplaces associated with a given location.
-
-        This method queries the cloud API to obtain detailed information about fireplaces present
-        at a specific location identified by the location_id.
 
         Args:
             client (httpx.AsyncClient): The HTTP client used for making the request.
@@ -203,15 +258,24 @@ class IntelliFireCloudInterface:
 
         Returns:
             IntelliFireFireplaces: An object containing details of fireplaces at the specified location.
+
+        Raises:
+            httpx.HTTPError: If there's an HTTP error during the request.
         """
         await self._login_check()
-        response = await client.get(
-            url=f"{self.prefix}://iftapi.net/a/enumfireplaces?location_id={location_id}"
-        )
-        json_data = response.json()
 
-        fireplaces = IntelliFireFireplaces(**json_data)
-        return fireplaces
+        try:
+            response = await client.get(
+                url=f"{self.prefix}://iftapi.net/a/enumfireplaces?location_id={location_id}"
+            )
+            response.raise_for_status()  # Raises an HTTPError for 4xx/5xx responses
+            json_data = response.json()
+
+            fireplaces = IntelliFireFireplaces(**json_data)
+            return fireplaces
+        except httpx.HTTPError as e:
+            self._log.error(f"HTTP error occurred while fetching fireplaces: {e}")
+            raise
 
     @property
     def cloud_fireplaces(self) -> list[IntelliFireAPICloud]:

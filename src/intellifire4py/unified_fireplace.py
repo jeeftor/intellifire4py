@@ -78,6 +78,10 @@ class UnifiedFireplace:
             serial=self.serial, cookies=self._fireplace_data.cookies
         )
 
+    async def perform_cloud_poll(self):
+        """Perform a Cloud Poll - this should be used to validate the stored credentials."""
+        await self._cloud_api.poll()
+
     @property
     def dump_user_data_json(self) -> str:
         """Dump the internal _fireplace_data object to a JSON String."""

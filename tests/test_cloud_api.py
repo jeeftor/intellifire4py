@@ -51,7 +51,7 @@ async def test_cloud_login(
 
     cloud_interface = IntelliFireCloudInterface()
     # cloud_api = IntelliFireAPICloud(serial="XXXXXE834CE109D849CBB15CDDBAFF381")
-    await cloud_interface.login(username=username, password=password)
+    await cloud_interface.login_with_credentials(username=username, password=password)
     user_data = cloud_interface.user_data
     fireplaces = await UnifiedFireplace.build_fireplaces_from_user_data(
         user_data,
@@ -105,7 +105,7 @@ async def test_incorrect_login_credentials(httpx_mock: HTTPXMock) -> None:
 
     cloud_api = IntelliFireCloudInterface()
     with pytest.raises(LoginError):
-        await cloud_api.login(username=username, password=password)
+        await cloud_api.login_with_credentials(username=username, password=password)
 
 
 @pytest.mark.asyncio
@@ -157,7 +157,7 @@ async def test_sending(
     )
 
     cloud_api = IntelliFireCloudInterface()
-    await cloud_api.login(username=username, password=password)
+    await cloud_api.login_with_credentials(username=username, password=password)
     # Fake logged in state
 
     # cloud_api = IntelliFireAPICloud()

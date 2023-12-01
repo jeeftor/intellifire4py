@@ -76,7 +76,7 @@ In order to actually control the unit you will need to access the cloud in order
 
 ```python
 cloud_api = IntelliFireAPICloud(use_http=True, verify_ssl=False)
-await cloud_api.login(username=username, password=password)
+await cloud_api.login_with_credentials(username=username, password=password)
 
 # Once logged in you can pull out the api key for the default (first detected) fireplace
 api_key = cloud_api.get_fireplace_api_key(cloud_api.default_fireplace)
