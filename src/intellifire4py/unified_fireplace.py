@@ -174,11 +174,18 @@ class UnifiedFireplace:
         depending on the value of '_read_mode'. This abstraction allows for seamless switching
         between local and cloud control without affecting the rest of the codebase.
         """
-        return (
-            cast(IntelliFireDataProvider, self._local_api)
+
+        # Due to how python handles inheritance we probably need to cast the stuff
+        # in order to suppress errors that may/may-not actually exist at all
+        # This could however break stuff I think
+
+        api = (
+            self._local_api
             if self._read_mode == IntelliFireApiMode.LOCAL
-            else cast(IntelliFireDataProvider, self._cloud_api)
+            else self._cloud_api
         )
+
+        return cast(IntelliFireDataProvider, api)
 
     @property
     def control_api(self) -> IntelliFireController:
