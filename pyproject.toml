@@ -22,7 +22,7 @@ Changelog = "https://github.com/jeeftor/intellifire4py/releases"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-pydantic = ">= 2"
+pydantic = ">=1.10.8"
 aenum = ">=3.1.11"
 httpx = ">=0.23.0"
 # Rich is needed
