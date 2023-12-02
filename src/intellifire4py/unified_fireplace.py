@@ -16,6 +16,8 @@ from rich import inspect
 
 from intellifire4py.read import IntelliFireDataProvider
 
+from typing import cast
+
 
 class UnifiedFireplace:
     """Unified Fireplace Object encapsulating both Local and Cloud control and data access.
@@ -41,44 +43,46 @@ class UnifiedFireplace:
         fireplace_data: IntelliFireCommonFireplaceData,
         read_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
         control_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
+        use_http: bool = False,
+        verify_ssl: bool = True,
     ):
-        """Initializes an instance of the class with specified fireplace data and operating modes.
+        """Initializes a new instance of the UnifiedFireplace class, configuring it for both local and cloud interactions with an IntelliFire fireplace.
 
-        This constructor sets up the object with necessary data and configurations for interfacing
-        with an IntelliFire fireplace system. It configures the reading and control modes and initializes
-        local and cloud API interfaces based on the provided fireplace data.
+        This constructor sets up the UnifiedFireplace object with essential data and configurations required for interfacing with an IntelliFire fireplace system. It establishes the modes for reading data and controlling the fireplace, and it initializes the local and cloud API interfaces using the provided fireplace data.
 
         Args:
-            fireplace_data (IntelliFireCommonFireplaceData): The common data associated with the fireplace,
-                including serial number, IP address, user ID, API key, and cookies. This data is crucial for
-                both local and cloud-based interactions with the fireplace system.
-            read_mode (IntelliFireApiMode, optional): The mode of reading data from the fireplace.
-                Defaults to IntelliFireApiMode.LOCAL. If set to LOCAL, data is read from the local network;
-                otherwise, it is fetched from the cloud.
-            control_mode (IntelliFireApiMode, optional): The mode of controlling the fireplace.
-                Defaults to IntelliFireApiMode.LOCAL. If set to LOCAL, commands are sent directly to the fireplace
-                over the local network; otherwise, they are routed through the cloud.
+            fireplace_data (IntelliFireCommonFireplaceData): Essential data for interacting with the fireplace, including details like serial number, IP address, user ID, API key, and cookies.
+            read_mode (IntelliFireApiMode, optional): Specifies the mode for reading data (LOCAL for local network, CLOUD for cloud). Defaults to LOCAL.
+            control_mode (IntelliFireApiMode, optional): Determines how the fireplace is controlled (LOCAL for local network, CLOUD for cloud). Defaults to LOCAL.
+            use_http (bool, optional): Indicates whether to use HTTP (True) or HTTPS (False) for communication. Defaults to False (HTTPS).
+            verify_ssl (bool, optional): Toggles SSL certificate verification. Defaults to True (verification enabled).
 
-        The constructor also initializes two API interfaces:
-            - `_local_api`: An instance of IntelliFireAPILocal, configured with the IP address, user ID,
-              and API key from `fireplace_data`, allowing direct local network communication with the fireplace.
-            - `_cloud_api`: An instance of IntelliFireAPICloud, configured with the serial number and cookies
-              from `fireplace_data`, facilitating cloud-based interactions with the fireplace system.
+        The constructor prepares two API interfaces:
+            - _local_api (IntelliFireAPILocal): Configured for direct local network communication, using the IP address, user ID, and API key from the fireplace_data.
+            - _cloud_api (IntelliFireAPICloud): Set up for cloud-based interactions, using the serial number and cookies from the fireplace_data.
+
+        These interfaces enable the UnifiedFireplace class to seamlessly manage and interact with IntelliFire fireplaces, simplifying the complexity of handling different APIs and connection modes.
         """
         self._control_mode = control_mode
         self._read_mode = read_mode
 
         self._fireplace_data = fireplace_data
 
-        self._local_api = IntelliFireAPILocal(
+        self._verify_ssl = verify_ssl
+        self._use_http = use_http
+
+        self._local_api: IntelliFireAPILocal = IntelliFireAPILocal(
             fireplace_ip=self.ip_address, user_id=self.user_id, api_key=self.api_key
         )
 
         self._cloud_api = IntelliFireAPICloud(
-            serial=self.serial, cookies=self._fireplace_data.cookies
+            serial=self.serial,
+            cookies=self._fireplace_data.cookies,
+            verify_ssl=verify_ssl,
+            use_http=use_http,
         )
 
-    async def perform_cloud_poll(self):
+    async def perform_cloud_poll(self) -> None:
         """Perform a Cloud Poll - this should be used to validate the stored credentials."""
         await self._cloud_api.poll()
 
@@ -171,9 +175,9 @@ class UnifiedFireplace:
         between local and cloud control without affecting the rest of the codebase.
         """
         return (
-            self._local_api
+            cast(IntelliFireDataProvider, self._local_api)
             if self._read_mode == IntelliFireApiMode.LOCAL
-            else self._cloud_api
+            else cast(IntelliFireDataProvider, self._cloud_api)
         )
 
     @property
@@ -308,6 +312,8 @@ class UnifiedFireplace:
         fireplace_data: IntelliFireCommonFireplaceData,
         read_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
         control_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
+        use_http: bool = False,
+        verify_ssl: bool = True,
     ) -> UnifiedFireplace:
         """Asynchronously creates an instance of the class with specified fireplace data and operating modes.
 
@@ -323,18 +329,41 @@ class UnifiedFireplace:
                 local or cloud. Defaults to IntelliFireApiMode.LOCAL.
             control_mode (IntelliFireApiMode, optional): The mode of controlling the fireplace, either
                 local or cloud. Defaults to IntelliFireApiMode.LOCAL.
+            use_http (bool, optional): Indicates whether to use HTTP (True) or HTTPS (False) for communication.
+            verify_ssl (bool, optional): Toggles SSL certificate verification.
 
         Returns:
             [cls]: An initialized instance of the class with the specified configuration.
         """
-        instance = cls(fireplace_data, read_mode, control_mode)
+        instance = cls(
+            fireplace_data,
+            read_mode,
+            control_mode,
+            verify_ssl=verify_ssl,
+            use_http=use_http,
+        )
         await instance._switch_read_mode(instance._read_mode)
         return instance
 
     @classmethod
     async def build_fireplace_from_common_data(
-        cls, common_data: IntelliFireCommonFireplaceData
-    ):
+        cls,
+        common_data: IntelliFireCommonFireplaceData,
+        use_http: bool = False,
+        verify_ssl: bool = True,
+    ) -> UnifiedFireplace:
+        """Asynchronously constructs a UnifiedFireplace instance from a given IntelliFireCommonFireplaceData object, including network security settings.
+
+        This method serves as a factory for creating UnifiedFireplace instances. It takes a pre-defined IntelliFireCommonFireplaceData object and uses it to instantiate a new UnifiedFireplace object, including SSL and HTTP configuration.
+
+        Args:
+            common_data (IntelliFireCommonFireplaceData): An object containing essential fireplace data.
+            use_http (bool, optional): Indicates whether to use HTTP or HTTPS for communication.
+            verify_ssl (bool, optional): Determines whether SSL certificate verification is enabled.
+
+        Returns:
+            UnifiedFireplace: A fully initialized instance of UnifiedFireplace.
+        """
         return await cls.create_async_instance(common_data)
 
     @classmethod
@@ -343,6 +372,8 @@ class UnifiedFireplace:
         user_data: IntelliFireUserData,
         read_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
         control_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
+        use_http: bool = False,
+        verify_ssl: bool = True,
     ) -> list[UnifiedFireplace]:
         """Builds a list of UnifiedFireplace instances from IntelliFireUserData.
 
@@ -355,6 +386,8 @@ class UnifiedFireplace:
                 local or cloud. Defaults to IntelliFireApiMode.LOCAL.
             control_mode (IntelliFireApiMode, optional): The mode of controlling the fireplace, either
                 local or cloud. Defaults to IntelliFireApiMode.LOCAL.
+            use_http (bool, optional): Indicates whether to use HTTP or HTTPS for communication.
+            verify_ssl (bool, optional): Determines whether SSL certificate verification is enabled.
 
 
         Returns:
@@ -382,6 +415,8 @@ class UnifiedFireplace:
         web_client_id: str,
         read_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
         control_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
+        use_http: bool = False,
+        verify_ssl: bool = True,
     ) -> UnifiedFireplace:
         """Asynchronously constructs a UnifiedFireplace instance with direct input parameters.
 
@@ -402,6 +437,8 @@ class UnifiedFireplace:
                 local or cloud. Defaults to IntelliFireApiMode.LOCAL.
             control_mode (IntelliFireApiMode, optional): The mode of controlling the fireplace, either
                 local or cloud. Defaults to IntelliFireApiMode.LOCAL.
+            use_http (bool, optional): Indicates whether to use HTTP or HTTPS for communication.
+            verify_ssl (bool, optional): Determines whether SSL certificate verification is enabled.
 
 
         Returns:
@@ -423,7 +460,10 @@ class UnifiedFireplace:
 
     @classmethod
     async def build_fireplace_from_common(
-        cls, common_fireplace: IntelliFireCommonFireplaceData
+        cls,
+        common_fireplace: IntelliFireCommonFireplaceData,
+        use_http: bool = False,
+        verify_ssl: bool = True,
     ) -> UnifiedFireplace:
         """Asynchronously creates a UnifiedFireplace instance from a common fireplace data structure.
 
@@ -435,11 +475,15 @@ class UnifiedFireplace:
         Args:
             common_fireplace (IntelliFireCommonFireplaceData): A pre-constructed common fireplace data
             object containing all necessary details for the fireplace.
+            use_http (bool, optional): Indicates whether to use HTTP or HTTPS for communication.
+            verify_ssl (bool, optional): Determines whether SSL certificate verification is enabled.
 
         Returns:
             UnifiedFireplace: An instance of the UnifiedFireplace class initialized with the given common fireplace data.
         """
-        return await cls.create_async_instance(common_fireplace)
+        return await cls.create_async_instance(
+            common_fireplace, use_http=use_http, verify_ssl=verify_ssl
+        )
 
     def debug(self) -> None:
         """Utility method to output detailed debugging information.
