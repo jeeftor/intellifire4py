@@ -86,6 +86,10 @@ class UnifiedFireplace:
         """Perform a Cloud Poll - this should be used to validate the stored credentials."""
         await self._cloud_api.poll()
 
+    async def perform_local_poll(self) -> None:
+        """Perform a local Poll - used to test local connectivity."""
+        await self._local_api.poll()
+
     @property
     def dump_user_data_json(self) -> str:
         """Dump the internal _fireplace_data object to a JSON String."""
