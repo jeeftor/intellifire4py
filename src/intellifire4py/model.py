@@ -1,9 +1,15 @@
 """Model definitions."""
 from __future__ import annotations
 
-from pydantic import Field
+
+try:
+    from pydantic.v1 import Field
+    from pydantic.v1 import BaseModel
+except ImportError:
+    from pydantic import Field  # type: ignore
+    from pydantic import BaseModel  # type: ignore
+
 from .const import IntelliFireErrorCode, IntelliFireApiMode
-from pydantic import BaseModel
 from httpx import Cookies
 
 

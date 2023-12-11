@@ -1,6 +1,9 @@
 """Test File."""
 
-from pydantic import ValidationError
+try:
+    from pydantic.v1 import ValidationError
+except ImportError:
+    from pydantic import ValidationError  # type: ignore
 
 from intellifire4py.model import IntelliFirePollData
 
