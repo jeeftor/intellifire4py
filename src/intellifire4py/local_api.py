@@ -10,6 +10,7 @@ from typing import Any
 import logging
 
 import httpx
+from httpx import ConnectError
 
 from intellifire4py.model import (
     IntelliFirePollData,
@@ -206,6 +207,8 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                         self._log.warning("Timeout error on polling")
         except httpx.ReadTimeout:
             self._log.warning(f"Timeout on reading {url}")
+        except ConnectError as err:
+            raise ConnectionError from err
 
     async def send_command(
         self,

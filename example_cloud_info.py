@@ -4,10 +4,11 @@ import asyncio
 import logging
 import os
 
-from httpx import Cookies
+from httpx import ConnectError
 from rich import print
 from rich.logging import RichHandler
 
+from intellifire4py import UnifiedFireplace
 from intellifire4py.cloud_interface import IntelliFireCloudInterface
 
 FORMAT = "%(message)s"
@@ -47,26 +48,61 @@ def get_creds() -> tuple[str, str]:
     return (username, password)
 
 
+async def _async_validate_connectivity(
+    fireplace: UnifiedFireplace, timeout=600
+) -> tuple[bool, bool]:
+    """Check local and cloud connectivity."""
+
+    async def with_timeout(coroutine):
+        try:
+            await asyncio.wait_for(coroutine, timeout)
+            return True
+        except asyncio.TimeoutError:
+            return False
+        except ConnectError:
+            return False
+        except Exception as err:  # pylint: disable=broad-except
+            print(err)
+            return False
+
+    local_future = with_timeout(fireplace.perform_local_poll())
+    cloud_future = with_timeout(fireplace.perform_cloud_poll())
+
+    local_success, cloud_success = await asyncio.gather(local_future, cloud_future)
+    return local_success, cloud_success
+
+
 async def main() -> None:
     """Define main function."""
     username, password = get_creds()
 
-    cloud_api_interface = IntelliFireCloudInterface(use_http=True, verify_ssl=False)
+    cloud_api_interface = (
+        IntelliFireCloudInterface()
+    )  # use_http=True, verify_ssl=False)
 
-    await cloud_api_interface.login_with_cookie(cookie=Cookies())
-    # user_json: str = os.getenv("USER_JSON")  # type: ignore
+    # await cloud_api_interface.login_with_cookie(cookie=Cookies())
+    user_json: str = os.getenv("USER_JSON")  # type: ignore
     #
-    # cloud_api_interface.load_user_data(json_str=user_json)
+    cloud_api_interface.load_user_data(json_str=user_json)
+
+    # await cloud_api_interface.login_with_credentials(
+    #     username=username, password=password
+    # )
     #
-    # # await cloud_api_interface.login(username=username, password=password)
-    #
-    # user_data = cloud_api_interface.user_data
+    user_data = cloud_api_interface.user_data
+
     # print(user_data.model_dump_json(indent=2))
     #
-    # fireplaces: UnifiedFireplace = (
-    #     await UnifiedFireplace.build_fireplaces_from_user_data(user_data)
-    # )
-    # fireplace = fireplaces[0]
+    fireplaces: UnifiedFireplace = (
+        await UnifiedFireplace.build_fireplaces_from_user_data(user_data)
+    )
+    fireplace = fireplaces[0]
+
+    # Tweak Local IP
+
+    local, cloud = await _async_validate_connectivity(fireplace)
+
+    print(local, cloud)
     #
     # await fireplace.set_read_mode(IntelliFireApiMode.LOCAL)
     # await fireplace.set_control_mode(IntelliFireApiMode.CLOUD)

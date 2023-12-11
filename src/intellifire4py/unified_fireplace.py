@@ -4,6 +4,8 @@ from __future__ import annotations
 import asyncio
 import logging
 
+from httpx import ConnectError
+
 from intellifire4py import IntelliFireAPILocal, IntelliFireAPICloud
 from intellifire4py.const import IntelliFireApiMode
 from intellifire4py.control import IntelliFireController
@@ -17,6 +19,8 @@ from rich import inspect
 from intellifire4py.read import IntelliFireDataProvider
 
 from typing import cast
+from typing import Any
+from collections.abc import Coroutine
 
 
 class UnifiedFireplace:
@@ -37,6 +41,9 @@ class UnifiedFireplace:
     # API Variables
     _local_api: IntelliFireAPILocal
     _cloud_api: IntelliFireAPICloud
+
+    cloud_connectivity: bool | None = None
+    local_connectivity: bool | None = None
 
     def __init__(
         self,
@@ -504,3 +511,55 @@ class UnifiedFireplace:
         for debugging purposes to understand the state of an object in a rich, readable format.
         """
         inspect(self, methods=True, help=True)
+
+    async def async_validate_connectivity(
+        self, timeout: int = 600
+    ) -> tuple[bool, bool]:
+        """Asynchronously validate connectivity for both local and cloud services.
+
+        This function checks the connectivity status for local and cloud services
+        by awaiting on two asynchronous tasks. Each task has a specified timeout,
+        after which it is considered unsuccessful.
+
+        Parameters:
+        timeout (int): The maximum time in seconds to wait for each connectivity check.
+
+        Returns:
+        tuple[bool, bool]: A tuple containing two boolean values. The first boolean
+                           indicates the success of the local connectivity check,
+                           and the second indicates the success of the cloud connectivity check.
+        """
+
+        async def with_timeout(coroutine: Coroutine[Any, Any, Any]) -> bool:
+            """Helper function to run a coroutine with a timeout.
+
+            If the coroutine does not complete within the specified timeout,
+            or if a ConnectError is raised, it returns False. Otherwise, it returns True.
+
+            Parameters:
+            coroutine: The coroutine to be executed with a timeout.
+
+            Returns:
+            bool: True if the coroutine completes successfully within the timeout, False otherwise.
+            """
+            try:
+                await asyncio.wait_for(coroutine, timeout)
+                return True
+            except asyncio.TimeoutError:
+                return False
+            except ConnectError:
+                return False
+
+        # Initiate asynchronous connectivity checks for local and cloud.
+        local_future = with_timeout(self.perform_local_poll())
+        cloud_future = with_timeout(self.perform_cloud_poll())
+
+        # Await the completion of both connectivity checks.
+        local_success, cloud_success = await asyncio.gather(local_future, cloud_future)
+
+        # Update instance variables with the results of the connectivity checks.
+        self.cloud_connectivity = cloud_success
+        self.local_connectivity = local_success
+
+        # Return the results of the connectivity checks.
+        return local_success, cloud_success
