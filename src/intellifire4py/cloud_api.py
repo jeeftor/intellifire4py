@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import asyncio
 
-import httpx
-from httpx import Cookies
 from asyncio import Task
 from typing import Any
 import time
 
+import aiohttp
+from aiohttp import CookieJar, ClientSession, ClientTimeout
 
 from .exceptions import ApiCallError
 from .model import (
@@ -23,6 +23,7 @@ from .control import IntelliFireController
 from .read import IntelliFireDataProvider
 from .utils import _range_check
 import logging
+from .const import USER_AGENT
 
 
 class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
@@ -36,7 +37,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         serial: str,
         use_http: bool = False,
         verify_ssl: bool = True,
-        cookies: Cookies,
+        cookie_jar: CookieJar,
     ):
         """Initialize the class with specific configuration for fireplace communication.
 
@@ -55,7 +56,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                           indicating that SSL verification is enabled by default. Set to False to disable
                           verification, which may be necessary in certain network environments with
                           self-signed certificates or lack of SSL support.
-            cookies (Cookies): A `Cookies` object containing authentication or session cookies required for
+            cookie_jar (CookieJar): A `Cookies` object containing authentication or session cookies required for
                           communicating with the fireplace. This is essential for maintaining a secure and
                           authenticated session.
 
@@ -69,7 +70,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         self._serial = serial
         self._log = logging.getLogger(__name__)
 
-        self._cookie = cookies
+        self._cookie_jar = cookie_jar
 
         if use_http:
             self.prefix = "http"  # pragma: no cover
@@ -85,6 +86,20 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
 
         # Full data set on the user
         self._user_data: IntelliFireUserData = IntelliFireUserData()
+
+    def _get_session(self, timeout_seconds: float = 10.0) -> ClientSession:
+        """Ensure that the aiohttp ClientSession is created and open."""
+        timeout = ClientTimeout(timeout_seconds)
+        return aiohttp.ClientSession(
+            timeout=timeout,
+            headers={"user-agent": USER_AGENT},
+            cookie_jar=self._cookie_jar,
+        )
+
+    # async def close_session(self) -> None:
+    #     """Close the aiohttp ClientSession."""
+    #     if self._session and not self._session.closed:
+    #         await self._session.close()
 
     def get_data(self) -> IntelliFirePollData:
         """Return data to the user."""
@@ -103,7 +118,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         """Send a command (cloud based)."""
         _range_check(command, value)
 
-        if not self._cookie:
+        if not self._cookie_jar:
             self._log.warning(
                 "Unable to control fireplace with command [%s=%s] Both `api_key` and `user_id` fields must be set.",
                 command.name,
@@ -119,11 +134,12 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         command: IntelliFireCommand,
         value: int,
     ) -> None:
-        async with httpx.AsyncClient(cookies=self._cookie) as client:
-            # Construct body
-            url = f"{self.prefix}://iftapi.net/a/{self._serial}//apppost"
-            content = f"{command.value['cloud_command']}={value}".encode()
-            response = await client.post(url, content=content, cookies=self._cookie)
+        url = f"{self.prefix}://iftapi.net/a/{self._serial}//apppost"
+        content = f"{command.value['cloud_command']}={value}".encode()
+
+        async with self._get_session().post(url, data=content) as response:
+            self._log.info(f">> Created Session {response}")
+            response.raise_for_status()
 
             # Log request details
             req = response.request
@@ -136,7 +152,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             curl_cmd = f"curl -X {req.method} {headers} {cookies} {data} {req.url}"
             self._log.debug(f"Generated curl command: {curl_cmd}")
 
-            log_msg = f"POST {url} [{content.decode()}]  [{self._cookie}]"
+            log_msg = f"POST {url} [{content.decode()}]  [{self._cookie_jar}]"
             self._log.debug(log_msg)
             """
             204 Success – command accepted
@@ -144,15 +160,15 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             404 Fireplace not found (bad serial number)
             422 Invalid Parameter (invalid command id or command value)
             """
-            if response.status_code == 204:
+            if response.status == 204:
                 return
             elif (
-                response.status_code == 403
+                response.status == 403
             ):  # Not authorized (bad email address or authorization cookie)
                 raise ApiCallError("Not authorized")
-            elif response.status_code == 404:
+            elif response.status == 404:
                 raise ApiCallError("Fireplace not found (bad serial number)")
-            elif response.status_code == 422:
+            elif response.status == 422:
                 raise ApiCallError(
                     "Invalid Parameter (invalid command id or command value)"
                 )
@@ -186,33 +202,35 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             bool: `True` if status changed, `False` if it did not
         """
 
-        async with httpx.AsyncClient(cookies=self._cookie, timeout=61) as client:
-            self._log.debug("Long Poll: Start")
-            response = await client.get(
-                f"{self.prefix}://iftapi.net/a/{self._serial}/applongpoll"
-            )
-            self._log.debug("Long Poll Status Code %d", response.status_code)
-            if response.status_code == 200:
-                self._log.debug("Long poll: 200 - Received data ")
+        self._log.debug("Long Poll: Start")
+
+        async with self._get_session().get(
+            f"{self.prefix}://iftapi.net/a/{self._serial}/applongpoll", timeout=61
+        ) as response:
+            self._log.debug("Long Poll Status Code %d", response.status)
+            if response.status == 200:
+                self._log.debug("Long poll: 200 - Received data")
                 return True
-            elif response.status_code == 408:
+            elif response.status == 408:
                 self._log.debug("Long poll: 408 - No Data changed")
                 return False
-            elif (
-                response.status_code == 403
-            ):  # Not authorized (bad email address or authorization cookie)
+            elif response.status == 403:
                 raise ApiCallError("Not authorized")
-            elif response.status_code == 404:
+            elif response.status == 404:
                 raise ApiCallError("Fireplace not found (bad serial number)")
             else:
-                raise Exception("Unexpected return code")
+                response_text = await response.text()
+                self._log.error(
+                    f"Unexpected status code: {response.status}, Response: {response_text}"
+                )
+                raise ApiCallError(f"Unexpected status code: {response.status}")
 
-    async def poll(self) -> None:
+    async def poll(self, timeout_seconds: float = 10.0) -> None:
         """Return a fireplace’s status in JSON.
 
         Args:
             fireplace (IntelliFireFireplace | None, optional): _description_. Defaults to None.
-
+            timeout_seconds (float): Timeout for the request
         Raises:
             ApiCallError: _description_
             ApiCallError: _description_
@@ -251,28 +269,31 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             }
 
         """
-        async with httpx.AsyncClient(cookies=self._cookie) as client:
-            serial = self._serial
 
-            poll_url = f"{self.prefix}://iftapi.net/a/{serial}//apppoll"
+        serial = self._serial
+        poll_url = f"{self.prefix}://iftapi.net/a/{serial}//apppoll"
 
-            self._log.debug(f"Poll Url: {poll_url}")
-            self._log.debug(f"Poll Cookies: {self._cookie}")
+        self._log.debug(f"poll() {poll_url}")
+        async with self._get_session() as session:
+            response = await session.get(poll_url)
 
-            response = await client.get(poll_url)
-            if response.status_code == 200:
-                json_data = response.json()
-                self._log.debug(response.text)
+            if response.status == 200:
+                json_data = await response.json()
                 self._data = IntelliFirePollData(**json_data)
-
-            elif (
-                response.status_code == 403
-            ):  # Not authorized (bad email address or authorization cookie)
-                raise ApiCallError("Not authorized")
-            elif response.status_code == 404:
-                raise ApiCallError("Fireplace not found (bad serial number)")
+                self._log.debug(f"poll() complete: {self._data}")
+            elif response.status == 403:
+                raise ApiCallError("Not authorized")  # Custom error for 403
+            elif response.status == 404:
+                raise ApiCallError(
+                    "Fireplace not found (bad serial number)"
+                )  # Custom error for 404
             else:
-                raise Exception("Unexpected return code")
+                # Handle other unexpected status codes
+                response_text = await response.text()
+                self._log.error(
+                    f"Unexpected status code: {response.status}, Response: {response_text}"
+                )
+                raise ApiCallError(f"Unexpected status code: {response.status}")
 
     async def start_background_polling(self, minimum_wait_in_seconds: int = 10) -> None:
         """Start an ensure-future background polling loop."""

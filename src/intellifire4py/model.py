@@ -1,6 +1,7 @@
 """Model definitions."""
 from __future__ import annotations
 
+from http.cookies import SimpleCookie
 
 try:
     from pydantic.v1 import Field
@@ -10,7 +11,7 @@ except ImportError:
     from pydantic import BaseModel  # type: ignore
 
 from .const import IntelliFireErrorCode, IntelliFireApiMode
-from httpx import Cookies
+from aiohttp import CookieJar
 
 
 class IntelliFirePollData(BaseModel):
@@ -213,41 +214,40 @@ class IntelliFireCookieData(BaseModel):
     user_id: str = "UNSET"
     web_client_id: str = "UNSET"
 
-    def parse_cookie(self, cookies: Cookies) -> None:
-        """Parses an `httpx.Cookies` object to extract and store key cookie values.
+    def parse_cookie_jar(self, cookies: SimpleCookie) -> None:
+        """Parses an `aiohttp.CookieJar` object to extract and store key cookie values.
 
-        This method is used to extract 'user', 'auth_cookie', and 'web_client_id' values from the provided
-        `httpx.Cookies` object and store them in the respective attributes of the class instance. This is
-        particularly useful for processing and storing cookie data received from HTTP responses.
+        This method extracts 'user', 'auth_cookie', and 'web_client_id' values from the provided
+        `aiohttp.CookieJar` object and stores them in the respective attributes of the class instance.
 
         Args:
-            cookies (Cookies): An `httpx.Cookies` object containing the response cookies.
+            cookies (SimpleCookie): An `aiohttp.CookieJar` object containing the response cookies.
         """
-        self.user_id: str = str(cookies.get("user", "UNSET"))
-        self.auth_cookie: str = str(cookies.get("auth_cookie", "UNSET"))
-        self.web_client_id: str = str(cookies.get("web_client_id", "UNSET"))
+        self.user_id = cookies.get("user", "UNSET").value  # type: ignore[union-attr]
+        self.auth_cookie = cookies.get("auth_cookie", "UNSET").value  # type: ignore[union-attr]
+        self.web_client_id = cookies.get("web_client_id", "UNSET").value  # type: ignore[union-attr]
 
     @property
-    def cookies(self) -> Cookies:
-        """Constructs an `httpx.Cookies` object from stored cookie data.
+    def cookie_jar(self) -> CookieJar:
+        """Constructs an `aiohttp.CookieJar` object from stored cookie data.
 
-        This property creates and returns an `httpx.Cookies` object, populating it with
+        This method creates and returns an `aiohttp.CookieJar` object, populating it with
         the 'user', 'auth_cookie', and 'web_client_id' values stored in the class instance.
-        This is useful for creating cookie objects that can be used in HTTP requests to
-        IntelliFire systems.
 
         Returns:
-            Cookies: An `httpx.Cookies` object containing the user's authentication and
-                     identification cookies.
+            CookieJar: An `aiohttp.CookieJar` object containing the user's authentication and
+                       identification cookies.
         """
-        cookies = Cookies()
-        if self.user_id:
-            cookies.set("user", self.user_id)
-        if self.auth_cookie:
-            cookies.set("auth_cookie", self.auth_cookie)
-        if self.web_client_id:
-            cookies.set("web_client_id", self.web_client_id)
-        return cookies
+
+        cookie_jar = CookieJar()
+        cookie_jar.update_cookies(
+            {
+                "user": self.user_id,
+                "auth_cookie": self.auth_cookie,
+                "web_client_id": self.web_client_id,
+            }
+        )
+        return cookie_jar
 
 
 class IntelliFireCommonFireplaceData(IntelliFireCookieData):

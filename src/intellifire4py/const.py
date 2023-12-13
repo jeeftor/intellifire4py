@@ -1,11 +1,13 @@
 """Constants and Globals."""
-import logging
 from enum import Enum
 
 from aenum import MultiValueEnum  # type: ignore
 
 
-_log = logging.getLogger(__package__)
+import importlib.metadata
+
+PACKAGE_VERSION = importlib.metadata.version("intellifire4py")
+USER_AGENT = f"intellifire4py/{PACKAGE_VERSION}"
 
 
 class IntelliFireApiMode(Enum):
@@ -13,6 +15,7 @@ class IntelliFireApiMode(Enum):
 
     LOCAL = "local"
     CLOUD = "cloud"
+    NONE = "none"
 
 
 class IntelliFireErrorCode(MultiValueEnum):  # type: ignore
