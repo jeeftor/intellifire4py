@@ -8,11 +8,9 @@ except ImportError:
 from intellifire4py.model import IntelliFirePollData
 
 
-def test_json_files(
-    poll_response_text: str, poll_response_text_error_6_642: str
-) -> None:
+def test_json_files(local_poll_json: str, poll_response_text_error_6_642: str) -> None:
     """Test Function."""
-    for json_text in [poll_response_text, poll_response_text_error_6_642]:
+    for json_text in [local_poll_json, poll_response_text_error_6_642]:
         try:
             IntelliFirePollData.parse_raw(json_text)
         except ValidationError as e:

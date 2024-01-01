@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from httpx import ConnectError
+from aiohttp import ClientConnectionError, ClientResponseError
 
 from intellifire4py import IntelliFireAPILocal, IntelliFireAPICloud
 from intellifire4py.const import IntelliFireApiMode
@@ -564,7 +564,14 @@ class UnifiedFireplace:
                 return True
             except asyncio.TimeoutError:
                 return False
-            except ConnectError:
+            except (ClientConnectionError, ConnectionError) as ex:
+                self._log.debug("Connectivity error: %s", ex)
+                return False
+            except ClientResponseError as ex:
+                self._log.debug("ClientResponseErrror Error error: %s", ex)
+                return False
+            except Exception as generic:
+                print(generic)
                 return False
 
         self._log.debug("Validating connectivity")

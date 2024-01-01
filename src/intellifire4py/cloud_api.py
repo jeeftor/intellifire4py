@@ -10,7 +10,7 @@ import time
 import aiohttp
 from aiohttp import CookieJar, ClientSession, ClientTimeout
 
-from .exceptions import ApiCallError
+from .exceptions import CloudError
 from .model import (
     IntelliFireFireplaceCloud,
     IntelliFireUserData,
@@ -165,11 +165,11 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             elif (
                 response.status == 403
             ):  # Not authorized (bad email address or authorization cookie)
-                raise ApiCallError("Not authorized")
+                raise CloudError("Not authorized")
             elif response.status == 404:
-                raise ApiCallError("Fireplace not found (bad serial number)")
+                raise CloudError("Fireplace not found (bad serial number)")
             elif response.status == 422:
-                raise ApiCallError(
+                raise CloudError(
                     "Invalid Parameter (invalid command id or command value)"
                 )
             else:
@@ -215,15 +215,15 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 self._log.debug("Long poll: 408 - No Data changed")
                 return False
             elif response.status == 403:
-                raise ApiCallError("Not authorized")
+                raise CloudError("Not authorized")
             elif response.status == 404:
-                raise ApiCallError("Fireplace not found (bad serial number)")
+                raise CloudError("Fireplace not found (bad serial number)")
             else:
                 response_text = await response.text()
                 self._log.error(
                     f"Unexpected status code: {response.status}, Response: {response_text}"
                 )
-                raise ApiCallError(f"Unexpected status code: {response.status}")
+                raise CloudError(f"Unexpected status code: {response.status}")
 
     async def poll(self, timeout_seconds: float = 10.0) -> None:
         """Return a fireplace’s status in JSON.
@@ -268,6 +268,10 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             "brand":"H&G"
             }
 
+        Errors:
+            403: Not Authorized
+            404: Bad Serial Number - Fireplace not found
+
         """
 
         serial = self._serial
@@ -275,25 +279,20 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
 
         self._log.debug(f"poll() {poll_url}")
         async with self._get_session() as session:
-            response = await session.get(poll_url)
-
-            if response.status == 200:
+            try:
+                response = await session.get(poll_url)
+                response.raise_for_status()  # Handle 4xx/5xx responses here
                 json_data = await response.json()
                 self._data = IntelliFirePollData(**json_data)
                 self._log.debug(f"poll() complete: {self._data}")
-            elif response.status == 403:
-                raise ApiCallError("Not authorized")  # Custom error for 403
-            elif response.status == 404:
-                raise ApiCallError(
-                    "Fireplace not found (bad serial number)"
-                )  # Custom error for 404
-            else:
-                # Handle other unexpected status codes
-                response_text = await response.text()
-                self._log.error(
-                    f"Unexpected status code: {response.status}, Response: {response_text}"
-                )
-                raise ApiCallError(f"Unexpected status code: {response.status}")
+            except aiohttp.ClientResponseError as e:
+                if e.status == 403:
+                    self._log.debug("Not authorized")
+                if e.status == 404:
+                    self._log.debug("Fireplace not found (bad serial number)")
+
+                # Reraise the exception
+                raise e
 
     async def start_background_polling(self, minimum_wait_in_seconds: int = 10) -> None:
         """Start an ensure-future background polling loop."""
