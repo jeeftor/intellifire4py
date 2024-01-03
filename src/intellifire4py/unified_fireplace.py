@@ -109,7 +109,7 @@ class UnifiedFireplace:
     def dump_user_data_json(self) -> str:
         """Dump the internal _fireplace_data object to a JSON String."""
         try:
-            return str(self._fireplace_data.model_dump_json(indent=2))
+            return str(self._fireplace_data.model_dump_json(indent=2))  # type: ignore[attr-defined]
         except AttributeError:
             return str(self._fireplace_data.json(indent=2))
 

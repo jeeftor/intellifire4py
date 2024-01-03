@@ -93,10 +93,11 @@ async def main() -> None:
 
     # print(user_data.model_dump_json(indent=2))
     #
-    fireplaces: UnifiedFireplace = (
-        await UnifiedFireplace.build_fireplaces_from_user_data(user_data)
-    )
-    fireplace = fireplaces[0]
+    fireplaces: list[
+        UnifiedFireplace
+    ] = await UnifiedFireplace.build_fireplaces_from_user_data(user_data)
+
+    fireplace = fireplaces[0]  # type: ignore
 
     # Tweak Local IP
 

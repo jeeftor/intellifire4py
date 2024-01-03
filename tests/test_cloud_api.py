@@ -120,7 +120,7 @@ async def test_bad_command_param(mock_cloud_login_flow) -> None:  # type:ignore
             control_mode=IntelliFireApiMode.CLOUD,
             read_mode=IntelliFireApiMode.CLOUD,
         )
-        fireplace = fireplaces[0]  # type: ignore
+        fireplace = fireplaces[0]  # type: ignore #noqa: F841
 
 
 #

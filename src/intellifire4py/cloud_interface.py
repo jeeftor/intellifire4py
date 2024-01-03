@@ -4,9 +4,11 @@ from __future__ import annotations
 import inspect
 import json
 import logging
-from .const import USER_AGENT
 
 import aiohttp
+
+from .const import USER_AGENT
+
 from aiohttp import ClientSession
 
 from intellifire4py import (
@@ -217,7 +219,7 @@ class IntelliFireCloudInterface:
         """
         try:
             # Pydantic V2
-            self._user_data = IntelliFireUserData().model_validate_json(
+            self._user_data = IntelliFireUserData().model_validate_json(  # type: ignore[attr-defined]
                 json_str
             )  # type:ignore
         except AttributeError:
