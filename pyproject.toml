@@ -13,7 +13,7 @@ classifiers = ["Development Status :: 5 - Production/Stable",
  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3",
- 
+
 ]
 
 [tool.poetry.urls]
@@ -59,7 +59,11 @@ ruff = "0.1.4"
 aioresponses = "^0.7.6"
 
 
-
+[tool.pytest.ini_options]
+addopts = "-n 8 --cov-report xml:cov.xml --cov src --cov-report term-missing --durations-min=1 --durations=0"
+testpaths = [
+    "tests"
+]
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
 tests = ["tests", "*/tests"]
@@ -71,6 +75,7 @@ source = ["intellifire4py", "tests"]
 [tool.coverage.report]
 show_missing = true
 #fail_under = 100
+
 
 [tool.isort]
 profile = "black"
