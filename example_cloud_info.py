@@ -4,12 +4,12 @@ import asyncio
 import logging
 import os
 
-from httpx import ConnectError
-from rich import print
-from rich.logging import RichHandler
+import aiohttp  # type: ignore[import-not-found]
+from rich import print  # type: ignore[import-not-found]
+from rich.logging import RichHandler  # type: ignore[import-not-found]
 
-from intellifire4py import UnifiedFireplace
-from intellifire4py.cloud_interface import IntelliFireCloudInterface
+from intellifire4py import UnifiedFireplace  # type: ignore[import-not-found]
+from intellifire4py.cloud_interface import IntelliFireCloudInterface  # type: ignore[import-not-found]
 
 FORMAT = "%(message)s"
 logging.basicConfig(
@@ -59,7 +59,7 @@ async def _async_validate_connectivity(
             return True
         except asyncio.TimeoutError:
             return False
-        except ConnectError:
+        except aiohttp.ClientError:
             return False
         except Exception as err:  # pylint: disable=broad-except
             print(err)
