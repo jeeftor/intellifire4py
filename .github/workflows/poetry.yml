@@ -5,17 +5,40 @@ on:
   - pull_request
 
 jobs:
-  tests:
-    name: Poetry Testing
+  ci:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11"]
+        poetry-version: ["1.7.1"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
-      - uses: Gr1N/setup-poetry@v8
-      - uses: actions/cache@v2
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2
         with:
-          path: ~/.cache/pypoetry/virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
-      - run: pytest
+          poetry-version: ${{ matrix.poetry-version }}
+      - name: Setup a local virtual environment (if no poetry.toml file)
+        run: |
+          poetry config virtualenvs.create true --local
+          poetry config virtualenvs.in-project true --local
+      - uses: actions/cache@v3
+        name: Define a cache for the virtual environment based on the dependencies lock file
+        with:
+          path: ./.venv
+          key: venv-${{ hashFiles('poetry.lock') }}
+      - name: Install the project dependencies
+        run: poetry install --all-extras
+      - name: Ensure xdist
+        run: poetry add pytest-xdist
+      - name: Run the automated tests (for example)
+        run: poetry run pytest
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v3.1.0
+        with:
+          files: ./cov.xml
