@@ -21,7 +21,7 @@ from .const import IntelliFireCommand, IntelliFireApiMode
 
 from .control import IntelliFireController
 from .read import IntelliFireDataProvider
-from .utils import _range_check
+from .utils import _range_check, _convert_aiohttp_response_to_curl
 import logging
 from .const import USER_AGENT
 
@@ -96,11 +96,6 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             cookie_jar=self._cookie_jar,
         )
 
-    # async def close_session(self) -> None:
-    #     """Close the aiohttp ClientSession."""
-    #     if self._session and not self._session.closed:
-    #         await self._session.close()
-
     def get_data(self) -> IntelliFirePollData:
         """Return data to the user."""
         if (
@@ -139,18 +134,10 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
 
         async with self._get_session().post(url, data=content) as response:
             self._log.info(f">> Created Session {response}")
+
+            curl_command = await _convert_aiohttp_response_to_curl(response)
+            self._log.debug(f"Generated curl command: {curl_command}")
             response.raise_for_status()
-
-            # Log request details
-            req = response.request
-
-            headers = " ".join([f"-H '{k}: {v}'" for k, v in req.headers.items()])
-            cookies = " ".join(
-                [f"-b '{k}={v}'" for k, v in response.cookies.items()]
-            )  # assuming httpx supports this in the future version
-            data = f"--data '{req.content.decode()}'"
-            curl_cmd = f"curl -X {req.method} {headers} {cookies} {data} {req.url}"
-            self._log.debug(f"Generated curl command: {curl_cmd}")
 
             log_msg = f"POST {url} [{content.decode()}]  [{self._cookie_jar}]"
             self._log.debug(log_msg)
@@ -162,18 +149,18 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             """
             if response.status == 204:
                 return
-            elif (
-                response.status == 403
-            ):  # Not authorized (bad email address or authorization cookie)
-                raise CloudError("Not authorized")
-            elif response.status == 404:
-                raise CloudError("Fireplace not found (bad serial number)")
-            elif response.status == 422:
-                raise CloudError(
-                    "Invalid Parameter (invalid command id or command value)"
-                )
+            # elif (
+            #     response.status == 403
+            # ):  # Not authorized (bad email address or authorization cookie)
+            #     raise CloudError("Not authorized")
+            # elif response.status == 404:
+            #     raise CloudError("Fireplace not found (bad serial number)")
+            # elif response.status == 422:
+            #     raise CloudError(
+            #         "Invalid Parameter (invalid command id or command value)"
+            #     )
             else:
-                raise Exception("Unexpected return code")
+                raise Exception(f"Unexpected return code {response.status}")
 
     async def long_poll(self, fireplace: IntelliFireFireplaceCloud) -> bool:
         """Perform a LongPoll to wait for a Status update.

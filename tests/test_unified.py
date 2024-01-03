@@ -1,3 +1,4 @@
+"""Unified tests."""
 import pytest
 
 
@@ -7,7 +8,8 @@ from intellifire4py.const import IntelliFireApiMode
 
 
 @pytest.mark.asyncio
-async def test_unified_connectivity(mock_cloud_login_flow_connectivity_testing):
+async def test_unified_connectivity(mock_cloud_login_flow_connectivity_testing):  # type: ignore
+    """Test connectivity."""
     username = "user"
     password = "pass"  # noqa: S105
 

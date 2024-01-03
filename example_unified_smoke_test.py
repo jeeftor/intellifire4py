@@ -33,8 +33,8 @@ async def main() -> None:
     """Main smoketest."""
     parse_env_file()
 
-    username = os.environ["IFT_USER"]
-    password = os.environ["IFT_PASS"]
+    username = os.environ["IFT_USER"]  # noqa: F841
+    password = os.environ["IFT_PASS"]  # noqa: F841
 
     # Make cloud interface
     cloud_interface = IntelliFireCloudInterface(use_http=True)

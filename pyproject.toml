@@ -86,6 +86,9 @@ pretty = true
 show_column_numbers = true
 show_error_codes = true
 show_error_context = true
+plugins = "pydantic.mypy"
+
+
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -100,9 +103,8 @@ line-length = 88
 
 select = ["B", "B9", "C", "D", "E", "F", "N", "S", "W"]
 
-
-# Assume Python 3.10.
-target-version = "py310"
+# Assume Python 3.11.
+target-version = "py311"
 
 # Exclude a variety of commonly ignored directories.
 exclude = [

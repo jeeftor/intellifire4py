@@ -135,4 +135,4 @@ class IntelliFireController(ABC):
         value: int,
     ) -> None:
         """Send command stub."""
-        return
+        pass

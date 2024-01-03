@@ -4,8 +4,8 @@ from __future__ import annotations
 from http.cookies import SimpleCookie
 
 try:
-    from pydantic.v1 import Field
-    from pydantic.v1 import BaseModel
+    from pydantic.v1 import Field, validator  # type: ignore # noqa F401
+    from pydantic.v1 import BaseModel  # type: ignore
 except ImportError:
     from pydantic import Field  # type: ignore
     from pydantic import BaseModel  # type: ignore
@@ -49,7 +49,10 @@ class IntelliFirePollData(BaseModel):
     class Config:
         """Set configuration values for pydantic."""
 
+        # pydantic v1 version (i think)
         populate_by_name = True
+        # Pydantic v2 version
+        allow_population_by_field_name = True
 
     @property
     def temperature_f(self) -> float:
@@ -207,6 +210,8 @@ class IntelliFireCookieData(BaseModel):
         auth_cookie (str | None): The authentication cookie string. Default is None.
         user_id (str | None): The user ID cookie string. Default is None.
         web_client_id (str | None): The web client ID cookie string. Default is None.
+
+
     """
 
     # User authentication and identification information

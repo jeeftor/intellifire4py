@@ -1,4 +1,5 @@
 """Test cloud functions."""
+
 import pytest
 
 # from httpx import Cookies
@@ -10,7 +11,7 @@ from intellifire4py.exceptions import LoginError
 
 
 @pytest.mark.asyncio
-async def test_cloud_login(
+async def test_cloud_login(  # type: ignore
     mock_cloud_login_flow,
     user_id,
     api_key,
@@ -41,29 +42,57 @@ async def test_cloud_login(
         assert cloud_interface.user_data.user_id == user_id
 
 
-# @pytest.mark.asyncio
-# async def test_uninitialized_data() -> None:
-#     """Test an uninitialized data case."""
-#     # Create an instance of IntelliFireAPICloud
-#     cloud_api = IntelliFireAPICloud(serial="1234", cookie_jar=Cookies())
-#
-#     # Set _data.ipv4_address to "127.0.0.1"
-#     cloud_api._data.ipv4_address = "127.0.0.1"
-#
-#     # Verify its uninitialized
-#     assert cloud_api.data == IntelliFirePollData()
-#
-#     assert cloud_api.is_polling_in_background is False
-#
-#     # # Test logged in
-#     # with pytest.raises(LoginError):
-#     #     await cloud_api._login_check()
-#     # with pytest.raises(AttributeError):
-#     #     cloud_api.get_fireplace_api_key()
+@pytest.mark.asyncio
+@pytest.mark.asyncio
+async def test_control(  # type: ignore
+    mock_login_for_control_testing,
+    user_id: str,
+    api_key: str,
+) -> None:  # Build cookies
+    """Test control."""
+    username = "user"
+    password = "pass"  # noqa: S105
+    async with IntelliFireCloudInterface() as cloud_interface:
+        await cloud_interface.login_with_credentials(
+            username=username, password=password
+        )
+        user_data = cloud_interface.user_data
+        fireplaces = await UnifiedFireplace.build_fireplaces_from_user_data(
+            user_data,
+            control_mode=IntelliFireApiMode.CLOUD,
+            read_mode=IntelliFireApiMode.CLOUD,
+        )
+        fp = fireplaces[0]
+
+        assert fp.data.serial == "unset"
+        assert fp.data.brand == "H&G"
+        assert fp.data.battery == 0
+        assert fp.data.connection_quality == 987690
+        await fp.read_api.start_background_polling()
+
+        assert fp.read_api.is_polling_in_background is True
+
+        await fp.control_api.pilot_on()
+        assert fp.data.pilot_on is True
+        await fp.control_api.flame_on()
+        assert fp.data.is_on is True
+        await fp.control_api.flame_off()
+        await fp.control_api.soft_reset()
+        await fp.control_api.stop_sleep_timer()
+        await fp.control_api.set_thermostat_c(10)
+        await fp.control_api.set_thermostat_f(70)
+        await fp.control_api.turn_on_thermostat()
+        await fp.control_api.turn_off_thermostat()
+        await fp.control_api.fan_off()
+        await fp.control_api.beep()
+        assert fp.data.is_on is False
+        assert fp.read_api.is_polling_in_background is True
+        assert fp.read_api.data.name == "Living Room"
+        await fp.read_api.stop_background_polling()
 
 
 @pytest.mark.asyncio
-async def test_incorrect_login_credentials(mock_login_bad_credentials) -> None:
+async def test_incorrect_login_credentials(mock_login_bad_credentials) -> None:  # type: ignore
     """Test login with incorrect credentials."""
     username = "incorrect_user"
     password = "incorrect_password"  # noqa S105)
@@ -76,7 +105,8 @@ async def test_incorrect_login_credentials(mock_login_bad_credentials) -> None:
 
 
 @pytest.mark.asyncio
-async def test_bad_command_param(mock_cloud_login_flow):
+async def test_bad_command_param(mock_cloud_login_flow) -> None:  # type:ignore
+    """Test bad command parameter handling."""
     username = "user"
     password = "pass"  # noqa: S105
 
@@ -90,7 +120,7 @@ async def test_bad_command_param(mock_cloud_login_flow):
             control_mode=IntelliFireApiMode.CLOUD,
             read_mode=IntelliFireApiMode.CLOUD,
         )
-        fireplace = fireplaces[0]
+        fireplace = fireplaces[0]  # type: ignore
 
 
 #
