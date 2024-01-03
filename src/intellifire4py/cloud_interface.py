@@ -217,10 +217,12 @@ class IntelliFireCloudInterface:
         """
         try:
             # Pydantic V2
-            self._user_data = IntelliFireUserData().model_validate_json(json_str)
+            self._user_data = IntelliFireUserData().model_validate_json(
+                json_str
+            )  # type:ignore
         except AttributeError:
             # Pydantic V1
-            self._user_data = IntelliFireUserData(**json.loads(json_str))
+            self._user_data = IntelliFireUserData(**json.loads(json_str))  # type:ignore
 
         return self._user_data
 
