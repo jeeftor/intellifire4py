@@ -23,7 +23,12 @@ async def test_unified_connectivity(mock_cloud_login_flow_connectivity_testing):
             control_mode=IntelliFireApiMode.NONE,
             read_mode=IntelliFireApiMode.NONE,
         )
+
         fireplace = fireplaces[0]
+
+        assert user_data.get_data_for_ip(
+            fireplace.ip_address
+        ) == user_data.get_data_for_serial(fireplace.serial)
 
         # Double 404
         (local, cloud) = await fireplace.async_validate_connectivity()

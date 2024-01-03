@@ -8,7 +8,8 @@ import pytest
 
 from intellifire4py import UnifiedFireplace
 from intellifire4py.cloud_interface import IntelliFireCloudInterface
-from intellifire4py.const import IntelliFireApiMode
+from intellifire4py.const import IntelliFireApiMode, IntelliFireCommand
+from intellifire4py.exceptions import InputRangError
 from intellifire4py.local_api import IntelliFireAPILocal
 from aioresponses import aioresponses
 
@@ -97,6 +98,11 @@ async def test_local_control(mock_login_for_control_testing):  # type: ignore
         assert fp.data.has_fan is True
         assert fp.data.ipv4_address == "192.168.1.69"
         await fp.read_api.stop_background_polling()
+
+        with pytest.raises(InputRangError):
+            await fp.control_api.send_command(
+                command=IntelliFireCommand.FAN_SPEED, value=8
+            )
 
 
 @pytest.mark.asyncio

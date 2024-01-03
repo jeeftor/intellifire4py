@@ -49,9 +49,10 @@ def test_jsons(cloud_poll_json, local_poll_json):
     assert cloud.prepurge == local.prepurge
 
     assert cloud.temperature_c == 17 == local.temperature_c
+    assert cloud.temperature_f == local.temperature_f
 
     assert cloud.has_thermostat == local.has_thermostat
-
+    assert cloud.has_errors == local.has_errors
     # assert cloud.thermostat == local.thermostat
     # assert cloud.timer == local.timer
     # assert cloud.timeremaining == local.timeremaining
@@ -70,3 +71,21 @@ def test_jsons(cloud_poll_json, local_poll_json):
     assert local.uptime == 3362
     assert cloud.raw_thermostat_setpoint == 16
     assert local.raw_thermostat_setpoint == 17
+
+    assert local.thermostat_setpoint_c == 0.17
+    assert local.thermostat_setpoint_f == 32.306
+    assert local.error_codes_string == ""
+    assert local.error_codes == []
+
+    assert local.error_codes_string == ""
+    assert local.error_pilot_flame is False
+    assert local.error_flame is False
+    assert local.error_fan_delay is False
+    assert local.error_maintenance is False
+    assert local.error_disabled is False
+    assert local.error_fan is False
+    assert local.error_lights is False
+    assert local.error_accessory is False
+    assert local.error_soft_lock_out is False
+    assert local.error_ecm_offline is False
+    assert local.error_offline is False

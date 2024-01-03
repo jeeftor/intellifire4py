@@ -11,7 +11,7 @@ from .model import IntelliFirePollData
 class IntelliFireController(ABC):
     """Abstract base class to allow for the control of a fireplace."""
 
-    def __init__(self, control_mode: IntelliFireApiMode):
+    def __init__(self, control_mode: IntelliFireApiMode):  # pragma: no cover
         """Initialize the controller knowing whether its local or cloud based."""
         self._control_mode = control_mode
         self._data = IntelliFirePollData()
@@ -135,4 +135,4 @@ class IntelliFireController(ABC):
         value: int,
     ) -> None:
         """Send command stub."""
-        pass
+        pass  # pragma: no cover

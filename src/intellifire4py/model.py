@@ -4,11 +4,11 @@ from __future__ import annotations
 from http.cookies import SimpleCookie
 
 try:
-    from pydantic.v1 import Field, validator  # type: ignore # noqa F401
-    from pydantic.v1 import BaseModel  # type: ignore
+    from pydantic.v1 import Field, validator  # type: ignore # noqa F401 # pragma: no cover
+    from pydantic.v1 import BaseModel  # type: ignore # pragma: no cover
 except ImportError:
-    from pydantic import Field  # type: ignore
-    from pydantic import BaseModel  # type: ignore
+    from pydantic import Field  # type: ignore # pragma: no cover
+    from pydantic import BaseModel  # type: ignore # pragma: no cover
 
 from .const import IntelliFireErrorCode, IntelliFireApiMode
 from aiohttp import CookieJar
