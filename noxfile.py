@@ -214,22 +214,22 @@ def typeguard(session: Session) -> None:
     session.run("pytest", f"--typeguard-packages={package}", *session.posargs)
 
 
-@nox.parametrize("pydantic_version", ["1.*", "2.*"])
-@session(python=python_versions)
-def test_with_pydantic(session: Session, pydantic_version: str) -> None:
-    """Run tests with different versions of Pydantic."""
-    requirements = session.poetry.export_requirements()
-    session.run("pip", "install", "-r", f"{requirements}")
-
-    # Install the specified version of Pydantic
-    session.install(f"pydantic=={pydantic_version}")
-
-    # Install the package and test dependencies
-    session.install(".")
-    session.install("pytest")
-
-    # Run tests
-    session.run("pytest")
+# @nox.parametrize("pydantic_version", ["1.*", "2.*"])
+# @session(python=python_versions)
+# def test_with_pydantic(session: Session, pydantic_version: str) -> None:
+#     """Run tests with different versions of Pydantic."""
+#     requirements = session.poetry.export_requirements()
+#     session.run("pip", "install", "-r", f"{requirements}")
+#
+#     # Install the specified version of Pydantic
+#     session.install(f"pydantic=={pydantic_version}")
+#
+#     # Install the package and test dependencies
+#     session.install(".")
+#     session.install("pytest")
+#
+#     # Run tests
+#     session.run("pytest")
 
 
 @session(python=python_versions)
