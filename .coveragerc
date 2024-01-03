@@ -1,0 +1,7 @@
+[run]
+omit =
+    tests/*.py
+    .nox/
+    docs/
+    out/
+    example*.py
