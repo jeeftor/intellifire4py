@@ -6,7 +6,6 @@ on:
       - main
       - master
       - refactor
-      - aiohttp
 
 jobs:
   release:
