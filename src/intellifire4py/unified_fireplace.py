@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from httpx import ConnectError
+from aiohttp import ClientConnectionError, ClientResponseError
 
 from intellifire4py import IntelliFireAPILocal, IntelliFireAPICloud
 from intellifire4py.const import IntelliFireApiMode
@@ -32,7 +32,7 @@ class UnifiedFireplace:
     controlling and monitoring the fireplace.
     """
 
-    log: logging.Logger = logging.getLogger(__name__)
+    _log: logging.Logger = logging.getLogger(__name__)
     _control_mode: IntelliFireApiMode
     _read_mode: IntelliFireApiMode
     # Data of importance
@@ -84,23 +84,34 @@ class UnifiedFireplace:
 
         self._cloud_api = IntelliFireAPICloud(
             serial=self.serial,
-            cookies=self._fireplace_data.cookies,
+            cookie_jar=self._fireplace_data.cookie_jar,
             verify_ssl=verify_ssl,
             use_http=use_http,
         )
 
-    async def perform_cloud_poll(self) -> None:
-        """Perform a Cloud Poll - this should be used to validate the stored credentials."""
-        await self._cloud_api.poll()
+    async def perform_cloud_poll(self, timeout_seconds: float = 10.0) -> None:
+        """Perform a Cloud Poll - this should be used to validate the stored credentials.
 
-    async def perform_local_poll(self) -> None:
-        """Perform a local Poll - used to test local connectivity."""
-        await self._local_api.poll()
+        Parameters:
+        timeout_seconds (float): The timeout in seconds for the cloud poll request.
+        """
+        await self._cloud_api.poll(timeout_seconds=timeout_seconds)
+
+    async def perform_local_poll(self, timeout_seconds: float = 10.0) -> None:
+        """Perform a local Poll - used to test local connectivity.
+
+        Parameters:
+        timeout_seconds (float): The timeout in seconds for the local poll request.
+        """
+        await self._local_api.poll(timeout_seconds=timeout_seconds)
 
     @property
     def dump_user_data_json(self) -> str:
         """Dump the internal _fireplace_data object to a JSON String."""
-        return self._fireplace_data.model_dump_json()
+        try:
+            return str(self._fireplace_data.model_dump_json(indent=2))  # type: ignore[attr-defined]
+        except AttributeError:
+            return str(self._fireplace_data.json(indent=2))
 
     @property
     def ip_address(self) -> str:
@@ -229,15 +240,15 @@ class UnifiedFireplace:
         It also handles the necessary setup or teardown operations needed when switching
         between these modes.
         """
-        self.log.debug("Changing READ mode: %s=>%s", self._read_mode.name, mode.name)
+        self._log.debug("Changing READ mode: %s=>%s", self._read_mode.name, mode.name)
         if self._read_mode == mode:
-            self.log.info("Not updating mode -- it was the same")
+            self._log.info("Not updating mode -- it was the same")
             return
 
         try:
             await self._switch_read_mode(mode)
         except Exception as e:
-            self.log.error(f"Error switching read mode: {e}")
+            self._log.error(f"Error switching read mode: {e}")
 
     async def _switch_read_mode(self, mode: IntelliFireApiMode) -> None:
         """Internal helper method to switch the read mode.
@@ -250,10 +261,14 @@ class UnifiedFireplace:
             await self._cloud_api.stop_background_polling()
             self._local_api.overwrite_data(self._cloud_api.data)
             await self._local_api.start_background_polling()
-        else:
+        elif mode == IntelliFireApiMode.CLOUD:
             await self._local_api.stop_background_polling()
             self._cloud_api.overwrite_data(self._local_api.data)
             await self._cloud_api.start_background_polling()
+        else:
+            await self._local_api.stop_background_polling()
+            await self._cloud_api.stop_background_polling()
+
         self._read_mode = mode
         self._fireplace_data.read_mode = mode
 
@@ -273,7 +288,7 @@ class UnifiedFireplace:
         This method allows dynamically changing the control mode between local and cloud.
         It updates the '_control_mode' property to reflect the new mode.
         """
-        self.log.debug(
+        self._log.debug(
             "Changing CONTROL mode: %s=>%s", self._control_mode.name, mode.name
         )
         self._control_mode = mode
@@ -417,10 +432,12 @@ class UnifiedFireplace:
                 fp,
                 read_mode=read_mode,
                 control_mode=control_mode,
+                verify_ssl=verify_ssl,
+                use_http=use_http,
             )
             for fp in user_data.fireplaces
         ]
-        return await asyncio.gather(*tasks)
+        return list(await asyncio.gather(*tasks))
 
     @classmethod
     async def build_fireplace_direct(
@@ -547,9 +564,17 @@ class UnifiedFireplace:
                 return True
             except asyncio.TimeoutError:
                 return False
-            except ConnectError:
+            except (ClientConnectionError, ConnectionError) as ex:
+                self._log.debug("Connectivity error: %s", ex)
+                return False
+            except ClientResponseError as ex:
+                self._log.debug("ClientResponseErrror Error error: %s", ex)
+                return False
+            except Exception as generic:
+                print(generic)
                 return False
 
+        self._log.debug("Validating connectivity")
         # Initiate asynchronous connectivity checks for local and cloud.
         local_future = with_timeout(self.perform_local_poll())
         cloud_future = with_timeout(self.perform_cloud_poll())

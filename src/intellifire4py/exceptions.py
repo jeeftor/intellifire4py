@@ -1,7 +1,7 @@
 """IntelliFire Exceptions."""
 
 
-class ApiCallError(Exception):
+class CloudError(Exception):
     """Error with the API call."""
 
 

@@ -1,8 +1,15 @@
 """Main API access to the Cloud enumerations for the fireplaces."""
+from __future__ import annotations
+
+import inspect
+import json
 import logging
 
-import httpx
-from httpx import Cookies
+import aiohttp
+
+from .const import USER_AGENT
+
+from aiohttp import ClientSession
 
 from intellifire4py import (
     IntelliFireAPICloud,
@@ -25,7 +32,6 @@ class IntelliFireCloudInterface:
         _user_data (IntelliFireUserData): Stores the user data after login.
         _cloud_fireplaces (dict[str, IntelliFireAPICloud]): Dictionary mapping fireplace identifiers to their cloud API instances.
         _is_logged_in (bool): Flag indicating whether the user is logged in.
-        _cookie (httpx.Cookies): Cookies used for authenticated sessions.
         _use_http (bool): Flag to use HTTP instead of HTTPS.
         _verify_ssl (bool): Flag to enable or disable SSL verification.
     """
@@ -42,7 +48,7 @@ class IntelliFireCloudInterface:
             use_http (bool, optional): If True, use HTTP instead of HTTPS. Default is False.
             verify_ssl (bool, optional): If True, enable SSL certificate verification. Default is True.
         """
-        self._cookie = Cookies()
+
         self._use_http = use_http
         self._verify_ssl = verify_ssl
 
@@ -51,55 +57,102 @@ class IntelliFireCloudInterface:
         else:
             self.prefix = "https"
 
-    async def login_with_cookie_vars(
-        self, *, user_id: str, auth_cookie: str, web_client_id: str
+        self._session: ClientSession | None = None
+        self._in_context = False
+
+    async def __aenter__(self) -> IntelliFireCloudInterface:
+        """Asynchronous context manager entry."""
+        await self._create_session()
+        self._in_context = True
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type | None,
+        exc_val: Exception | None,
+        exc_tb: object | None,
     ) -> None:
-        """Logs in using individual cookie components instead of a pre-formed cookie object.
+        """Asynchronous context manager exit."""
+        self._in_context = False
+        await self.close_session()
 
-        This method constructs a cookie using the provided user_id, auth_cookie, and web_client_id,
-        then proceeds with the login process using this cookie. It's an alternative way to authenticate
-        when you have the cookie components instead of a full cookie string.
+    async def _create_session(self) -> None:
+        """Create an aiohttp ClientSession with the required settings."""
+        if self._session is None or self._session.closed:
+            self._session = ClientSession(
+                headers={"user-agent": USER_AGENT},
+            )
 
-        Args:
-            user_id (str): The user ID part of the cookie.
-            auth_cookie (str): The authentication token part of the cookie.
-            web_client_id (str): The web client ID part of the cookie.
+    async def close_session(self) -> None:
+        """Close the aiohttp ClientSession."""
+        if self._session and not self._session.closed:
+            await self._session.close()
 
-        Returns:
-            None: This method does not return anything. It sets the authenticated state internally.
-        """
-        cookie = Cookies()
-        cookie.set("user", user_id)
-        cookie.set("auth_cookie", auth_cookie)
-        cookie.set("web_client_id", web_client_id)
-        return await self.login_with_cookie(cookie=cookie)
-
-    async def login_with_cookie(self, *, cookie: Cookies) -> None:
-        """Uses a cookie 🍪️ to simulate the login flow, bypassing the need for username and password.
-
-        Sets the user as logged in if the cookie is valid and can successfully fetch user data.
-        """
-        self._user_data.username = "UNSET"
-        self._user_data.password = "UNSET"  # noqa: S105
-
-        self._cookie = cookie
-        self._user_data.parse_cookie(self._cookie)
-
-        # Must be set for future methods to pass -> if cookie is invalid will be set to false
-        self._is_logged_in = True
-
-        async with httpx.AsyncClient() as client:
-            try:
-                self._log.info("Using cookie data to poll IFTAPI")
-                await self._parse_user_data(client=client)
-            except httpx.HTTPError as http_err:
-                self._log.error(f"HTTP error occurred: {http_err}")
-                self._is_logged_in = False
-                # raise
-            except Exception as err:
-                self._log.error(f"An error occurred: {err}")
-                self._is_logged_in = False
-                raise
+    # async def login_with_cookie_vars(
+    #     self, *, user_id: str, auth_cookie: str, web_client_id: str
+    # ) -> None:
+    #     """Logs in using individual cookie components instead of a pre-formed cookie object.
+    #
+    #     This method constructs a cookie using the provided user_id, auth_cookie, and web_client_id,
+    #     then proceeds with the login process using this cookie. It's an alternative way to authenticate
+    #     when you have the cookie components instead of a full cookie string.
+    #
+    #     Args:
+    #         user_id (str): The user ID part of the cookie.
+    #         auth_cookie (str): The authentication token part of the cookie.
+    #         web_client_id (str): The web client ID part of the cookie.
+    #
+    #     Returns:
+    #         None: This method does not return anything. It sets the authenticated state internally.
+    #     """
+    #     if not self._in_context:
+    #         current_method = inspect.currentframe().f_code.co_name  # type: ignore
+    #         raise RuntimeError(
+    #             f"The {current_method} must be called within an 'async with' context"
+    #         )
+    #
+    #     self._session.cookie_jar.update_cookies(  # type: ignore[union-attr]
+    #         {
+    #             "user": user_id,
+    #             "auth_cookie": auth_cookie,
+    #             "web_client_id": web_client_id,
+    #         }
+    #     )
+    #
+    #     return await self.login_with_cookie()
+    #
+    # async def login_with_cookie(self) -> None:
+    #     """Uses a cookie 🍪️ to simulate the login flow, bypassing the need for username and password.
+    #
+    #     Sets the user as logged in if the cookie is valid and can successfully fetch user data.
+    #     """
+    #
+    #     if not self._in_context:
+    #         current_method = inspect.currentframe().f_code.co_name  # type: ignore
+    #         raise RuntimeError(
+    #             f"The {current_method} must be called within an 'async with' context"
+    #         )
+    #
+    #     self._user_data.username = "UNSET"
+    #     self._user_data.password = "UNSET"  # noqa: S105
+    #
+    #     # Parse the current cookies from the cookie jar
+    #     self._user_data.parse_cookie_jar(self._cookie_jar)
+    #
+    #     # Must be set for future methods to pass -> if cookie is invalid will be set to false
+    #     self._is_logged_in = True
+    #
+    #     try:
+    #         self._log.info("Using cookie data to poll IFTAPI")
+    #         await self._parse_user_data()
+    #     except aiohttp.ClientError as http_err:
+    #         self._log.error(f"HTTP error occurred: {http_err}")
+    #         self._is_logged_in = False
+    #         raise
+    #     except Exception as err:
+    #         self._log.error(f"An error occurred: {err}")
+    #         self._is_logged_in = False
+    #         raise
 
     async def login_with_credentials(self, *, username: str, password: str) -> None:
         """Authenticates with the IntelliFire Cloud API using the provided username and password.
@@ -117,36 +170,45 @@ class IntelliFireCloudInterface:
         Returns:
             None
         """
+
+        if not self._in_context:
+            current_method = inspect.currentframe().f_code.co_name  # type: ignore[union-attr]
+            raise RuntimeError(
+                f"The {current_method} must be called within an 'async with' context"
+            )
+
         data = {"username": username, "password": password}
 
         # Store Username/Pass locally
         self._user_data.username = username
         self._user_data.password = password
 
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(
-                    f"{self.prefix}://iftapi.net/a/login",
-                    data=data,  # .encode(),
-                )
-
-                if response.status_code != 204:
+        try:
+            async with self._session.post(  # type: ignore[union-attr]
+                f"{self.prefix}://iftapi.net/a/login", data=data
+            ) as response:
+                if response.status != 204:
                     raise LoginError()
 
-                self._cookie = response.cookies
-                self._user_data.parse_cookie(self._cookie)
+                # Update cookies from the response
+                # aiohttp automatically updates the CookieJar attached to the session
+                self._user_data.parse_cookie_jar(response.cookies)
                 self._is_logged_in = True
                 self._log.info("Success - Logged into IFTAPI")
-                self._log.debug(f"Cookie Info: {self._cookie}")
+                self._log.debug(f"Cookie Info: {self._session.cookie_jar}")  # type: ignore[union-attr]
 
-                await self._parse_user_data(client=client)
+                await self._parse_user_data()
 
-            except LoginError as ex:
-                self._log.warning("Login failure")
-                raise ex
-            return None
+        except LoginError as ex:
+            self._log.warning("Login failure")
+            raise ex
+        except aiohttp.ClientError as http_err:
+            self._log.error(f"HTTP error occurred: {http_err}")
+            raise
 
-    def load_user_data(self, json_str: str) -> None:
+        return None
+
+    def load_user_data(self, json_str: str) -> IntelliFireUserData:
         """Loads user data from a JSON string representation.
 
         This method is useful for initializing the interface with pre-existing user data
@@ -155,7 +217,16 @@ class IntelliFireCloudInterface:
         Args:
             json_str (str): A JSON string representing user data.
         """
-        self._user_data = IntelliFireUserData.model_validate_json(json_str)
+        try:
+            # Pydantic V2
+            self._user_data = IntelliFireUserData().model_validate_json(  # type: ignore[attr-defined]
+                json_str
+            )  # type:ignore
+        except AttributeError:
+            # Pydantic V1
+            self._user_data = IntelliFireUserData(**json.loads(json_str))  # type:ignore
+
+        return self._user_data
 
     async def _login_check(self) -> None:
         """Checks if the user is currently logged in.
@@ -166,18 +237,15 @@ class IntelliFireCloudInterface:
         if not self._is_logged_in:
             raise LoginError("Not Logged In")
 
-    async def _parse_user_data(self, client: httpx.AsyncClient) -> None:
+    async def _parse_user_data(self) -> None:
         """Extracts and processes user data from the cloud API.
 
         This method retrieves location and fireplace details from the cloud API and constructs
         a comprehensive user data structure encompassing all necessary information for managing
         IntelliFire fireplaces.
-
-        Args:
-            client (httpx.AsyncClient): The HTTP client used for making API calls.
         """
 
-        locations: IntelliFireLocations = await self._get_locations(client=client)
+        locations: IntelliFireLocations = await self._get_locations()
 
         for loc in locations.locations:
             """Enumerate the locations and start building out our user data set"""
@@ -185,7 +253,7 @@ class IntelliFireCloudInterface:
             location_id = loc.location_id
 
             fireplaces: IntelliFireFireplaces = await self._get_fireplaces(
-                client=client, location_id=location_id
+                location_id=location_id
             )
 
             for fireplace in fireplaces.fireplaces:
@@ -194,7 +262,7 @@ class IntelliFireCloudInterface:
                     serial=fireplace.serial,
                     use_http=self._use_http,
                     verify_ssl=self._verify_ssl,
-                    cookies=self.user_data.cookies,
+                    cookie_jar=self.user_data.cookie_jar,
                 )
 
                 # Poll the fireplace
@@ -221,59 +289,57 @@ class IntelliFireCloudInterface:
 
             # self._user_data.locations_with_fireplaces.append(location_with_fireplaces)
 
-    async def _get_locations(self, client: httpx.AsyncClient) -> IntelliFireLocations:
+    async def _get_locations(self) -> IntelliFireLocations:
         """Retrieves a list of locations accessible to the user from the cloud API.
 
-        Args:
-            client (httpx.AsyncClient): The HTTP client used for making the request.
+        This method uses aiohttp's ClientSession to make the request.
 
         Returns:
             IntelliFireLocations: An object representing the locations accessible to the user.
 
         Raises:
-            httpx.HTTPError: If there's an HTTP error during the request.
+            aiohttp.ClientError: If there's an HTTP error during the request.
         """
         await self._login_check()
 
         try:
-            response = await client.get(
+            async with self._session.get(  # type: ignore
                 url=f"{self.prefix}://iftapi.net/a/enumlocations"
-            )
-            response.raise_for_status()  # Raises an HTTPError for 4xx/5xx responses
-            json_data = response.json()
-            locations = IntelliFireLocations(**json_data)
-            return locations
-        except httpx.HTTPError as e:
+            ) as response:
+                response.raise_for_status()  # Raises an HTTPError for 4xx/5xx responses
+                json_data = await response.json()
+                locations = IntelliFireLocations(**json_data)
+                return locations
+        except aiohttp.ClientError as e:
             self._log.error(f"HTTP error occurred while fetching locations: {e}")
             raise
 
-    async def _get_fireplaces(
-        self, client: httpx.AsyncClient, *, location_id: str
-    ) -> IntelliFireFireplaces:
+    async def _get_fireplaces(self, *, location_id: str) -> IntelliFireFireplaces:
         """Retrieves a list of fireplaces associated with a given location.
 
+        This method uses aiohttp's ClientSession to make the request.
+
         Args:
-            client (httpx.AsyncClient): The HTTP client used for making the request.
             location_id (str): Identifier for the location whose fireplaces are to be retrieved.
 
         Returns:
             IntelliFireFireplaces: An object containing details of fireplaces at the specified location.
 
         Raises:
-            httpx.HTTPError: If there's an HTTP error during the request.
+            aiohttp.ClientError: If there's an HTTP error during the request.
         """
         await self._login_check()
 
         try:
-            response = await client.get(
+            async with self._session.get(  # type: ignore
                 url=f"{self.prefix}://iftapi.net/a/enumfireplaces?location_id={location_id}"
-            )
-            response.raise_for_status()  # Raises an HTTPError for 4xx/5xx responses
-            json_data = response.json()
+            ) as response:
+                response.raise_for_status()  # Raises an HTTPError for 4xx/5xx responses
+                json_data = await response.json()
 
-            fireplaces = IntelliFireFireplaces(**json_data)
-            return fireplaces
-        except httpx.HTTPError as e:
+                fireplaces = IntelliFireFireplaces(**json_data)
+                return fireplaces
+        except aiohttp.ClientError as e:
             self._log.error(f"HTTP error occurred while fetching fireplaces: {e}")
             raise
 
@@ -289,7 +355,7 @@ class IntelliFireCloudInterface:
         cloud_fireplaces = [
             IntelliFireAPICloud(
                 serial=common_fireplace.serial,
-                cookies=common_fireplace.cookies,
+                cookie_jar=common_fireplace.cookie_jar,
                 use_http=self.use_http,
                 verify_ssl=self.verify_ssl,
             )

@@ -4,8 +4,9 @@ import json
 import socket
 from typing import Any
 from typing import Union
+import logging
 
-from .const import _log
+_log = logging.getLogger(__name__)
 
 
 class IFTDiscoveryReaderProtocol(asyncio.DatagramProtocol):
