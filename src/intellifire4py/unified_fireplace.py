@@ -376,6 +376,7 @@ class UnifiedFireplace:
             use_http=use_http,
         )
         await instance._switch_read_mode(instance._read_mode)
+        await instance.set_control_mode(instance.control_mode)
         return instance
 
     @classmethod
@@ -517,7 +518,11 @@ class UnifiedFireplace:
             UnifiedFireplace: An instance of the UnifiedFireplace class initialized with the given common fireplace data.
         """
         return await cls.create_async_instance(
-            common_fireplace, use_http=use_http, verify_ssl=verify_ssl
+            common_fireplace,
+            use_http=use_http,
+            verify_ssl=verify_ssl,
+            read_mode=common_fireplace.read_mode,
+            control_mode=common_fireplace.control_mode,
         )
 
     def debug(self) -> None:

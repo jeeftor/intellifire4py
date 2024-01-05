@@ -135,6 +135,28 @@ def mock_cloud_login_flow(
 
 
 @pytest.fixture
+def mock_login_for_unified_test(
+    cookies: list[tuple[str, str]],
+    enum_locations_json: str,
+    enum_fireplaces_json: str,
+    cloud_poll_json: str,
+    local_poll_json: str,
+) -> Generator[aioresponses, None, None]:
+    """Mock the login flow."""
+    with aioresponses() as m:
+        setup_common_mocks(
+            m,
+            cookies,
+            enum_locations_json,
+            enum_fireplaces_json,
+            cloud_poll_json,
+            repeat=True,
+        )
+        m.get(url="http://192.168.1.69/poll", body=local_poll_json, repeat=True)
+        yield m
+
+
+@pytest.fixture
 def mock_cloud_login_flow_connectivity_testing(
     cookies: list[tuple[str, str]],
     enum_locations_json: str,
