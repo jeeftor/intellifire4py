@@ -3,10 +3,83 @@
 import asyncio
 import os
 from collections.abc import Generator
+from contextlib import ExitStack
+from unittest.mock import patch
+
 import pytest
 from aioresponses import aioresponses
 
+from intellifire4py.const import IntelliFireApiMode
+from intellifire4py.model import IntelliFireCommonFireplaceData, IntelliFireUserData
+
+
 # Define fixtures for various test scenarios.
+
+
+@pytest.fixture()
+def mock_common_data_local(
+    api_key, user_id, serial, ip, auth_cookie, web_client_id
+) -> IntelliFireCommonFireplaceData:
+    """Fixture for mock common data."""
+    return IntelliFireCommonFireplaceData(
+        auth_cookie=auth_cookie,
+        user_id=user_id,
+        web_client_id=web_client_id,
+        serial=serial,
+        api_key=api_key,
+        ip_address=ip,
+        read_mode=IntelliFireApiMode.LOCAL,
+        control_mode=IntelliFireApiMode.LOCAL,
+    )
+
+
+@pytest.fixture()
+def mock_user_data(
+    auth_cookie, user_id, web_client_id, mock_common_data_local
+) -> IntelliFireUserData:
+    """Fixture for mock user data."""
+    return IntelliFireUserData(
+        auth_cookie=auth_cookie,
+        user_id=user_id,
+        web_client_id=web_client_id,
+        username="",
+        password="",
+        fireplaces=[mock_common_data_local],
+    )
+
+
+@pytest.fixture()
+def mock_common_data_cloud(
+    api_key, user_id, serial, ip, auth_cookie, web_client_id
+) -> IntelliFireCommonFireplaceData:
+    """Fixture for mock common data."""
+    return IntelliFireCommonFireplaceData(
+        auth_cookie=auth_cookie,
+        user_id=user_id,
+        web_client_id=web_client_id,
+        serial=serial,
+        api_key=api_key,
+        ip_address=ip,
+        read_mode=IntelliFireApiMode.CLOUD,
+        control_mode=IntelliFireApiMode.CLOUD,
+    )
+
+
+@pytest.fixture()
+def mock_common_data_none(
+    api_key, user_id, serial, ip, web_client_id, auth_cookie
+) -> IntelliFireCommonFireplaceData:
+    """Fixture for mock common data."""
+    return IntelliFireCommonFireplaceData(
+        auth_cookie=auth_cookie,
+        user_id=user_id,
+        web_client_id=web_client_id,
+        serial=serial,
+        api_key=api_key,
+        ip_address=ip,
+        read_mode=IntelliFireApiMode.NONE,
+        control_mode=IntelliFireApiMode.NONE,
+    )
 
 
 @pytest.fixture
@@ -59,6 +132,18 @@ def api_key() -> str:
 
 
 @pytest.fixture
+def serial() -> str:
+    """Mock serial number."""
+    return "XXXXXE834CE109D849CBB15CDDBAFF381"
+
+
+@pytest.fixture
+def ip() -> str:
+    """Mock IP address."""
+    return "192.168.1.69"
+
+
+@pytest.fixture
 def challenge_text() -> str:
     """Mock challenge text."""
     # Returns a mock challenge text
@@ -77,6 +162,18 @@ def cookies(user_id: str) -> list[tuple[str, str]]:
 
 
 @pytest.fixture
+def auth_cookie() -> str:
+    """Mock auth cookie."""
+    return "XXXX1B56D18B52DC8F94DC0E5DC89A90"
+
+
+@pytest.fixture()
+def web_client_id() -> str:
+    """Mock web client id."""
+    return "XXXX21C9A75384EA726071BFCC95E3F6"
+
+
+@pytest.fixture
 def mock_aioresponse() -> Generator[aioresponses, None, None]:
     """Mock out an aioresponse but i'm not sure if we even use this."""
     # Context manager for mocking aiohttp responses
@@ -86,6 +183,7 @@ def mock_aioresponse() -> Generator[aioresponses, None, None]:
 
 def setup_common_mocks(
     m: aioresponses,
+    serial: str,
     cookies: list[tuple[str, str]],
     enum_locations_json: str,
     enum_fireplaces_json: str,
@@ -106,7 +204,7 @@ def setup_common_mocks(
         body=enum_fireplaces_json,
     )
     m.get(
-        "https://iftapi.net/a/XXXXXE834CE109D849CBB15CDDBAFF381//apppoll",
+        f"https://iftapi.net/a/{serial}//apppoll",
         status=200,
         body=cloud_poll_json,
         repeat=repeat,
@@ -114,17 +212,20 @@ def setup_common_mocks(
 
 
 @pytest.fixture
-def mock_cloud_login_flow(
+def mock_cloud_login_flow_no_local(
     cookies: list[tuple[str, str]],
     enum_locations_json: str,
     enum_fireplaces_json: str,
     cloud_poll_json: str,
     local_poll_json: str,
+    serial: str,
+    ip: str,
 ) -> Generator[aioresponses, None, None]:
     """Mock the login flow."""
     with aioresponses() as m:
         setup_common_mocks(
             m,
+            serial,
             cookies,
             enum_locations_json,
             enum_fireplaces_json,
@@ -135,24 +236,52 @@ def mock_cloud_login_flow(
 
 
 @pytest.fixture
-def mock_login_for_unified_test(
+def mock_login_flow_with_local_and_cloud(
     cookies: list[tuple[str, str]],
     enum_locations_json: str,
     enum_fireplaces_json: str,
     cloud_poll_json: str,
     local_poll_json: str,
+    serial: str,
+    ip: str,
 ) -> Generator[aioresponses, None, None]:
     """Mock the login flow."""
     with aioresponses() as m:
         setup_common_mocks(
             m,
+            serial,
             cookies,
             enum_locations_json,
             enum_fireplaces_json,
             cloud_poll_json,
             repeat=True,
         )
-        m.get(url="http://192.168.1.69/poll", body=local_poll_json, repeat=True)
+        m.get(url=f"http://{ip}/poll", body=local_poll_json, repeat=True)
+        yield m
+
+
+@pytest.fixture
+def mock_login_flow_with_cloud_only(
+    cookies: list[tuple[str, str]],
+    enum_locations_json: str,
+    enum_fireplaces_json: str,
+    cloud_poll_json: str,
+    local_poll_json: str,
+    serial: str,
+    ip: str,
+) -> Generator[aioresponses, None, None]:
+    """Mock the login flow."""
+    with aioresponses() as m:
+        setup_common_mocks(
+            m,
+            serial,
+            cookies,
+            enum_locations_json,
+            enum_fireplaces_json,
+            cloud_poll_json,
+            repeat=True,
+        )
+        m.get(url=f"http://{ip}/poll", status=404, repeat=True)
         yield m
 
 
@@ -163,12 +292,15 @@ def mock_cloud_login_flow_connectivity_testing(
     enum_fireplaces_json: str,
     cloud_poll_json: str,
     local_poll_json: str,
+    serial: str,
+    ip: str,
 ) -> Generator[aioresponses, None, None]:
     """Test connectivity."""
     with aioresponses() as m:
         # Mock the POST login request
         setup_common_mocks(
             m,
+            serial,
             cookies,
             enum_locations_json,
             enum_fireplaces_json,
@@ -178,36 +310,36 @@ def mock_cloud_login_flow_connectivity_testing(
 
         # Double 404
         m.get(
-            "https://iftapi.net/a/XXXXXE834CE109D849CBB15CDDBAFF381//apppoll",
+            f"https://iftapi.net/a/{serial}//apppoll",
             status=404,
             # body=cloud_poll_json,
             # repeat=False,
         )
         m.get(
-            url="http://192.168.1.69/poll",
+            url=f"http://{ip}/poll",
             status=404,
         )
 
         # 403 / timeout
         m.get(
-            "https://iftapi.net/a/XXXXXE834CE109D849CBB15CDDBAFF381//apppoll",
+            f"https://iftapi.net/a/{serial}//apppoll",
             status=403,  # bad credentials
         )
         m.get(
-            url="http://192.168.1.69/poll",
+            url=f"http://{ip}/poll",
             body=None,
             exception=asyncio.TimeoutError(),
         )
 
         # All is finally good
         m.get(
-            "https://iftapi.net/a/XXXXXE834CE109D849CBB15CDDBAFF381//apppoll",
+            f"https://iftapi.net/a/{serial}//apppoll",
             status=200,
             body=cloud_poll_json,
             repeat=False,
         )
         m.get(
-            url="http://192.168.1.69/poll",
+            url=f"http://{ip}/poll",
             status=200,
             body=local_poll_json,
         )
@@ -222,6 +354,8 @@ def mock_login_for_control_testing(
     cloud_poll_json: str,
     local_poll_json: str,
     challenge_text: str,
+    serial: str,
+    ip: str,
 ) -> Generator[aioresponses, None, None]:
     """Fixture for mocking login process for control testing."""
     # Using 'aioresponses' for mocking asynchronous HTTP responses.
@@ -229,6 +363,7 @@ def mock_login_for_control_testing(
         # Set up common mocks for the test.
         setup_common_mocks(
             m,
+            serial,
             cookies,
             enum_locations_json,
             enum_fireplaces_json,
@@ -238,7 +373,7 @@ def mock_login_for_control_testing(
 
         # Mock successful polling of the application.
         m.get(
-            "https://iftapi.net/a/XXXXXE834CE109D849CBB15CDDBAFF381//apppoll",
+            f"https://iftapi.net/a/{serial}//apppoll",
             status=200,
             body=cloud_poll_json,
             repeat=True,
@@ -246,19 +381,19 @@ def mock_login_for_control_testing(
 
         # Mock successful POST request for cloud-based operations.
         m.post(
-            "https://iftapi.net/a/XXXXXE834CE109D849CBB15CDDBAFF381//apppost",
+            f"https://iftapi.net/a/{serial}//apppost",
             repeat=True,
             status=204,
         )
 
         # Mock successful polling of local endpoint.
-        m.get("http://192.168.1.69/poll", body=local_poll_json, repeat=True)
+        m.get(f"http://{ip}/poll", body=local_poll_json, repeat=True)
 
         # Mock retrieval of a challenge text from the local endpoint.
-        m.get("http://192.168.1.69/get_challenge", body=challenge_text, repeat=True)
+        m.get(f"http://{ip}/get_challenge", body=challenge_text, repeat=True)
 
         # Mock POST request to the local control endpoint.
-        m.post("http://192.168.1.69/post", repeat=True)
+        m.post(f"http://{ip}/post", repeat=True)
         yield m
 
 
@@ -270,3 +405,28 @@ def mock_login_bad_credentials() -> Generator[aioresponses, None, None]:
         # Mock a failed login attempt due to bad credentials.
         m.post("https://iftapi.net/a/login", status=403)
         yield m
+
+
+@pytest.fixture
+def mock_background_polling() -> Generator:
+    """Fixture for mocking background polling."""
+    with ExitStack() as stack:
+        local_stop_mock = stack.enter_context(
+            patch("intellifire4py.IntelliFireAPILocal.stop_background_polling")
+        )
+        cloud_stop_mock = stack.enter_context(
+            patch("intellifire4py.IntelliFireAPICloud.stop_background_polling")
+        )
+        local_start_mock = stack.enter_context(
+            patch("intellifire4py.IntelliFireAPILocal.start_background_polling")
+        )
+        cloud_start_mock = stack.enter_context(
+            patch("intellifire4py.IntelliFireAPICloud.start_background_polling")
+        )
+
+        yield {
+            "local_stop": local_stop_mock,
+            "cloud_stop": cloud_stop_mock,
+            "local_start": local_start_mock,
+            "cloud_start": cloud_start_mock,
+        }

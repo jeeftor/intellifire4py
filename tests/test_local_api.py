@@ -8,7 +8,7 @@ import pytest
 
 from intellifire4py import UnifiedFireplace
 from intellifire4py.cloud_interface import IntelliFireCloudInterface
-from intellifire4py.const import IntelliFireApiMode, IntelliFireCommand
+from intellifire4py.const import IntelliFireCommand
 from intellifire4py.exceptions import InputRangError
 from intellifire4py.local_api import IntelliFireAPILocal
 from aioresponses import aioresponses
@@ -59,11 +59,7 @@ async def test_local_control(mock_login_for_control_testing):  # type: ignore
             username=username, password=password
         )
         user_data = cloud_interface.user_data
-        fireplaces = await UnifiedFireplace.build_fireplaces_from_user_data(
-            user_data,
-            control_mode=IntelliFireApiMode.LOCAL,
-            read_mode=IntelliFireApiMode.LOCAL,
-        )
+        fireplaces = await UnifiedFireplace.build_fireplaces_from_user_data(user_data)
         fp = fireplaces[0]
 
         assert fp.data.serial == "BD0E054B5D6DF7AFBC8F9B28C9011111"

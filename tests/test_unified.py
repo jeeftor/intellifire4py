@@ -1,63 +1,94 @@
 """Unified tests."""
+from unittest.mock import patch
+
 import pytest
 
+from aiohttp import ClientError
 
 from intellifire4py import UnifiedFireplace
 from intellifire4py.cloud_interface import IntelliFireCloudInterface
 from intellifire4py.const import IntelliFireApiMode
-from intellifire4py.model import IntelliFireCommonFireplaceData
 
 
 @pytest.mark.asyncio
-async def test_build_from_common_data(mock_login_for_unified_test):
-    """Test unified firepalce construction control/read mode issues."""
-    common_data_local = IntelliFireCommonFireplaceData(
-        auth_cookie="cookie",
-        user_id="user",
-        web_client_id="id",
-        serial="XXXXXE834CE109D849CBB15CDDBAFF381",
-        api_key="api_key",
-        ip_address="192.168.1.69",
-        read_mode=IntelliFireApiMode.LOCAL,
-        control_mode=IntelliFireApiMode.LOCAL,
-    )
+async def test_build_from_common_data_local_with_local_connectivity(
+    mock_common_data_local, mock_login_flow_with_local_and_cloud
+) -> None:
+    """Test build from common data."""
+    assert mock_common_data_local.ip_address == "192.168.1.69"
 
-    common_data_cloud = IntelliFireCommonFireplaceData(
-        auth_cookie="cookie",
-        user_id="user",
-        web_client_id="id",
-        serial="XXXXXE834CE109D849CBB15CDDBAFF381",
-        api_key="api_key",
-        ip_address="192.168.1.69",
-        read_mode=IntelliFireApiMode.CLOUD,
-        control_mode=IntelliFireApiMode.CLOUD,
+    local_fp = await UnifiedFireplace.build_fireplace_from_common(
+        mock_common_data_local
     )
-
-    common_data_none = IntelliFireCommonFireplaceData(
-        auth_cookie="cookie",
-        user_id="user",
-        web_client_id="id",
-        serial="XXXXXE834CE109D849CBB15CDDBAFF381",
-        api_key="api_key",
-        ip_address="192.168.1.69",
-        read_mode=IntelliFireApiMode.NONE,
-        control_mode=IntelliFireApiMode.NONE,
-    )
-
-    local_fp = await UnifiedFireplace.build_fireplace_from_common(common_data_local)
-    cloud_fp = await UnifiedFireplace.build_fireplace_from_common(common_data_cloud)
-    none_fp = await UnifiedFireplace.build_fireplace_from_common(common_data_none)
 
     assert local_fp.read_mode == IntelliFireApiMode.LOCAL
     assert local_fp.control_mode == IntelliFireApiMode.LOCAL
+    await local_fp.read_api.stop_background_polling()
 
-    assert cloud_fp.read_mode == IntelliFireApiMode.CLOUD
-    assert cloud_fp.control_mode == IntelliFireApiMode.CLOUD
-    assert cloud_fp.read_mode == IntelliFireApiMode.CLOUD
-    assert cloud_fp.control_mode == IntelliFireApiMode.CLOUD
 
-    assert none_fp.read_mode == IntelliFireApiMode.NONE
-    assert none_fp.control_mode == IntelliFireApiMode.NONE
+@pytest.mark.asyncio
+async def test_build_from_common_data_local_with_local_connectivity1(
+    mock_common_data_cloud, mock_login_flow_with_local_and_cloud
+) -> None:
+    """Test build from common data."""
+    local_fp = await UnifiedFireplace.build_fireplace_from_common(
+        mock_common_data_cloud
+    )
+
+    assert local_fp.read_mode == IntelliFireApiMode.CLOUD
+    assert local_fp.control_mode == IntelliFireApiMode.CLOUD
+
+    await local_fp.read_api.stop_background_polling()
+
+
+@pytest.mark.asyncio
+async def test_build_from_common_data_local_without_local_connectivity2(
+    mock_common_data_local, mock_login_flow_with_cloud_only
+) -> None:
+    """Test build from common data."""
+    assert mock_common_data_local.ip_address == "192.168.1.69"
+
+    local_fp = await UnifiedFireplace.build_fireplace_from_common(
+        mock_common_data_local
+    )
+
+    assert local_fp.read_mode == IntelliFireApiMode.CLOUD
+    assert local_fp.control_mode == IntelliFireApiMode.CLOUD
+    await local_fp.read_api.stop_background_polling()
+
+
+@pytest.mark.asyncio
+async def test_build_with_user_data_cloud_only(
+    mock_user_data, mock_cloud_login_flow_no_local
+):
+    """Test build with user data."""
+    fp = (
+        await UnifiedFireplace.build_fireplaces_from_user_data(user_data=mock_user_data)
+    )[0]
+
+    assert fp.read_mode == IntelliFireApiMode.CLOUD
+    assert fp.control_mode == IntelliFireApiMode.CLOUD
+
+    assert fp.cloud_connectivity is True
+    assert fp.local_connectivity is False
+    await fp.read_api.stop_background_polling()
+
+
+@pytest.mark.asyncio
+async def test_build_with_user_data_cloud_and_local(
+    mock_user_data, mock_login_flow_with_local_and_cloud
+):
+    """Test build with user data."""
+    fp = (
+        await UnifiedFireplace.build_fireplaces_from_user_data(user_data=mock_user_data)
+    )[0]
+
+    assert fp.read_mode == IntelliFireApiMode.LOCAL
+    assert fp.control_mode == IntelliFireApiMode.LOCAL
+
+    assert fp.cloud_connectivity is True
+    assert fp.local_connectivity is True
+    await fp.read_api.stop_background_polling()
 
 
 @pytest.mark.asyncio
@@ -71,27 +102,39 @@ async def test_unified_connectivity(mock_cloud_login_flow_connectivity_testing):
             username=username, password=password
         )
         user_data = cloud_interface.user_data
-        fireplaces = await UnifiedFireplace.build_fireplaces_from_user_data(
-            user_data,
-            control_mode=IntelliFireApiMode.NONE,
-            read_mode=IntelliFireApiMode.NONE,
-        )
 
-        fireplace = fireplaces[0]
 
-        assert user_data.get_data_for_ip(
-            fireplace.ip_address
-        ) == user_data.get_data_for_serial(fireplace.serial)
+@pytest.mark.asyncio
+async def test_connectivity_cloud_only(mock_common_data_local, mock_background_polling):
+    """Test connectivity."""
+    with patch("intellifire4py.UnifiedFireplace.async_validate_connectivity") as m:
+        m.return_value = (False, True)
 
-        # Double 404
-        (local, cloud) = await fireplace.async_validate_connectivity()
-        assert local is False
-        assert cloud is False
+        fp = await UnifiedFireplace.build_fireplace_from_common(mock_common_data_local)
 
-        # 403 / Timeout
-        (local, cloud) = await fireplace.async_validate_connectivity()
-        assert local is False
-        assert cloud is False
-        (local, cloud) = await fireplace.async_validate_connectivity()
-        assert local is True
-        assert cloud is True
+        assert fp.local_connectivity is False
+        assert fp.cloud_connectivity is True
+
+
+@pytest.mark.asyncio
+async def test_connectivity_local_only(mock_common_data_local, mock_background_polling):
+    """Test connectivity."""
+    with patch("intellifire4py.UnifiedFireplace.async_validate_connectivity") as m:
+        m.return_value = (True, False)
+
+        fp = await UnifiedFireplace.build_fireplace_from_common(mock_common_data_local)
+
+        assert fp.local_connectivity is True
+        assert fp.cloud_connectivity is False
+
+
+@pytest.mark.asyncio
+async def test_connectivity_none(mock_common_data_local, mock_background_polling):
+    """Test connectivity."""
+    with patch("intellifire4py.UnifiedFireplace.async_validate_connectivity") as m:
+        m.return_value = (False, False)
+
+        with pytest.raises(ClientError) as ex:
+            fp = await UnifiedFireplace.build_fireplace_from_common(
+                mock_common_data_local
+            )

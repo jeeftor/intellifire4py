@@ -12,7 +12,7 @@ from intellifire4py.exceptions import LoginError
 
 @pytest.mark.asyncio
 async def test_cloud_login(  # type: ignore
-    mock_cloud_login_flow,
+    mock_cloud_login_flow_no_local,
     user_id,
     api_key,
 ):
@@ -27,8 +27,8 @@ async def test_cloud_login(  # type: ignore
         user_data = cloud_interface.user_data
         fireplaces = await UnifiedFireplace.build_fireplaces_from_user_data(
             user_data,
-            control_mode=IntelliFireApiMode.NONE,
-            read_mode=IntelliFireApiMode.NONE,
+            desired_control_mode=IntelliFireApiMode.NONE,
+            desired_read_mode=IntelliFireApiMode.NONE,
         )
         fireplace = fireplaces[0]
         await fireplace.perform_cloud_poll()
@@ -59,8 +59,8 @@ async def test_control(  # type: ignore
         user_data = cloud_interface.user_data
         fireplaces = await UnifiedFireplace.build_fireplaces_from_user_data(
             user_data,
-            control_mode=IntelliFireApiMode.CLOUD,
-            read_mode=IntelliFireApiMode.CLOUD,
+            desired_control_mode=IntelliFireApiMode.CLOUD,
+            desired_read_mode=IntelliFireApiMode.CLOUD,
         )
         fp = fireplaces[0]
 
@@ -105,7 +105,7 @@ async def test_incorrect_login_credentials(mock_login_bad_credentials) -> None: 
 
 
 @pytest.mark.asyncio
-async def test_bad_command_param(mock_cloud_login_flow) -> None:  # type:ignore
+async def test_bad_command_param(mock_cloud_login_flow_no_local) -> None:  # type:ignore
     """Test bad command parameter handling."""
     username = "user"
     password = "pass"  # noqa: S105
@@ -117,8 +117,8 @@ async def test_bad_command_param(mock_cloud_login_flow) -> None:  # type:ignore
         user_data = cloud_interface.user_data
         fireplaces = await UnifiedFireplace.build_fireplaces_from_user_data(
             user_data,
-            control_mode=IntelliFireApiMode.CLOUD,
-            read_mode=IntelliFireApiMode.CLOUD,
+            desired_control_mode=IntelliFireApiMode.CLOUD,
+            desired_read_mode=IntelliFireApiMode.CLOUD,
         )
         fireplace = fireplaces[0]  # type: ignore #noqa: F841
 

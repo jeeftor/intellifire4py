@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 
+import aiohttp
 from aiohttp import ClientConnectionError, ClientResponseError
 
 from intellifire4py import IntelliFireAPILocal, IntelliFireAPICloud
@@ -21,6 +21,10 @@ from intellifire4py.read import IntelliFireDataProvider
 from typing import cast
 from typing import Any
 from collections.abc import Coroutine
+
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 class UnifiedFireplace:
@@ -340,11 +344,11 @@ class UnifiedFireplace:
             return self._cloud_data
 
     @classmethod
-    async def create_async_instance(
+    async def _create_async_instance(
         cls,
         fireplace_data: IntelliFireCommonFireplaceData,
-        read_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
-        control_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
+        desired_read_mode: IntelliFireApiMode | None = None,
+        desired_control_mode: IntelliFireApiMode | None = None,
         use_http: bool = False,
         verify_ssl: bool = True,
     ) -> UnifiedFireplace:
@@ -358,9 +362,9 @@ class UnifiedFireplace:
             fireplace_data (IntelliFireCommonFireplaceData): Data related to the fireplace, necessary
                 for initializing the instance. This includes details like IP address, serial number,
                 user ID, API key, etc.
-            read_mode (IntelliFireApiMode, optional): The mode of reading data from the fireplace, either
+            desired_read_mode (IntelliFireApiMode, optional): The mode of reading data from the fireplace, either
                 local or cloud. Defaults to IntelliFireApiMode.LOCAL.
-            control_mode (IntelliFireApiMode, optional): The mode of controlling the fireplace, either
+            desired_control_mode (IntelliFireApiMode, optional): The mode of controlling the fireplace, either
                 local or cloud. Defaults to IntelliFireApiMode.LOCAL.
             use_http (bool, optional): Indicates whether to use HTTP (True) or HTTPS (False) for communication.
             verify_ssl (bool, optional): Toggles SSL certificate verification.
@@ -368,15 +372,52 @@ class UnifiedFireplace:
         Returns:
             [cls]: An initialized instance of the class with the specified configuration.
         """
+
+        desired_read_mode = desired_read_mode or fireplace_data.read_mode
+        desired_control_mode = desired_control_mode or fireplace_data.control_mode
+
+        # Create a fireplace with no connectivity
+        LOGGER.debug("Constructing a new universal fireplace")
         instance = cls(
             fireplace_data,
-            read_mode,
-            control_mode,
+            read_mode=IntelliFireApiMode.NONE,
+            control_mode=IntelliFireApiMode.NONE,
             verify_ssl=verify_ssl,
             use_http=use_http,
         )
-        await instance._switch_read_mode(instance._read_mode)
-        await instance.set_control_mode(instance.control_mode)
+        local_connect, cloud_connect = await instance.async_validate_connectivity(
+            timeout=30
+        )
+
+        instance.local_connectivity = local_connect
+        instance.cloud_connectivity = cloud_connect
+
+        # Everything must be local
+        if local_connect and not cloud_connect:
+            await instance._switch_read_mode(IntelliFireApiMode.LOCAL)
+            await instance.set_control_mode(IntelliFireApiMode.LOCAL)
+        # Everything must be cloud
+        elif cloud_connect and not local_connect:
+            await instance._switch_read_mode(IntelliFireApiMode.CLOUD)
+            await instance.set_control_mode(IntelliFireApiMode.CLOUD)
+        elif not cloud_connect and not local_connect:
+            LOGGER.error("No connectivity to fireplace")
+            raise aiohttp.ClientError(
+                "No connectivity to fireplace via either Local or Cloud"
+            )
+        else:  # use what was configured
+            await instance._switch_read_mode(desired_read_mode)
+            await instance.set_control_mode(desired_control_mode)
+
+        if desired_read_mode != instance._read_mode:
+            LOGGER.debug(
+                f"Unable to apply desired control mode [{desired_read_mode}] - using [{instance._read_mode}] instead"
+            )
+        if desired_control_mode != instance._control_mode:
+            LOGGER.debug(
+                f"Unable to apply desired control mode [{desired_control_mode}] - using [{instance._control_mode}] instead"
+            )
+
         return instance
 
     @classmethod
@@ -398,14 +439,20 @@ class UnifiedFireplace:
         Returns:
             UnifiedFireplace: A fully initialized instance of UnifiedFireplace.
         """
-        return await cls.create_async_instance(common_data)
+        return await cls._create_async_instance(
+            common_data,
+            use_http=use_http,
+            verify_ssl=verify_ssl,
+            desired_read_mode=common_data.read_mode,
+            desired_control_mode=common_data.control_mode,
+        )
 
     @classmethod
     async def build_fireplaces_from_user_data(
         cls,
         user_data: IntelliFireUserData,
-        read_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
-        control_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
+        desired_read_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
+        desired_control_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
         use_http: bool = False,
         verify_ssl: bool = True,
     ) -> list[UnifiedFireplace]:
@@ -416,9 +463,9 @@ class UnifiedFireplace:
 
         Args:
             user_data (IntelliFireUserData): User data containing a list of fireplace data.
-            read_mode (IntelliFireApiMode, optional): The mode of reading data from the fireplace, either
+            desired_read_mode (IntelliFireApiMode, optional): The mode of reading data from the fireplace, either
                 local or cloud. Defaults to IntelliFireApiMode.LOCAL.
-            control_mode (IntelliFireApiMode, optional): The mode of controlling the fireplace, either
+            desired_control_mode (IntelliFireApiMode, optional): The mode of controlling the fireplace, either
                 local or cloud. Defaults to IntelliFireApiMode.LOCAL.
             use_http (bool, optional): Indicates whether to use HTTP or HTTPS for communication.
             verify_ssl (bool, optional): Determines whether SSL certificate verification is enabled.
@@ -429,10 +476,10 @@ class UnifiedFireplace:
         """
 
         tasks = [
-            cls.create_async_instance(
+            cls._create_async_instance(
                 fp,
-                read_mode=read_mode,
-                control_mode=control_mode,
+                desired_read_mode=desired_read_mode,
+                desired_control_mode=desired_control_mode,
                 verify_ssl=verify_ssl,
                 use_http=use_http,
             )
@@ -492,7 +539,7 @@ class UnifiedFireplace:
             control_mode=control_mode,
         )
 
-        return await cls.create_async_instance(common_fireplace)
+        return await cls._create_async_instance(common_fireplace)
 
     @classmethod
     async def build_fireplace_from_common(
@@ -517,12 +564,13 @@ class UnifiedFireplace:
         Returns:
             UnifiedFireplace: An instance of the UnifiedFireplace class initialized with the given common fireplace data.
         """
-        return await cls.create_async_instance(
+
+        return await cls._create_async_instance(
             common_fireplace,
             use_http=use_http,
             verify_ssl=verify_ssl,
-            read_mode=common_fireplace.read_mode,
-            control_mode=common_fireplace.control_mode,
+            desired_read_mode=common_fireplace.read_mode,
+            desired_control_mode=common_fireplace.control_mode,
         )
 
     def debug(self) -> None:
@@ -579,7 +627,7 @@ class UnifiedFireplace:
                 print(generic)
                 return False
 
-        self._log.debug("Validating connectivity")
+        self._log.debug("Validating Fireplace connectivity")
         # Initiate asynchronous connectivity checks for local and cloud.
         local_future = with_timeout(self.perform_local_poll())
         cloud_future = with_timeout(self.perform_cloud_poll())

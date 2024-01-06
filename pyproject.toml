@@ -65,7 +65,7 @@ pytest-xdist = "^3.5.0"
 
 
 [tool.pytest.ini_options]
-addopts = "-n 8 --cov-report xml:cov.xml --cov src --cov-report term-missing --durations-min=1 --durations=0"
+#addopts = "-n 8 --cov-report xml:cov.xml --cov src --cov-report term-missing --durations-min=1 --durations=0"
 testpaths = [
     "tests"
 ]
