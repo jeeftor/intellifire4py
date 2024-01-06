@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "intellifire4py"
-version = "4.1.1"
+version = "4.1.3"
 description = "Intellifire4Py"
 authors = ["Jeff Stein <jeffstein@gmail.com>"]
 license = "MIT"
