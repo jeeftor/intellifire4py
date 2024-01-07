@@ -110,7 +110,16 @@ class UnifiedFireplace:
         await self._local_api.poll(timeout_seconds=timeout_seconds)
 
     @property
-    def dump_user_data_json(self) -> str:
+    def is_cloud_polling(self) -> bool:
+        """Returns True if the cloud API is currently polling in the background."""
+        return self._cloud_api.is_polling_in_background
+
+    @property
+    def is_local_polling(self) -> bool:
+        """Returns True if the local API is currently polling in the background."""
+        return self._local_api.is_polling_in_background
+
+    def get_user_data_as_json(self) -> str:
         """Dump the internal _fireplace_data object to a JSON String."""
         try:
             return str(self._fireplace_data.model_dump_json(indent=2))  # type: ignore[attr-defined]
