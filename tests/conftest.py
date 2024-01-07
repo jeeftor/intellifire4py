@@ -417,16 +417,24 @@ def mock_background_polling() -> Generator:
         cloud_stop_mock = stack.enter_context(
             patch("intellifire4py.IntelliFireAPICloud.stop_background_polling")
         )
+        # abstract_stop_mock = stack.enter_context(
+        #     patch("intellifire4py.IntelliFireDataProvider.stop_background_polling")
+        # )
         local_start_mock = stack.enter_context(
             patch("intellifire4py.IntelliFireAPILocal.start_background_polling")
         )
         cloud_start_mock = stack.enter_context(
             patch("intellifire4py.IntelliFireAPICloud.start_background_polling")
         )
+        # abstract_start_mock = stack.enter_context(
+        #     patch("intellifire4py.IntelliFireDataProvider.start_background_polling")
+        # )
 
         yield {
             "local_stop": local_stop_mock,
             "cloud_stop": cloud_stop_mock,
+            # "abstract_stop": abstract_stop_mock,
             "local_start": local_start_mock,
             "cloud_start": cloud_start_mock,
+            # "abstract_start": abstract_start_mock,
         }

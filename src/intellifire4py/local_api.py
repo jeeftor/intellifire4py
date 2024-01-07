@@ -302,7 +302,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                         while (time.time() - challenge_time) < 5 and not success:
                             # There is a 10 second timeout on the challenge response - we'll try for 5
                             self._log.info(
-                                "_send_local_command:: -- Attempting command via post %d [%s]",
+                                "_send_local_command ➡️ Attempting command via 📬️ post %d [%s]",
                                 (time.time() - challenge_time),
                                 challenge,
                             )
@@ -316,17 +316,17 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                                 timeout=1.0,
                             )
                             self._log.debug(
-                                "_send_local_command:: Sending Local IntelliFire command: [%s=%s]",
+                                "_send_local_command ➡️ Sending Local IntelliFire command: [%s=%s]",
                                 command.value["local_command"],
                                 value,
                             )
                             if resp.status == 403:
                                 self._log.warning(
-                                    f"_send_local_command:: : 403 Error - Invalid challenge code (it may have expired): {url}{data}"
+                                    f"_send_local_command 🟥️ 403 Error - Invalid challenge code (it may have expired): {url}{data}"
                                 )
                             if resp.status == 404:
                                 self._log.warning(
-                                    f"_send_local_command:: Failed to post: {url}{data}"
+                                    f"_send_local_command 🟥️ Failed to post: {url}{data}"
                                 )
                             if resp.status == 422:
                                 self._log.warning(
@@ -373,7 +373,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
         except asyncio.TimeoutError:
             end = time.time()
             self._log.warning(
-                "time[%.2f] get_challenge returned TimeoutError", (end - start)
+                "time[%.2f] get_challenge returned TimeoutError 🕰️", (end - start)
             )
             pass
         except Exception as error:
