@@ -2,7 +2,7 @@
 from __future__ import annotations
 import time
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime
 
 from asyncio import Task
 from typing import Any
@@ -150,7 +150,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             422 Invalid Parameter (invalid command id or command value)
             """
             if response.status == 204:
-                self.last_send = datetime.now(timezone.utc)
+                self.last_send = datetime.now()
                 return
             # elif (
             #     response.status == 403
@@ -200,11 +200,11 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             self._log.debug("Long Poll Status Code %d", response.status)
             if response.status == 200:
                 self._log.debug("Long poll: 200 - Received data")
-                self.last_long_poll = datetime.now(timezone.utc)
+                self.last_long_poll = datetime.now()
                 return True
             elif response.status == 408:
                 self._log.debug("Long poll: 408 - No Data changed")
-                self.last_long_poll = datetime.now(timezone.utc)
+                self.last_long_poll = datetime.now()
                 return False
             elif response.status == 403:
                 raise CloudError("Not authorized")
@@ -278,7 +278,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 self._data = IntelliFirePollData(**json_data)
                 self._log.debug(f"poll() complete: {self._data}")
 
-                self.last_poll = datetime.now(timezone.utc)
+                self.last_poll = datetime.now()
 
             except aiohttp.ClientResponseError as e:
                 if e.status == 403:
