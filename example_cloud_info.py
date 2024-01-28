@@ -10,6 +10,7 @@ from rich.logging import RichHandler  # type: ignore[import-not-found]
 
 from intellifire4py import UnifiedFireplace  # type: ignore[import-not-found]
 from intellifire4py.cloud_interface import IntelliFireCloudInterface  # type: ignore[import-not-found]
+from intellifire4py.const import IntelliFireApiMode
 
 FORMAT = "%(message)s"
 logging.basicConfig(
@@ -76,9 +77,7 @@ async def main() -> None:
     """Define main function."""
     username, password = get_creds()
 
-    cloud_api_interface = (
-        IntelliFireCloudInterface()
-    )  # use_http=True, verify_ssl=False)
+    cloud_api_interface = IntelliFireCloudInterface(use_http=True, verify_ssl=False)
 
     # await cloud_api_interface.login_with_cookie(cookie=Cookies())
     user_json: str = os.getenv("USER_JSON")  # type: ignore
@@ -95,7 +94,9 @@ async def main() -> None:
     #
     fireplaces: list[
         UnifiedFireplace
-    ] = await UnifiedFireplace.build_fireplaces_from_user_data(user_data)
+    ] = await UnifiedFireplace.build_fireplaces_from_user_data(
+        user_data, use_http=True, verify_ssl=False
+    )
 
     fireplace = fireplaces[0]  # type: ignore
 
@@ -104,6 +105,11 @@ async def main() -> None:
     local, cloud = await _async_validate_connectivity(fireplace)
 
     print(local, cloud)
+
+    # Set Cloud Mode
+    await fireplace.set_read_mode(IntelliFireApiMode.CLOUD)
+    await asyncio.sleep(60)
+
     #
     # await fireplace.set_read_mode(IntelliFireApiMode.LOCAL)
     # await fireplace.set_control_mode(IntelliFireApiMode.CLOUD)

@@ -2,7 +2,7 @@
 from __future__ import annotations
 import time
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 
 from asyncio import Task
 from typing import Any
@@ -148,7 +148,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             422 Invalid Parameter (invalid command id or command value)
             """
             if response.status == 204:
-                self._last_send = datetime.now()
+                self._last_send = datetime.now(timezone.utc)
                 return
             # elif (
             #     response.status == 403
@@ -207,11 +207,11 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                     self._data = IntelliFirePollData(**json_data)
                     self._log.debug(f"poll() complete: {self._data}")
 
-                    self._last_poll = datetime.now()
+                    self._last_poll = datetime.now(timezone.utc)
                     return True
                 elif response.status == 408:
                     self._log.debug("Long poll: 408 - No Data changed")
-                    self._last_poll = datetime.now()
+                    self._last_poll = datetime.now(timezone.utc)
                     return False
             except aiohttp.ClientResponseError as e:
                 if e.status == 403:
@@ -288,7 +288,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 self._data = IntelliFirePollData(**json_data)
                 self._log.debug(f"poll() complete: {self._data}")
 
-                self._last_poll = datetime.now()
+                self._last_poll = datetime.now(timezone.utc)
 
             except aiohttp.ClientResponseError as e:
                 if e.status == 403:

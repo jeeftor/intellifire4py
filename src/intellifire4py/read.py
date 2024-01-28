@@ -17,7 +17,7 @@ class IntelliFireDataProvider(ABC):
         pass
 
     @property
-    def last_poll(self) -> datetime | None:
+    def last_poll_utc(self) -> datetime | None:
         """Return the last poll time."""
         return self._last_poll
 
