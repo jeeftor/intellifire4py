@@ -16,7 +16,7 @@ class IntelliFireController(ABC):
         """Initialize the controller knowing whether its local or cloud based."""
         self._control_mode = control_mode
         self._data = IntelliFirePollData()
-        self.last_send: datetime | None = None
+        self._last_send: datetime | None = None
 
     async def flame_on(self) -> None:
         """Turn on the flame."""

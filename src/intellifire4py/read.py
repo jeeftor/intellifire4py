@@ -13,9 +13,13 @@ class IntelliFireDataProvider(ABC):
     def __init__(self) -> None:
         """Define simple initializer."""
         self._data = IntelliFirePollData()
-        self.last_poll: datetime | None = None
-        self.last_long_poll: datetime | None = None
+        self._last_poll: datetime | None = None
         pass
+
+    @property
+    def last_poll(self) -> datetime | None:
+        """Return the last poll time."""
+        return self._last_poll
 
     @property
     @abstractmethod

@@ -18,6 +18,13 @@ class IntelliFireApiMode(Enum):
     NONE = "none"
 
 
+class IntelliFireCloudPollType(Enum):
+    """Polling type."""
+
+    LONG = "long"
+    SHORT = "short"
+
+
 class IntelliFireErrorCode(MultiValueEnum):  # type: ignore
     """The following is a description of various error codes. These were obtained by decompiling the Android APK.
 

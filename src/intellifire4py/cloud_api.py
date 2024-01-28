@@ -6,18 +6,17 @@ from datetime import datetime
 
 from asyncio import Task
 from typing import Any
-
+import json
 import aiohttp
 from aiohttp import CookieJar, ClientSession, ClientTimeout
 
 from .exceptions import CloudError
 from .model import (
-    IntelliFireFireplaceCloud,
     IntelliFireUserData,
 )
 from .model import IntelliFirePollData
 
-from .const import IntelliFireCommand, IntelliFireApiMode
+from .const import IntelliFireCommand, IntelliFireApiMode, IntelliFireCloudPollType
 
 from .control import IntelliFireController
 from .read import IntelliFireDataProvider
@@ -30,6 +29,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
     """Api for cloud access."""
 
     _control_mode = IntelliFireApiMode.CLOUD
+    _poll_mode = IntelliFireCloudPollType.LONG
 
     def __init__(
         self,
@@ -86,8 +86,6 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
 
         # Full data set on the user
         self._user_data: IntelliFireUserData = IntelliFireUserData()
-
-        self.last_send = None
 
     def _get_session(self, timeout_seconds: float = 10.0) -> ClientSession:
         """Ensure that the aiohttp ClientSession is created and open."""
@@ -150,7 +148,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             422 Invalid Parameter (invalid command id or command value)
             """
             if response.status == 204:
-                self.last_send = datetime.now()
+                self._last_send = datetime.now()
                 return
             # elif (
             #     response.status == 403
@@ -165,7 +163,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             else:
                 raise Exception(f"Unexpected return code {response.status}")
 
-    async def long_poll(self, fireplace: IntelliFireFireplaceCloud) -> bool:
+    async def long_poll(self) -> bool:
         """Perform a LongPoll to wait for a Status update.
 
         Only returns a status update when the fireplace’s status actually changes (excluding normal periodic
@@ -192,30 +190,43 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             bool: `True` if status changed, `False` if it did not
         """
 
-        self._log.debug("Long Poll: Start")
+        long_poll_url = f"{self.prefix}://iftapi.net/a/{self._serial}/applongpoll"
+        self._log.debug(f"long_poll() {long_poll_url}")
 
-        async with self._get_session().get(
-            f"{self.prefix}://iftapi.net/a/{self._serial}/applongpoll", timeout=61
-        ) as response:
-            self._log.debug("Long Poll Status Code %d", response.status)
-            if response.status == 200:
-                self._log.debug("Long poll: 200 - Received data")
-                self.last_long_poll = datetime.now()
-                return True
-            elif response.status == 408:
-                self._log.debug("Long poll: 408 - No Data changed")
-                self.last_long_poll = datetime.now()
-                return False
-            elif response.status == 403:
-                raise CloudError("Not authorized")
-            elif response.status == 404:
-                raise CloudError("Fireplace not found (bad serial number)")
-            else:
-                response_text = await response.text()
-                self._log.error(
-                    f"Unexpected status code: {response.status}, Response: {response_text}"
-                )
-                raise CloudError(f"Unexpected status code: {response.status}")
+        async with self._get_session() as session:
+            try:
+                response = await session.get(long_poll_url, timeout=61)
+
+                self._log.debug("Long Poll Status Code %d", response.status)
+                if response.status == 200:
+                    self._log.debug("Long poll: 200 - Received data")
+
+                    # Data has text/html header type so we need to manually convert it to json
+                    json_data = json.loads(await response.text())
+
+                    self._data = IntelliFirePollData(**json_data)
+                    self._log.debug(f"poll() complete: {self._data}")
+
+                    self._last_poll = datetime.now()
+                    return True
+                elif response.status == 408:
+                    self._log.debug("Long poll: 408 - No Data changed")
+                    self._last_poll = datetime.now()
+                    return False
+            except aiohttp.ClientResponseError as e:
+                if e.status == 403:
+                    raise CloudError("Not authorized") from e
+                if e.status == 404:
+                    raise CloudError("Fireplace not found (bad serial number)") from e
+                else:
+                    response_text = await response.text()
+                    self._log.error(
+                        f"Unexpected status code: {response.status}, Response: {response_text}"
+                    )
+                    raise CloudError(
+                        f"Unexpected status code: {response.status}"
+                    ) from e
+        return False
 
     async def poll(self, timeout_seconds: float = 10.0) -> None:
         """Return a fireplace’s status in JSON.
@@ -266,8 +277,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
 
         """
 
-        serial = self._serial
-        poll_url = f"{self.prefix}://iftapi.net/a/{serial}//apppoll"
+        poll_url = f"{self.prefix}://iftapi.net/a/{self._serial}//apppoll"
 
         self._log.debug(f"poll() {poll_url}")
         async with self._get_session() as session:
@@ -278,7 +288,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 self._data = IntelliFirePollData(**json_data)
                 self._log.debug(f"poll() complete: {self._data}")
 
-                self.last_poll = datetime.now()
+                self._last_poll = datetime.now()
 
             except aiohttp.ClientResponseError as e:
                 if e.status == 403:
@@ -324,14 +334,20 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             self._log.debug("__background_poll:: Loop start time %f", start)
 
             try:
-                #     new_data = await self.long_poll()
-                #
-                #     if new_data:
-                #         self._log.debug(self.data)
-                #
-                # Long poll didn't seem to be working so switched to normal polling again
+                if self._poll_mode == IntelliFireCloudPollType.LONG:
+                    await self.long_poll()
+                else:
+                    await self.poll()
 
-                await self.poll()
+                #
+                # #     has_new_data = await self.long_poll()
+                # #
+                # #     if new_data:
+                # #         self._log.debug(self.data)
+                # #
+                # # Long poll didn't seem to be working so switched to normal polling again
+                #
+                # await self.poll()
 
                 end = time.time()
                 duration: float = end - start
@@ -361,3 +377,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         ):  # pragma: no cover - the tests SHOULD be hitting this but dont appear to be
             self._log.warning("Returning uninitialized poll data")  # pragma: no cover
         return self._data
+
+    def set_poll_mode(self, mode: IntelliFireCloudPollType):
+        """Set the poll mode."""
+        self._poll_mode = mode

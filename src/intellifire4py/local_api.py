@@ -205,7 +205,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                     json_data = await response.json(content_type=None)
                     self._data = IntelliFirePollData(**json_data)
                     self._log.debug(f"poll() complete: {self._data}")
-                    self.last_poll = datetime.now()
+                    self._last_poll = datetime.now()
                 except JSONDecodeError as error:
                     if not suppress_warnings:
                         self._log.warning("Error decoding JSON: [%s]", response.text)
@@ -339,7 +339,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                             self._log.debug(
                                 "_send_local_command:: Response Code [%d]", resp.status
                             )
-                            self.last_send = datetime.now()
+                            self._last_send = datetime.now()
                     except asyncio.TimeoutError as error:
                         self._log.warning("Control Endpoint Timeout Error %s", error)
                         continue
