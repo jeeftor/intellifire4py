@@ -1,6 +1,7 @@
 """IntelliFire Control Logic."""
 from __future__ import annotations
 
+from datetime import datetime
 
 from .const import IntelliFireCommand, IntelliFireApiMode
 from abc import ABC, abstractmethod
@@ -15,6 +16,7 @@ class IntelliFireController(ABC):
         """Initialize the controller knowing whether its local or cloud based."""
         self._control_mode = control_mode
         self._data = IntelliFirePollData()
+        self.last_send: datetime | None = None
 
     async def flame_on(self) -> None:
         """Turn on the flame."""

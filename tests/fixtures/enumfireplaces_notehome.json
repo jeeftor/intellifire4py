@@ -1,0 +1,19 @@
+{
+  "location_name": "nothome",
+  "fireplaces": [
+    {
+      "serial": "ABCXXXE834CE109D849CBB15CDDBAFF381",
+      "brand": "H&G",
+      "name": "Bed Room",
+      "apikey": "A2345BDB2D97B3DC7CEE8A8B05DD5FFA",
+      "power": "0"
+    },
+    {
+      "serial": "DEFXXE834CE109D849CBB15CDDBAFF381",
+      "brand": "H&G",
+      "name": "Bathroom Room",
+      "apikey": "B2345BDB2D97B3DC7CEE8A8B05DD5FFA",
+      "power": "1"
+    }
+  ]
+}

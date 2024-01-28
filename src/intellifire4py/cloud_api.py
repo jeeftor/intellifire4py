@@ -1,11 +1,11 @@
 """IntelliFire CLoud API."""
 from __future__ import annotations
-
+import time
 import asyncio
+from datetime import datetime, timezone
 
 from asyncio import Task
 from typing import Any
-import time
 
 import aiohttp
 from aiohttp import CookieJar, ClientSession, ClientTimeout
@@ -87,6 +87,8 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         # Full data set on the user
         self._user_data: IntelliFireUserData = IntelliFireUserData()
 
+        self.last_send = None
+
     def _get_session(self, timeout_seconds: float = 10.0) -> ClientSession:
         """Ensure that the aiohttp ClientSession is created and open."""
         timeout = ClientTimeout(timeout_seconds)
@@ -148,6 +150,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             422 Invalid Parameter (invalid command id or command value)
             """
             if response.status == 204:
+                self.last_send = datetime.now(timezone.utc)
                 return
             # elif (
             #     response.status == 403
@@ -197,9 +200,11 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             self._log.debug("Long Poll Status Code %d", response.status)
             if response.status == 200:
                 self._log.debug("Long poll: 200 - Received data")
+                self.last_long_poll = datetime.now(timezone.utc)
                 return True
             elif response.status == 408:
                 self._log.debug("Long poll: 408 - No Data changed")
+                self.last_long_poll = datetime.now(timezone.utc)
                 return False
             elif response.status == 403:
                 raise CloudError("Not authorized")
@@ -272,6 +277,9 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 json_data = await response.json()
                 self._data = IntelliFirePollData(**json_data)
                 self._log.debug(f"poll() complete: {self._data}")
+
+                self.last_poll = datetime.now(timezone.utc)
+
             except aiohttp.ClientResponseError as e:
                 if e.status == 403:
                     self._log.debug("Not authorized")
