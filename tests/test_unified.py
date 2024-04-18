@@ -13,7 +13,7 @@ from intellifire4py.const import IntelliFireApiMode
 
 @pytest.mark.asyncio
 async def test_build_from_common_data_local_with_local_connectivity(
-    mock_common_data_local, mock_login_flow_with_local_and_cloud
+        mock_common_data_local, mock_login_flow_with_local_and_cloud
 ) -> None:
     """Test build from common data."""
     assert mock_common_data_local.ip_address == "192.168.1.69"
@@ -29,7 +29,7 @@ async def test_build_from_common_data_local_with_local_connectivity(
 
 @pytest.mark.asyncio
 async def test_build_from_common_data_local_with_local_connectivity1(
-    mock_common_data_cloud, mock_login_flow_with_local_and_cloud
+        mock_common_data_cloud, mock_login_flow_with_local_and_cloud
 ) -> None:
     """Test build from common data."""
     local_fp = await UnifiedFireplace.build_fireplace_from_common(
@@ -44,7 +44,7 @@ async def test_build_from_common_data_local_with_local_connectivity1(
 
 @pytest.mark.asyncio
 async def test_build_from_common_data_local_without_local_connectivity2(
-    mock_common_data_local, mock_login_flow_with_cloud_only
+        mock_common_data_local, mock_login_flow_with_cloud_only
 ) -> None:
     """Test build from common data."""
     assert mock_common_data_local.ip_address == "192.168.1.69"
@@ -60,7 +60,7 @@ async def test_build_from_common_data_local_without_local_connectivity2(
 
 @pytest.mark.asyncio
 async def test_build_with_user_data_cloud_only(
-    mock_user_data, mock_cloud_login_flow_no_local
+        mock_user_data, mock_cloud_login_flow_no_local
 ):
     """Test build with user data."""
     fp = (
@@ -77,7 +77,7 @@ async def test_build_with_user_data_cloud_only(
 
 @pytest.mark.asyncio
 async def test_build_with_user_data_cloud_and_local(
-    mock_user_data, mock_login_flow_with_local_and_cloud
+        mock_user_data, mock_login_flow_with_local_and_cloud
 ):
     """Test build with user data."""
     fp = (
@@ -102,7 +102,8 @@ async def test_unified_connectivity(mock_cloud_login_flow_connectivity_testing):
         await cloud_interface.login_with_credentials(
             username=username, password=password
         )
-        user_data = cloud_interface.user_data
+        user_data = cloud_interface.user_data # noqa: F841
+
 
 
 @pytest.mark.asyncio
@@ -135,7 +136,7 @@ async def test_connectivity_none(mock_common_data_local, mock_background_polling
     with patch("intellifire4py.UnifiedFireplace.async_validate_connectivity") as m:
         m.return_value = (False, False)
 
-        with pytest.raises(ClientError) as ex:
-            fp = await UnifiedFireplace.build_fireplace_from_common(
+        with pytest.raises(ClientError) as ex:  # noqa: F841
+            fp = await UnifiedFireplace.build_fireplace_from_common( # noqa: F841
                 mock_common_data_local
             )
