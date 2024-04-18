@@ -1,4 +1,5 @@
 """Basic error code test case."""
+
 from unittest import TestCase
 
 from intellifire4py.const import IntelliFireErrorCode

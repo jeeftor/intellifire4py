@@ -1,4 +1,5 @@
 """IntelliFire API for Python."""
+
 from __future__ import annotations
 
 from .cloud_api import IntelliFireAPICloud  # noqa: F401

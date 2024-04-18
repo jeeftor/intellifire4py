@@ -1,0 +1,76 @@
+---
+name: CI
+
+"on":
+  push:
+    branches:
+      - master
+      - rye
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+      id-token: write
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: eifinger/setup-rye@v2
+        id: setup-rye
+        with:
+          enable-cache: true
+          cache-prefix: ${{ matrix.python-version }}
+      - name: Pin python-version ${{ matrix.python-version }}
+        if: steps.setup-rye.outputs.cache-hit != 'true'
+        run: rye pin ${{ matrix.python-version }}
+      - name: Install dependencies
+        if: steps.setup-rye.outputs.cache-hit != 'true'
+        run: |
+          rye sync --no-lock --all-features
+      - name: Cache pre-commit
+        uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4.0.1
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-|${{ matrix.python-version }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Lint
+        run: |
+          rye run pre-commit run --all-files
+      #      - name: Lint GitHub Actions
+      #        uses: eifinger/actionlint-action@v1
+      - name: Test & Coverage
+        run: |
+          rye test
+          rye run pytest  --cov-report xml:cov.xml --cov src --cov-report term-missing --durations-min=1 --durations=0
+
+      - name: Build & Publish Test Version
+        if: github.ref != 'refs/heads/master'
+        run: |
+          EPOCH=$(date -u +%s)
+          RV=$(rye version)
+          rye version "${RV}.dev${EPOCH}"          
+          rye build --sdist --wheel
+          rye publish --repository testpypi --repository-url https://test.pypi.org/legacy/  --yes --token ${{ secrets.TEST_PYPI_TOKEN }}
+
+      - name: Build & Publish Release Version
+        if: github.ref == 'refs/heads/master'
+        run: |
+          rye build --sdist --wheel
+          rye publish --yes --token ${{ secrets.PYPI_TOKEN }}
+
+#      - name: Publish the release notes
+#        uses: release-drafter/release-drafter@v6.0.0
+#        with:
+#          publish: ${{ steps.check-version.outputs.tag != '' }}
+#          tag: ${{ steps.check-version.outputs.tag }}
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

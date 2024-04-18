@@ -1,4 +1,5 @@
 """Constants and Globals."""
+
 from enum import Enum
 
 from aenum import MultiValueEnum  # type: ignore

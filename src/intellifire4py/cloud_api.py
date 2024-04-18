@@ -1,4 +1,5 @@
 """IntelliFire CLoud API."""
+
 from __future__ import annotations
 import time
 import asyncio

@@ -1,4 +1,5 @@
 """Model definitions."""
+
 from __future__ import annotations
 
 from http.cookies import SimpleCookie

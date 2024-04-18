@@ -1,4 +1,5 @@
 """Tests for utils.py."""
+
 from unittest import TestCase
 from intellifire4py.utils import _range_check
 from intellifire4py.const import IntelliFireCommand

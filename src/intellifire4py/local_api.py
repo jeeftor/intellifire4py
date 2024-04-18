@@ -1,4 +1,5 @@
 """IntelliFire Local API for accessing the fireplace over the lan."""
+
 from __future__ import annotations
 import asyncio
 import time
