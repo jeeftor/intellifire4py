@@ -108,6 +108,11 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
         return self._data
 
     @property
+    def is_initialized(self) -> bool:
+        """Return whether the data is initialized."""
+        return self._data.serial != "unset"
+
+    @property
     def is_polling_in_background(self) -> bool:
         """Return whether api is polling."""
         return self._is_polling_in_background
