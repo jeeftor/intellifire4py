@@ -57,7 +57,7 @@ jobs:
           EPOCH=$(date -u +%s)
           RV=$(rye version)
           rye version "${RV}.dev${EPOCH}"          
-          rye build --sdist --wheel
+          rye build --all
           rye publish --repository testpypi --repository-url https://test.pypi.org/legacy/  --yes --token ${{ secrets.TEST_PYPI_TOKEN }}
 
       - name: Build & Publish Release Version
