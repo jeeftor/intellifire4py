@@ -1,7 +1,7 @@
 
 [project]
 name = "intellifire4py"
-version = "4.1.10"
+version = "4.1.11"
 description = "Intellifire4Py"
 authors = [
     { name = "Jeef", email = "jeffstein@gmail.com" }

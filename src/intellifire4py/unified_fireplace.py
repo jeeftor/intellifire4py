@@ -651,3 +651,8 @@ class UnifiedFireplace:
 
         # Return the results of the connectivity checks.
         return local_success, cloud_success
+
+    @property
+    def is_initialized_local(self) -> bool:
+        """Return the local api init state."""
+        return self._local_api.is_initialized
