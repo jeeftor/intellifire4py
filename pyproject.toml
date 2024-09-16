@@ -70,7 +70,7 @@ testpaths = [
     "tests"
 ]
 [tool.coverage.paths]
-source = ["src", "*/site-packages"]
+source = ["intellifire4py", "*/site-packages"]
 tests = ["tests", "*/tests"]
 
 [tool.coverage.run]

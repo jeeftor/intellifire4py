@@ -419,12 +419,12 @@ class UnifiedFireplace:
             await instance.set_control_mode(desired_control_mode)
 
         if desired_read_mode != instance._read_mode:
-            LOGGER.debug(
-                f"Unable to apply desired control mode [{desired_read_mode}] - using [{instance._read_mode}] instead"
+            LOGGER.info(
+                f"Unable to apply desired control mode [{desired_read_mode}] - using [{instance._read_mode}] instead - check cloud/local connectivity"
             )
         if desired_control_mode != instance._control_mode:
-            LOGGER.debug(
-                f"Unable to apply desired control mode [{desired_control_mode}] - using [{instance._control_mode}] instead"
+            LOGGER.info(
+                f"Unable to apply desired control mode [{desired_control_mode}] - using [{instance._control_mode}] instead - check cloud/local connectivity"
             )
 
         return instance
