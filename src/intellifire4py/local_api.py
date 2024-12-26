@@ -282,12 +282,14 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
             # api_bytes = bytes.fromhex(self._api_key)
             success = False
             retries = 0
+            # We're done when we succeed, but also give up after 10 retries
             while not success and retries < 10:
                 retries += 1
                 # Make a client session
                 # async with self._session as client:
                 # Await a challenge
                 challenge = await self._get_challenge(session)
+                # If the challenge timed out or had another error, try again from the top
                 if not challenge:
                     continue;
 
@@ -355,11 +357,18 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                     self._log.error("Unhandled exception %s", error)
                     self._log.error(error)
 
-            self._log.debug(
-                "_send_local_command:: SUCCESS!! - IntelliFire Command Sent [%s=%s]",
-                command.value["local_command"],
-                value,
-            )
+            if success:
+                self._log.debug(
+                    "_send_local_command:: SUCCESS!! - IntelliFire Command Sent [%s=%s]",
+                    command.value["local_command"],
+                    value,
+                )
+            else:
+                self._log.debug(
+                    "_send_local_command:: FAILURE!! - IntelliFire command could not be sent [%s=%s]",
+                    command.value["local_command"],
+                    value,
+                )
 
     async def _get_challenge(
         self, session: ClientSession
