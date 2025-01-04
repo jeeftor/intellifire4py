@@ -70,6 +70,7 @@ class UnifiedFireplace:
             control_mode (IntelliFireApiMode, optional): Determines how the fireplace is controlled (LOCAL for local network, CLOUD for cloud). Defaults to LOCAL.
             use_http (bool, optional): Indicates whether to use HTTP (True) or HTTPS (False) for communication. Defaults to False (HTTPS).
             verify_ssl (bool, optional): Toggles SSL certificate verification. Defaults to True (verification enabled).
+            polling_enabled (bool, optional): Enables background polling.  If disabled the user must poll manually. Defaults to True (polling enabled).
 
         The constructor prepares two API interfaces:
             - _local_api (IntelliFireAPILocal): Configured for direct local network communication, using the IP address, user ID, and API key from the fireplace_data.
@@ -404,6 +405,7 @@ class UnifiedFireplace:
                 local or cloud. Defaults to IntelliFireApiMode.LOCAL.
             use_http (bool, optional): Indicates whether to use HTTP (True) or HTTPS (False) for communication.
             verify_ssl (bool, optional): Toggles SSL certificate verification.
+            polling_enabled (bool, optional): Enables background polling.  If disabled the user must poll manually. Defaults to True (polling enabled).
 
         Returns:
             [cls]: An initialized instance of the class with the specified configuration.
@@ -598,6 +600,7 @@ class UnifiedFireplace:
             object containing all necessary details for the fireplace.
             use_http (bool, optional): Indicates whether to use HTTP or HTTPS for communication.
             verify_ssl (bool, optional): Determines whether SSL certificate verification is enabled.
+            polling_enabled (bool, optional): Enables background polling.  If disabled the user must poll manually. Defaults to True (polling enabled).
 
         Returns:
             UnifiedFireplace: An instance of the UnifiedFireplace class initialized with the given common fireplace data.
