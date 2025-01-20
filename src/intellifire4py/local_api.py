@@ -291,7 +291,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 challenge = await self._get_challenge(session)
                 # If the challenge timed out or had another error, try again from the top
                 if not challenge:
-                    continue;
+                    continue
 
                 challenge_time = time.time()
                 #
