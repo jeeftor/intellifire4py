@@ -117,7 +117,7 @@ async def test_send_cloud_command_raises_on_unexpected(cloud_api):
 async def test_cloud_api_long_poll_success(cloud_api):
     """Test long poll returns valid JSON."""
     with aioresponses() as m:
-        m.get("https://iftapi.net/a/SERIAL123//apppoll", status=200, body=b'{}')
+        m.get("https://iftapi.net/a/SERIAL123/applongpoll", status=200, body=b'{}')
         resp = await cloud_api.long_poll()
         assert resp is True
 
@@ -126,7 +126,7 @@ async def test_cloud_api_long_poll_success(cloud_api):
 async def test_long_poll_handles_403(cloud_api):
     """Test that long_poll handles a 403 response."""
     with aioresponses() as m:
-        m.get("https://iftapi.net/a/SERIAL123//apppoll", status=403)
+        m.get("https://iftapi.net/a/SERIAL123/applongpoll", status=403)
         with pytest.raises(CloudError):
             await cloud_api.long_poll()
 
@@ -135,7 +135,7 @@ async def test_long_poll_handles_403(cloud_api):
 async def test_long_poll_handles_404(cloud_api):
     """Test that long_poll handles a 404 response."""
     with aioresponses() as m:
-        m.get("https://iftapi.net/a/SERIAL123//apppoll", status=404)
+        m.get("https://iftapi.net/a/SERIAL123/applongpoll", status=404)
         with pytest.raises(CloudError):
             await cloud_api.long_poll()
 

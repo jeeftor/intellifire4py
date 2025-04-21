@@ -110,12 +110,12 @@ def activate_virtualenv_in_precommit_hooks(session: Session) -> None:
                 break
 
 
-def install_poetry_requirements(session, with_dev=True):
-    """Install poetry-plugin-export and export requirements."""
-    session.run("poetry", "self", "add", "poetry-plugin-export")
-    requirements = session.poetry.export_requirements(with_dev=with_dev)
-    session.run("pip", "install", "-r", f"{requirements}")
-    return requirements
+# def install_poetry_requirements(session, with_dev=True):
+#     """Install poetry-plugin-export and export requirements."""
+#     session.run("poetry", "self", "add", "poetry-plugin-export")
+#     requirements = session.poetry.export_requirements(with_dev=with_dev)
+#     session.run("pip", "install", "-r", f"{requirements}")
+#     return requirements
 
 
 def install_sphinx(session, autobuild=False):
@@ -129,7 +129,6 @@ def install_sphinx(session, autobuild=False):
 @session(name="pre-commit", python=python_versions[0])
 def precommit(session: Session) -> None:
     """Lint using pre-commit."""
-    install_poetry_requirements(session)
     args = session.posargs or [
         "run",
         "--all-files",
@@ -144,7 +143,6 @@ def precommit(session: Session) -> None:
 @session(python=python_versions[0])
 def safety(session: Session) -> None:
     """Scan dependencies for insecure packages."""
-    install_poetry_requirements(session)
     session.install("safety")
     requirements = session.poetry.export_requirements(with_dev=True)
     session.run("safety", "check", "--full-report", f"--file={requirements}")
@@ -154,7 +152,6 @@ def safety(session: Session) -> None:
 def mypy(session: Session) -> None:
     """Type-check using mypy."""
     args = session.posargs or ["src", "tests", "docs/conf.py"]
-    install_poetry_requirements(session)
     session.install(".")
     session.install("mypy", "pytest")
     session.run("mypy", *args)
@@ -165,7 +162,6 @@ def mypy(session: Session) -> None:
 @session(python=python_versions)
 def tests(session: Session) -> None:
     """Run the test suite."""
-    install_poetry_requirements(session)
     session.install(".")
     session.install("coverage[toml]", "pytest", "pygments")
     try:
@@ -189,7 +185,6 @@ def tests(session: Session) -> None:
 def coverage(session: Session) -> None:
     """Produce the coverage report."""
     args = session.posargs or ["report"]
-    install_poetry_requirements(session)
     session.install("coverage[toml]")
     if not session.posargs and any(Path().glob(".coverage.*")):
         session.run("coverage", "combine")
@@ -199,7 +194,6 @@ def coverage(session: Session) -> None:
 @session(python=python_versions[0])
 def typeguard(session: Session) -> None:
     """Runtime type checking using Typeguard."""
-    install_poetry_requirements(session)
     session.install(".")
     session.install("pytest", "typeguard", "pygments")
     session.run("pytest", f"--typeguard-packages={package}", *session.posargs)
@@ -226,7 +220,6 @@ def typeguard(session: Session) -> None:
 @session(python=python_versions)
 def xdoctest(session: Session) -> None:
     """Run examples with xdoctest."""
-    install_poetry_requirements(session)
     if session.posargs:
         args = [package, *session.posargs]
     else:
@@ -244,7 +237,6 @@ def docs_build(session: Session) -> None:
     args = session.posargs or ["docs", "docs/_build"]
     if not session.posargs and "FORCE_COLOR" in os.environ:
         args.insert(0, "--color")
-    install_poetry_requirements(session)
     session.install(".")
     install_sphinx(session)
     build_dir = Path("docs", "_build")
@@ -257,7 +249,6 @@ def docs_build(session: Session) -> None:
 def docs(session: Session) -> None:
     """Build and serve the documentation with live reloading on file changes."""
     args = session.posargs or ["--open-browser", "docs", "docs/_build"]
-    install_poetry_requirements(session)
     session.install(".")
     install_sphinx(session, autobuild=True)
     build_dir = Path("docs", "_build")
