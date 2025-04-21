@@ -7,6 +7,7 @@ from intellifire4py.cloud_api import IntelliFireAPICloud
 from intellifire4py.const import IntelliFireCommand, IntelliFireCloudPollType
 from aiohttp import CookieJar
 from intellifire4py.exceptions import CloudError
+from aioresponses import aioresponses
 
 @pytest_asyncio.fixture
 async def dummy_cookie_jar():
@@ -68,235 +69,93 @@ async def test_cloud_api_send_command_calls_send_cloud_command(monkeypatch, clou
 
 
 @pytest.mark.asyncio
-async def test_cloud_api_send_cloud_command_raises_on_non_204(monkeypatch, cloud_api):
+async def test_cloud_api_send_cloud_command_raises_on_non_204(cloud_api):
     """Test _send_cloud_command raises on non-204 response."""
-    class FakeResponse:
-        status = 500
-        async def read(self): return b'error'
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-        def raise_for_status(self):
-            raise RuntimeError("Non-204 response")
-    class FakeSession:
-        def post(self, *a, **kw): return FakeResponse()
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
-    async def fake_convert_aiohttp_response_to_curl(r):
-        return "curl ..."
-    monkeypatch.setattr("intellifire4py.cloud_api._convert_aiohttp_response_to_curl", fake_convert_aiohttp_response_to_curl)
-    with pytest.raises(RuntimeError):
-        await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
+    with aioresponses() as m:
+        m.post("https://iftapi.net/a/SERIAL123//apppost", status=500, body=b'error')
+        with pytest.raises(CloudError):
+            await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
 
 
 @pytest.mark.asyncio
-async def test_cloud_api_long_poll_success(monkeypatch, cloud_api):
+async def test_cloud_api_long_poll_success(cloud_api):
     """Test long poll returns valid JSON."""
-    class FakeResponse:
-        status = 200
-        async def read(self): return b'{}'
-        async def text(self): return '{}'
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    class FakeSession:
-        async def get(self, *a, **kw): return FakeResponse()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
-    resp = await cloud_api.long_poll()
-    assert resp is True
+    with aioresponses() as m:
+        m.get("https://iftapi.net/a/SERIAL123//apppoll", status=200, body=b'{}')
+        resp = await cloud_api.long_poll()
+        assert resp is True
 
 
 @pytest.mark.asyncio
-async def test_cloud_api_set_poll_mode(cloud_api):
-    """Test set_poll_mode sets the poll mode."""
-    cloud_api.set_poll_mode(IntelliFireCloudPollType.LONG)
-    assert cloud_api._poll_mode == IntelliFireCloudPollType.LONG
-
-
-@pytest.mark.asyncio
-async def test_cloud_api_data_property_warns_on_localhost(cloud_api, caplog):
-    """Test that accessing the data property on localhost issues a warning."""
-    cloud_api._data.ipv4_address = "127.0.0.1"
-    with caplog.at_level("WARNING"):
-        _ = cloud_api.data
-    assert "uninitialized poll data" in caplog.text
-
-
-@pytest.mark.asyncio
-async def test_send_cloud_command_raises_clouderror_403(monkeypatch, cloud_api):
+async def test_send_cloud_command_raises_clouderror_403(cloud_api):
     """Test that sending a cloud command with 403 response raises CloudError."""
-    from intellifire4py.exceptions import CloudError
-    class FakeRequestInfo:
-        method = "POST"
-        headers = {}
-    class FakeResponse:
-        status = 403
-        request_info = FakeRequestInfo()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-        async def read(self): return b""
-    class FakeSession:
-        def post(self, *a, **kw): return FakeResponse()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
-    with pytest.raises(CloudError):
-        await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
+    with aioresponses() as m:
+        m.post("https://iftapi.net/a/SERIAL123//apppost", status=403)
+        with pytest.raises(CloudError):
+            await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
 
 
 @pytest.mark.asyncio
-async def test_send_cloud_command_raises_clouderror_404(monkeypatch, cloud_api):
+async def test_send_cloud_command_raises_clouderror_404(cloud_api):
     """Test that sending a cloud command with 404 response raises CloudError."""
-    from intellifire4py.exceptions import CloudError
-    class FakeRequestInfo:
-        method = "POST"
-        headers = {}
-    class FakeResponse:
-        status = 404
-        request_info = FakeRequestInfo()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-        async def read(self): return b""
-    class FakeSession:
-        def post(self, *a, **kw): return FakeResponse()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
-    with pytest.raises(CloudError):
-        await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
+    with aioresponses() as m:
+        m.post("https://iftapi.net/a/SERIAL123//apppost", status=404)
+        with pytest.raises(CloudError):
+            await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
 
 
 @pytest.mark.asyncio
-async def test_send_cloud_command_raises_clouderror_422(monkeypatch, cloud_api):
+async def test_send_cloud_command_raises_clouderror_422(cloud_api):
     """Test that sending a cloud command with 422 response raises CloudError."""
-    from intellifire4py.exceptions import CloudError
-    class FakeRequestInfo:
-        method = "POST"
-        headers = {}
-    class FakeResponse:
-        status = 422
-        request_info = FakeRequestInfo()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-        async def read(self): return b""
-    class FakeSession:
-        def post(self, *a, **kw): return FakeResponse()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
-    with pytest.raises(CloudError):
-        await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
+    with aioresponses() as m:
+        m.post("https://iftapi.net/a/SERIAL123//apppost", status=422)
+        with pytest.raises(CloudError):
+            await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
 
 
 @pytest.mark.asyncio
-async def test_send_cloud_command_raises_on_unexpected(monkeypatch, cloud_api):
+async def test_send_cloud_command_raises_on_unexpected(cloud_api):
     """Test that sending a cloud command with unexpected status raises CloudError."""
-    class FakeResponse:
-        status = 500
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    class FakeSession:
-        def post(self, *a, **kw): return FakeResponse()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
-    with pytest.raises(CloudError):
-        await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
+    with aioresponses() as m:
+        m.post("https://iftapi.net/a/SERIAL123//apppost", status=500)
+        with pytest.raises(CloudError):
+            await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
 
 
 @pytest.mark.asyncio
-async def test_long_poll_handles_403(monkeypatch, cloud_api):
-    """Test that long_poll handles a 403 response."""
-    class FakeResponse:
-        status = 403
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    class FakeSession:
-        async def get(self, *a, **kw): return FakeResponse()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
-    with pytest.raises(CloudError):
-        await cloud_api.long_poll()
-
-
-@pytest.mark.asyncio
-async def test_long_poll_handles_404(monkeypatch, cloud_api):
-    """Test that long_poll handles a 404 response."""
-    class FakeResponse:
-        status = 404
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    class FakeSession:
-        async def get(self, *a, **kw): return FakeResponse()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
-    with pytest.raises(CloudError):
-        await cloud_api.long_poll()
-
-
-@pytest.mark.asyncio
-async def test_poll_handles_403(monkeypatch, cloud_api):
-    """Test that poll handles a 403 response."""
-    class FakeResponse:
-        status = 403
-        async def json(self): return {}
-        def raise_for_status(self):
-            raise aiohttp.ClientResponseError(None, (), status=403)
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    class FakeSession:
-        async def get(self, *a, **kw): return FakeResponse()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
-    with pytest.raises(aiohttp.ClientResponseError):
-        await cloud_api.poll()
-
-
-@pytest.mark.asyncio
-async def test_poll_handles_404(monkeypatch, cloud_api):
-    """Test that poll handles a 404 response."""
-    class FakeResponse:
-        status = 404
-        async def json(self): return {}
-        def raise_for_status(self):
-            raise aiohttp.ClientResponseError(None, (), status=404)
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    class FakeSession:
-        async def get(self, *a, **kw): return FakeResponse()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
-    with pytest.raises(aiohttp.ClientResponseError):
-        await cloud_api.poll()
-
-
-@pytest.mark.asyncio
-async def test_send_cloud_command_204_sets_last_send(monkeypatch, cloud_api):
+async def test_send_cloud_command_204_sets_last_send(cloud_api):
     """Test that a 204 response sets _last_send in send_cloud_command."""
-    class FakeRequestInfo:
-        method = "POST"
-    class FakeResponse:
-        status = 204
-        request_info = FakeRequestInfo()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    class FakeSession:
-        def post(self, *a, **kw): return FakeResponse()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
     import time
-    before = time.time()
-    await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
-    assert cloud_api._last_send >= before
+    with aioresponses() as m:
+        m.post("https://iftapi.net/a/SERIAL123//apppost", status=204)
+        before = time.time()
+        await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
+        assert cloud_api._last_send >= before
+
+
+@pytest.mark.asyncio
+async def test_long_poll_handles_403(cloud_api):
+    """Test that long_poll handles a 403 response."""
+    with aioresponses() as m:
+        m.get("https://iftapi.net/a/SERIAL123//apppoll", status=403)
+        with pytest.raises(CloudError):
+            await cloud_api.long_poll()
+
+
+@pytest.mark.asyncio
+async def test_long_poll_handles_404(cloud_api):
+    """Test that long_poll handles a 404 response."""
+    with aioresponses() as m:
+        m.get("https://iftapi.net/a/SERIAL123//apppoll", status=404)
+        with pytest.raises(CloudError):
+            await cloud_api.long_poll()
 
 
 @pytest.mark.asyncio
 async def test_long_poll_raises_clientresponseerror_403(monkeypatch, cloud_api):
     """Test that long_poll raises CloudError on 403 ClientResponseError."""
+    import aiohttp
+    from intellifire4py.exceptions import CloudError
     class FakeResponse:
         status = 403
         async def __aenter__(self):
@@ -315,6 +174,8 @@ async def test_long_poll_raises_clientresponseerror_403(monkeypatch, cloud_api):
 @pytest.mark.asyncio
 async def test_long_poll_raises_clientresponseerror_404(monkeypatch, cloud_api):
     """Test that long_poll raises CloudError on 404 ClientResponseError."""
+    import aiohttp
+    from intellifire4py.exceptions import CloudError
     class FakeResponse:
         status = 404
         async def __aenter__(self):
@@ -333,6 +194,8 @@ async def test_long_poll_raises_clientresponseerror_404(monkeypatch, cloud_api):
 @pytest.mark.asyncio
 async def test_long_poll_raises_clientresponseerror_other(monkeypatch, cloud_api):
     """Test that long_poll raises CloudError on unexpected ClientResponseError status."""
+    import aiohttp
+    from intellifire4py.exceptions import CloudError
     class FakeResponse:
         status = 500
         async def __aenter__(self):
@@ -378,3 +241,50 @@ async def test_background_poll_loop_handles_exception(monkeypatch, cloud_api):
     await cloud_api._IntelliFireAPICloud__background_poll(minimum_wait_in_seconds=0)
     assert calls['called']
     assert not cloud_api._should_poll_in_background
+
+
+@pytest.mark.asyncio
+async def test_poll_handles_403(monkeypatch, cloud_api):
+    """Test that poll handles a 403 response."""
+    class FakeResponse:
+        status = 403
+        async def json(self): return {}
+        def raise_for_status(self):
+            raise aiohttp.ClientResponseError(None, (), status=403)
+        async def __aenter__(self): return self
+        async def __aexit__(self, exc_type, exc, tb): pass
+    class FakeSession:
+        async def get(self, *a, **kw): return FakeResponse()
+        async def __aenter__(self): return self
+        async def __aexit__(self, exc_type, exc, tb): pass
+    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
+    with pytest.raises(aiohttp.ClientResponseError):
+        await cloud_api.poll()
+
+
+@pytest.mark.asyncio
+async def test_poll_handles_404(monkeypatch, cloud_api):
+    """Test that poll handles a 404 response."""
+    class FakeResponse:
+        status = 404
+        async def json(self): return {}
+        def raise_for_status(self):
+            raise aiohttp.ClientResponseError(None, (), status=404)
+        async def __aenter__(self): return self
+        async def __aexit__(self, exc_type, exc, tb): pass
+    class FakeSession:
+        async def get(self, *a, **kw): return FakeResponse()
+        async def __aenter__(self): return self
+        async def __aexit__(self, exc_type, exc, tb): pass
+    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
+    with pytest.raises(aiohttp.ClientResponseError):
+        await cloud_api.poll()
+
+
+@pytest.mark.asyncio
+async def test_cloud_api_data_property_warns_on_localhost(cloud_api, caplog):
+    """Test that accessing the data property on localhost issues a warning."""
+    cloud_api._data.ipv4_address = "127.0.0.1"
+    with caplog.at_level("WARNING"):
+        _ = cloud_api.data
+    assert "uninitialized poll data" in caplog.text

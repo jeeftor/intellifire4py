@@ -58,9 +58,6 @@ jobs:
           pipx inject --pip-args=--constraint=.github/workflows/constraints.txt nox nox-poetry
           nox --version
 
-      - name: Upgrade Poetry to v2
-        run: pipx install poetry==2.2.2 --force
-
       - name: Check Poetry version
         run: poetry --version
 
