@@ -58,6 +58,15 @@ jobs:
           pipx inject --pip-args=--constraint=.github/workflows/constraints.txt nox nox-poetry
           nox --version
 
+      - name: Upgrade Poetry to v2
+        run: pipx install poetry==2.2.2 --force
+
+      - name: Check Poetry version
+        run: poetry --version
+
+      - name: Set up Nix
+        uses: cachix/install-nix-action@v27
+
       - name: Compute pre-commit cache key
         if: matrix.session == 'pre-commit'
         id: pre-commit-cache
@@ -82,9 +91,9 @@ jobs:
           restore-keys: |
             ${{ steps.pre-commit-cache.outputs.result }}-
 
-      - name: Run Nox
+      - name: Run Nox in Nix devShell
         run: |
-          nox --python=${{ matrix.python }}
+          nix develop --command nox
 
       - name: Run tests and generate coverage report
         if: matrix.session == 'tests'
