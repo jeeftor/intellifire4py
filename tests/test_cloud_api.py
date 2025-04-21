@@ -124,10 +124,16 @@ async def test_cloud_api_data_property_warns_on_localhost(cloud_api, caplog):
 @pytest.mark.asyncio
 async def test_send_cloud_command_raises_clouderror_403(monkeypatch, cloud_api):
     """Test that sending a cloud command with 403 response raises CloudError."""
+    from intellifire4py.exceptions import CloudError
+    class FakeRequestInfo:
+        method = "POST"
+        headers = {}
     class FakeResponse:
         status = 403
+        request_info = FakeRequestInfo()
         async def __aenter__(self): return self
         async def __aexit__(self, exc_type, exc, tb): pass
+        async def read(self): return b""
     class FakeSession:
         def post(self, *a, **kw): return FakeResponse()
         async def __aenter__(self): return self
@@ -140,10 +146,16 @@ async def test_send_cloud_command_raises_clouderror_403(monkeypatch, cloud_api):
 @pytest.mark.asyncio
 async def test_send_cloud_command_raises_clouderror_404(monkeypatch, cloud_api):
     """Test that sending a cloud command with 404 response raises CloudError."""
+    from intellifire4py.exceptions import CloudError
+    class FakeRequestInfo:
+        method = "POST"
+        headers = {}
     class FakeResponse:
         status = 404
+        request_info = FakeRequestInfo()
         async def __aenter__(self): return self
         async def __aexit__(self, exc_type, exc, tb): pass
+        async def read(self): return b""
     class FakeSession:
         def post(self, *a, **kw): return FakeResponse()
         async def __aenter__(self): return self
@@ -156,10 +168,16 @@ async def test_send_cloud_command_raises_clouderror_404(monkeypatch, cloud_api):
 @pytest.mark.asyncio
 async def test_send_cloud_command_raises_clouderror_422(monkeypatch, cloud_api):
     """Test that sending a cloud command with 422 response raises CloudError."""
+    from intellifire4py.exceptions import CloudError
+    class FakeRequestInfo:
+        method = "POST"
+        headers = {}
     class FakeResponse:
         status = 422
+        request_info = FakeRequestInfo()
         async def __aenter__(self): return self
         async def __aexit__(self, exc_type, exc, tb): pass
+        async def read(self): return b""
     class FakeSession:
         def post(self, *a, **kw): return FakeResponse()
         async def __aenter__(self): return self

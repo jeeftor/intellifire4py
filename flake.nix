@@ -1,5 +1,5 @@
 {
-  description = "A sample Flake for Home Assistant with Python 3.12 & uv";
+  description = "A sample Flake for Home Assistant with Python 3.13 & uv";
   
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -10,7 +10,11 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        python = pkgs.python312;
+        python = pkgs.python313;
+        pythonEnv = python.withPackages (ps: with ps; [
+          ps.pip # ensure pip exists
+          ps.numpy # Numpy
+        ]);
       in
       {
         devShells.default = pkgs.mkShell {
