@@ -9,13 +9,12 @@ from intellifire4py import UnifiedFireplace
 from intellifire4py.cloud_interface import IntelliFireCloudInterface
 from intellifire4py.const import IntelliFireApiMode
 
-
 @pytest.mark.asyncio
 async def test_build_from_common_data_local_with_local_connectivity(
     mock_common_data_local, mock_login_flow_with_local_and_cloud
 ) -> None:
     """Test build from common data."""
-    assert mock_common_data_local.ip_address == "192.168.1.69"
+    assert mock_common_data_local.ip_address == "192.168.1.69" #NOSONAR
 
     local_fp = await UnifiedFireplace.build_fireplace_from_common(
         mock_common_data_local
@@ -46,7 +45,7 @@ async def test_build_from_common_data_local_without_local_connectivity2(
     mock_common_data_local, mock_login_flow_with_cloud_only
 ) -> None:
     """Test build from common data."""
-    assert mock_common_data_local.ip_address == "192.168.1.69"
+    assert mock_common_data_local.ip_address == "192.168.1.69" #NOSONAR
 
     local_fp = await UnifiedFireplace.build_fireplace_from_common(
         mock_common_data_local
@@ -95,7 +94,7 @@ async def test_build_with_user_data_cloud_and_local(
 async def test_unified_connectivity(mock_cloud_login_flow_connectivity_testing):  # type: ignore
     """Test connectivity."""
     username = "user"
-    password = "pass"  # noqa: S105
+    password = "pass"  # noqa: S105 NOSONAR
 
     async with IntelliFireCloudInterface() as cloud_interface:
         await cloud_interface.login_with_credentials(
@@ -247,7 +246,7 @@ async def test_build_fireplace_direct(monkeypatch):
         return (True, False)
     monkeypatch.setattr(UnifiedFireplace, "async_validate_connectivity", fake_validate)
     fp = await UnifiedFireplace.build_fireplace_direct(
-        ip_address="1.2.3.4",
+        ip_address="1.2.3.4", #NOSONAR
         api_key="api",
         serial="ser",
         auth_cookie="cookie",
@@ -259,7 +258,7 @@ async def test_build_fireplace_direct(monkeypatch):
         verify_ssl=False,
     )
     assert isinstance(fp, UnifiedFireplace)
-    assert fp.ip_address == "1.2.3.4"
+    assert fp.ip_address == "1.2.3.4" #NOSONAR
     assert fp.api_key == "api"
     assert fp.serial == "ser"
     assert fp.auth_cookie == "cookie"
