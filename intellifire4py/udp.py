@@ -67,11 +67,11 @@ class IFTDiscoverySenderProtocol(asyncio.DatagramProtocol):
 
     def error_received(self, exc):  # type: ignore
         """Display error."""
-        _log.warning("UDP Discovery Send - Error received:", exc)
+        _log.warning("UDP Discovery Send - Error received: %s", exc)
 
     def connection_lost(self, exc):  # type: ignore
         """Close connection."""
-        if not self.on_con_lost:
+        if self.on_con_lost is not None:
             self.on_con_lost.set_result(True)
 
 
