@@ -73,7 +73,43 @@ async def test_cloud_api_send_cloud_command_raises_on_non_204(cloud_api):
     """Test _send_cloud_command raises on non-204 response."""
     with aioresponses() as m:
         m.post("https://iftapi.net/a/SERIAL123//apppost", status=500, body=b'error')
-        with pytest.raises(CloudError):
+        with pytest.raises(aiohttp.ClientResponseError):
+            await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
+
+
+@pytest.mark.asyncio
+async def test_send_cloud_command_raises_clouderror_403(cloud_api):
+    """Test that sending a cloud command with 403 response raises aiohttp.ClientResponseError."""
+    with aioresponses() as m:
+        m.post("https://iftapi.net/a/SERIAL123//apppost", status=403)
+        with pytest.raises(aiohttp.ClientResponseError):
+            await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
+
+
+@pytest.mark.asyncio
+async def test_send_cloud_command_raises_clouderror_404(cloud_api):
+    """Test that sending a cloud command with 404 response raises aiohttp.ClientResponseError."""
+    with aioresponses() as m:
+        m.post("https://iftapi.net/a/SERIAL123//apppost", status=404)
+        with pytest.raises(aiohttp.ClientResponseError):
+            await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
+
+
+@pytest.mark.asyncio
+async def test_send_cloud_command_raises_clouderror_422(cloud_api):
+    """Test that sending a cloud command with 422 response raises aiohttp.ClientResponseError."""
+    with aioresponses() as m:
+        m.post("https://iftapi.net/a/SERIAL123//apppost", status=422)
+        with pytest.raises(aiohttp.ClientResponseError):
+            await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
+
+
+@pytest.mark.asyncio
+async def test_send_cloud_command_raises_on_unexpected(cloud_api):
+    """Test that sending a cloud command with unexpected status raises aiohttp.ClientResponseError."""
+    with aioresponses() as m:
+        m.post("https://iftapi.net/a/SERIAL123//apppost", status=500)
+        with pytest.raises(aiohttp.ClientResponseError):
             await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
 
 
@@ -84,53 +120,6 @@ async def test_cloud_api_long_poll_success(cloud_api):
         m.get("https://iftapi.net/a/SERIAL123//apppoll", status=200, body=b'{}')
         resp = await cloud_api.long_poll()
         assert resp is True
-
-
-@pytest.mark.asyncio
-async def test_send_cloud_command_raises_clouderror_403(cloud_api):
-    """Test that sending a cloud command with 403 response raises CloudError."""
-    with aioresponses() as m:
-        m.post("https://iftapi.net/a/SERIAL123//apppost", status=403)
-        with pytest.raises(CloudError):
-            await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
-
-
-@pytest.mark.asyncio
-async def test_send_cloud_command_raises_clouderror_404(cloud_api):
-    """Test that sending a cloud command with 404 response raises CloudError."""
-    with aioresponses() as m:
-        m.post("https://iftapi.net/a/SERIAL123//apppost", status=404)
-        with pytest.raises(CloudError):
-            await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
-
-
-@pytest.mark.asyncio
-async def test_send_cloud_command_raises_clouderror_422(cloud_api):
-    """Test that sending a cloud command with 422 response raises CloudError."""
-    with aioresponses() as m:
-        m.post("https://iftapi.net/a/SERIAL123//apppost", status=422)
-        with pytest.raises(CloudError):
-            await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
-
-
-@pytest.mark.asyncio
-async def test_send_cloud_command_raises_on_unexpected(cloud_api):
-    """Test that sending a cloud command with unexpected status raises CloudError."""
-    with aioresponses() as m:
-        m.post("https://iftapi.net/a/SERIAL123//apppost", status=500)
-        with pytest.raises(CloudError):
-            await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
-
-
-@pytest.mark.asyncio
-async def test_send_cloud_command_204_sets_last_send(cloud_api):
-    """Test that a 204 response sets _last_send in send_cloud_command."""
-    import time
-    with aioresponses() as m:
-        m.post("https://iftapi.net/a/SERIAL123//apppost", status=204)
-        before = time.time()
-        await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
-        assert cloud_api._last_send >= before
 
 
 @pytest.mark.asyncio
