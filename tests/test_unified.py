@@ -138,3 +138,70 @@ async def test_connectivity_none(mock_common_data_local, mock_background_polling
             fp = await UnifiedFireplace.build_fireplace_from_common(
                 mock_common_data_local
             )
+
+
+@pytest.mark.asyncio
+async def test_property_access(mock_common_data_local):
+    """Test property accessors for UnifiedFireplace."""
+    fp = UnifiedFireplace(mock_common_data_local)
+    assert fp.ip_address == mock_common_data_local.ip_address
+    assert fp.api_key == mock_common_data_local.api_key
+    assert fp.serial == mock_common_data_local.serial
+    assert fp.user_id == mock_common_data_local.user_id
+    assert fp.auth_cookie == mock_common_data_local.auth_cookie
+    assert fp.web_client_id == mock_common_data_local.web_client_id
+    json_str = fp.get_user_data_as_json()
+    assert isinstance(json_str, str)
+
+
+@pytest.mark.asyncio
+async def test_read_and_control_api_switch(mock_common_data_local):
+    """Test read_api and control_api switching logic."""
+    fp = UnifiedFireplace(mock_common_data_local)
+    fp._read_mode = IntelliFireApiMode.LOCAL
+    assert fp.read_api is fp._local_api
+    fp._read_mode = IntelliFireApiMode.CLOUD
+    assert fp.read_api is fp._cloud_api
+    fp._control_mode = IntelliFireApiMode.LOCAL
+    assert fp.control_api is fp._local_api
+    fp._control_mode = IntelliFireApiMode.CLOUD
+    assert fp.control_api is fp._cloud_api
+
+
+@pytest.mark.asyncio
+async def test_data_property(mock_common_data_local):
+    """Test data property returns correct data based on mode."""
+    fp = UnifiedFireplace(mock_common_data_local)
+    fp._read_mode = IntelliFireApiMode.LOCAL
+    assert fp.data == fp._local_api.data
+    fp._read_mode = IntelliFireApiMode.CLOUD
+    assert fp.data == fp._cloud_api.data
+
+
+import pytest
+@pytest.mark.asyncio
+async def test_set_read_mode_branches(monkeypatch, mock_common_data_local):
+    """Test set_read_mode covers all branches and error handling."""
+    fp = UnifiedFireplace(mock_common_data_local)
+    # Same mode: triggers early return
+    await fp.set_read_mode(fp._read_mode)
+    # Switch mode: triggers _switch_read_mode
+    called = {}
+    async def fake_switch(mode):
+        called['mode'] = mode
+    fp._switch_read_mode = fake_switch
+    await fp.set_read_mode(IntelliFireApiMode.CLOUD)
+    assert called['mode'] == IntelliFireApiMode.CLOUD
+    # Error branch
+    async def raise_exc(mode):
+        raise Exception("fail")
+    fp._switch_read_mode = raise_exc
+    await fp.set_read_mode(IntelliFireApiMode.LOCAL)  # Should log error, not raise
+
+@pytest.mark.asyncio
+async def test_set_control_mode(mock_common_data_local):
+    """Test set_control_mode sets mode and updates fireplace_data."""
+    fp = UnifiedFireplace(mock_common_data_local)
+    await fp.set_control_mode(IntelliFireApiMode.CLOUD)
+    assert fp._control_mode == IntelliFireApiMode.CLOUD
+    assert fp._fireplace_data.control_mode == IntelliFireApiMode.CLOUD
