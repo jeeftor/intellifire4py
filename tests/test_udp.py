@@ -12,10 +12,10 @@ async def test_ift_discovery_reader_protocol_adds_ip():
     ip_set = set()
     protocol = IFTDiscoveryReaderProtocol(timeout=5, ip_set=ip_set)
     # Simulate receiving a valid datagram
-    data = json.dumps({"ip": "192.168.1.100"}).encode()
+    data = json.dumps({"ip": "192.168.1.100"}).encode() #NOSONAR
     addr = ("192.168.1.100", 55555)
     protocol.datagram_received(data, addr)
-    assert "192.168.1.100" in ip_set
+    assert "192.168.1.100" in ip_set #NOSONAR
 
 
 def test_ift_discovery_reader_protocol_connection_methods():
@@ -54,8 +54,8 @@ async def test_udp_fireplace_finder_ips_and_init():
     """Test UDPFireplaceFinder initialization and IPs property."""
     finder = UDPFireplaceFinder(timeout_in_seconds=1)
     assert finder.ips == []
-    finder.ip_set.add("1.2.3.4")
-    assert finder.ips == ["1.2.3.4"]
+    finder.ip_set.add("1.2.3.4") #NOSONAR
+    assert finder.ips == ["1.2.3.4"] #NOSONAR
 
 
 @pytest.mark.asyncio
