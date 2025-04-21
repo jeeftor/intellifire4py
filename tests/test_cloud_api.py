@@ -49,6 +49,8 @@ async def test_cloud_api_send_command_calls_send_cloud_command(monkeypatch, clou
     async def fake_send_cloud_command(**kwargs):
         called["yes"] = True
     monkeypatch.setattr(cloud_api, "_send_cloud_command", fake_send_cloud_command)
+    # Ensure the cookie jar is not None so the real _send_cloud_command is called
+    cloud_api._cookie_jar = object()
     await cloud_api.send_command(command=IntelliFireCommand.POWER, value=1)
     assert called["yes"]
 
@@ -73,10 +75,11 @@ async def test_cloud_api_send_cloud_command_raises_on_non_204(monkeypatch, cloud
 
 @pytest.mark.asyncio
 async def test_cloud_api_long_poll_success(monkeypatch, cloud_api):
+    import json
     class FakeResponse:
         status = 200
-        async def read(self): return b''
-        async def text(self): return ''
+        async def read(self): return b'{}'
+        async def text(self): return '{}'
         async def json(self): return {}
     class FakeSession:
         async def __aenter__(self): return self

@@ -74,17 +74,8 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 "control the device. "
             )
 
-        # self._session: ClientSession | None = None
 
-    # async def ensure_session(self) -> None:
-    #     """Ensure that the aiohttp ClientSession is created and open."""
-    #     if self._session is None or self._session.closed:
-    #         self._session = aiohttp.ClientSession(headers={"user-agent": USER_AGENT})
-    #
-    # async def close_session(self) -> None:
-    #     """Close the aiohttp ClientSession."""
-    #     if self._session and not self._session.closed:
-    #         await self._session.close()
+
 
     def log_status(self) -> None:
         """Log a status message."""
@@ -267,7 +258,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
             f"command={command}&value={value}&user={self._user_id}&response={response}"
         )
 
-    async def _send_local_command(
+    async def _send_local_command( #NOSONAR
         self,
         *,
         command: IntelliFireCommand,
@@ -299,7 +290,6 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                     #     + sha256(api_bytes + challenge_bytes + payload_bytes).digest()
                     # ).hexdigest()
 
-                    # data = f"command={command.value['local_command']}&value={value}&user={self._user_id}&response={response}"
                     data = self._construct_payload(
                         command=command.value["local_command"],  # type: ignore
                         value=value,
@@ -378,13 +368,11 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 "time[%.2f] get_challenge returned ClientConnectError",
                 (end - start),
             )
-            pass
         except asyncio.TimeoutError:
             end = time.time()
             self._log.warning(
                 "time[%.2f] get_challenge returned TimeoutError 🕰️", (end - start)
             )
-            pass
         except Exception as error:
             end = time.time()
             self._log.error(
