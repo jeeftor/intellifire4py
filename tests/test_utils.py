@@ -1,8 +1,9 @@
 """Tests for utils.py."""
 from unittest import TestCase
-from intellifire4py.utils import _range_check
+from intellifire4py.utils import _range_check, _convert_aiohttp_response_to_curl
 from intellifire4py.const import IntelliFireCommand
 from intellifire4py.exceptions import InputRangError
+import pytest
 
 
 class TestRangeCheck(TestCase):
@@ -69,3 +70,19 @@ class TestRangeCheck(TestCase):
         self.assertEqual(
             str(context.exception), "POWER is out of bounds: valid values [0:1]"
         )
+
+    @pytest.mark.asyncio
+    async def test_convert_aiohttp_response_to_curl(self, monkeypatch):
+        class DummyRequestInfo:
+            method = "POST"
+            headers = {"Content-Type": "application/json", "X-Test": "foo"}
+        class DummyResponse:
+            request_info = DummyRequestInfo()
+            url = "http://localhost/api"
+            async def read(self):
+                return b'{"foo": "bar"}'
+        curl = await _convert_aiohttp_response_to_curl(DummyResponse())
+        assert "curl -X POST" in curl
+        assert "-H \"Content-Type: application/json\"" in curl
+        assert "-d '{\"foo\": \"bar\"}'" in curl
+        assert "http://localhost/api" in curl
