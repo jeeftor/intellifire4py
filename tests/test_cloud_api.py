@@ -8,6 +8,7 @@ from intellifire4py.const import IntelliFireCommand, IntelliFireCloudPollType
 from aiohttp import CookieJar
 from intellifire4py.exceptions import CloudError
 from aioresponses import aioresponses
+import asyncio
 
 @pytest_asyncio.fixture
 async def dummy_cookie_jar():
@@ -215,20 +216,25 @@ async def test_start_and_stop_background_polling(monkeypatch, cloud_api):
 @pytest.mark.asyncio
 async def test_background_poll_loop_handles_exception(monkeypatch, cloud_api):
     """Test that background poll loop handles exceptions without crashing."""
-    # Patch poll to raise exception
-    async def fake_poll(*a, **kw): raise Exception("fail!")
+    # Patch poll to raise exception and stop background polling
+    async def fake_poll(*a, **kw):
+        cloud_api._should_poll_in_background = False  # stop loop after exception
+        raise Exception("fail!")
     monkeypatch.setattr(cloud_api, "poll", fake_poll)
     cloud_api._should_poll_in_background = True
     cloud_api._is_polling_in_background = False
-    # Patch asyncio.sleep to break loop after one iteration
+    # Patch asyncio.sleep to record call
     import asyncio as aio
     calls = {}
     async def fake_sleep(secs):
         calls['called'] = True
-        cloud_api._should_poll_in_background = False  # stop loop
     monkeypatch.setattr(aio, "sleep", fake_sleep)
-    await cloud_api._IntelliFireAPICloud__background_poll(minimum_wait_in_seconds=0)
-    assert calls['called']
+    # Run with timeout to avoid hangs and ensure clean failure if something goes wrong
+    try:
+        await asyncio.wait_for(cloud_api._IntelliFireAPICloud__background_poll(minimum_wait_in_seconds=0), timeout=5)
+    except asyncio.TimeoutError:
+        pytest.fail("Test timed out: background polling did not terminate as expected.")
+    assert 'called' in calls
     assert not cloud_api._should_poll_in_background
 
 

@@ -64,6 +64,7 @@ aioresponses = "^0.7.6"
 pytest-xdist = "^3.5.0"
 safety = "^3.3.1"
 pytest-timeout = "^2.3.1"
+furo = "^2024.8.6"
 
 
 [tool.pytest.ini_options]
