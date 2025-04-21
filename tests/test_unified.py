@@ -207,7 +207,7 @@ async def test_set_control_mode(mock_common_data_local):
     assert fp._fireplace_data.control_mode == IntelliFireApiMode.CLOUD
 
 @pytest.mark.asyncio
-async def test_is_cloud_and_local_polling_properties(mock_common_data_local):
+async def test_is_cloud_and_local_polling_properties_cleanup(mock_common_data_local):
     fp = UnifiedFireplace(mock_common_data_local)
     with patch.object(type(fp._cloud_api), "is_polling_in_background", new_callable=PropertyMock) as cloud_polling, \
          patch.object(type(fp._local_api), "is_polling_in_background", new_callable=PropertyMock) as local_polling:
@@ -219,6 +219,12 @@ async def test_is_cloud_and_local_polling_properties(mock_common_data_local):
         local_polling.return_value = True
         assert fp.is_cloud_polling is False
         assert fp.is_local_polling is True
+    # Clean up background polling if started
+    import asyncio
+    try:
+        asyncio.get_event_loop().run_until_complete(fp.read_api.stop_background_polling())
+    except Exception:
+        pass
 
 @pytest.mark.asyncio
 async def test_switch_read_mode_else_branch(monkeypatch, mock_common_data_local):
