@@ -1,130 +1,95 @@
-name: Tests
+name: CI
 
 on:
-  - push
-  - pull_request
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
-  tests:
-    name: ${{ matrix.session }} ${{ matrix.python }} / ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { python: "3.13", os: "ubuntu-latest", session: "pre-commit" }
-          - { python: "3.13", os: "ubuntu-latest", session: "safety" }
-          - { python: "3.13", os: "ubuntu-latest", session: "tests" }
-          - { python: "3.13", os: "ubuntu-latest", session: "typeguard" }
-          - { python: "3.13", os: "ubuntu-latest", session: "xdoctest" }
-          - { python: "3.13", os: "ubuntu-latest", session: "docs-build" }
-
-    env:
-      NOXSESSION: ${{ matrix.session }}
-      FORCE_COLOR: "1"
-      PRE_COMMIT_COLOR: "always"
-
+  lint:
+    name: pre-commit
+    runs-on: ubuntu-latest
     steps:
-      - name: Check out the repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: '3.13'
+      - run: pip install poetry pre-commit
+      - run: poetry install
+      - run: pre-commit run --all-files
 
-      - name: Upgrade pip
-        run: |
-          pip install --constraint=.github/workflows/constraints.txt pip
-          pip --version
-
-      - name: Upgrade pip in virtual environments
-        shell: python
-        run: |
-          import os
-          import pip
-
-          with open(os.environ["GITHUB_ENV"], mode="a") as io:
-              print(f"VIRTUALENV_PIP={pip.__version__}", file=io)
-
-      - name: Install Poetry
-        run: |
-          pipx install --pip-args=--constraint=.github/workflows/constraints.txt poetry
-          poetry --version
-
-      - name: Install Nox
-        run: |
-          pipx install --pip-args=--constraint=.github/workflows/constraints.txt nox
-          pipx inject --pip-args=--constraint=.github/workflows/constraints.txt nox nox-poetry
-          nox --version
-
-      - name: Check Poetry version
-        run: poetry --version
-
-      - name: Set up Nix
-        uses: cachix/install-nix-action@v27
-
-      - name: Compute pre-commit cache key
-        if: matrix.session == 'pre-commit'
-        id: pre-commit-cache
-        shell: python
-        run: |
-          import hashlib
-          import sys
-
-          python = "py{}.{}".format(*sys.version_info[:2])
-          payload = sys.version.encode() + sys.executable.encode()
-          digest = hashlib.sha256(payload).hexdigest()
-          result = "${{ runner.os }}-{}-{}-pre-commit".format(python, digest[:8])
-
-          print("::set-output name=result::{}".format(result))
-
-      - name: Restore pre-commit cache
-        uses: actions/cache@v4
-        if: matrix.session == 'pre-commit'
+  safety:
+    name: safety
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          path: ~/.cache/pre-commit
-          key: ${{ steps.pre-commit-cache.outputs.result }}-${{ hashFiles('.pre-commit-config.yaml') }}
-          restore-keys: |
-            ${{ steps.pre-commit-cache.outputs.result }}-
+          python-version: '3.13'
+      - run: pip install poetry safety
+      - run: poetry install
+      - run: poetry export --format=requirements.txt --dev --without-hashes -o requirements.txt
+      - run: safety check --full-report --file=requirements.txt
 
-      - name: Run Nox in Nix devShell
-        run: |
-          nix develop --command nox
-
-      - name: Run tests and generate coverage report
-        if: matrix.session == 'tests'
-        run: |
-          pytest --cov=. --cov-report=xml
-
-      - name: SonarCloud Scan
-        if: matrix.session == 'tests'
-        uses: SonarSource/sonarcloud-github-action@v2.1.1
+  test:
+    name: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          args: >
-            -Dsonar.projectKey=jeeftor_intellifire4py
-            -Dsonar.organization=jeeftor
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          python-version: '3.13'
+      - run: pip install poetry
+      - run: poetry install
+      - run: pytest
+      - run: coverage run --parallel --source=./src -m pytest
+      - run: coverage combine
+      - run: coverage report
 
-      - name: Upload coverage data
-        if: always() && matrix.session == 'tests'
-        uses: "actions/upload-artifact@v4"
+  typeguard:
+    name: typeguard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          name: coverage-data
-          path: ".coverage.*"
+          python-version: '3.13'
+      - run: pip install poetry
+      - run: poetry install
+      - run: pip install typeguard pytest pygments
+      - run: pytest --typeguard-packages=intellifire4py
 
-      - name: Upload documentation
-        if: matrix.session == 'docs-build'
-        uses: actions/upload-artifact@v4
+  xdoctest:
+    name: xdoctest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          name: docs
-          path: docs/_build
+          python-version: '3.13'
+      - run: pip install poetry
+      - run: poetry install
+      - run: pip install xdoctest[colors]
+      - run: python -m xdoctest --modname=intellifire4py --command=all
+
+  docs:
+    name: docs-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install poetry
+      - run: poetry install
+      - run: pip install sphinx sphinx-click furo myst-parser
+      - run: |
+          if [ -d docs/_build ]; then rm -rf docs/_build; fi
+          sphinx-build docs docs/_build
 
   coverage:
     runs-on: ubuntu-latest
-    needs: tests
+    needs: test
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
@@ -150,18 +115,59 @@ jobs:
           pipx inject --pip-args=--constraint=.github/workflows/constraints.txt nox nox-poetry
           nox --version
 
-#      - name: Download coverage data
-#        uses: actions/download-artifact@v3
-#        with:
-#          name: coverage-data
-#
-#      - name: Combine coverage data and display human readable report
-#        run: |
-#          nox --session=coverage
-#
-#      - name: Create coverage report
-#        run: |
-#          nox --session=coverage -- xml
-#
-#      - name: Upload coverage report
-#        uses: codecov/codecov-action@v3.1.0
+      - name: Upload coverage data
+        uses: "actions/upload-artifact@v4"
+        with:
+          name: coverage-data
+          path: ".coverage.*"
+
+  sonarcloud:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Upgrade pip
+        run: |
+          pip install --constraint=.github/workflows/constraints.txt pip
+          pip --version
+
+      - name: Install Poetry
+        run: |
+          pipx install --pip-args=--constraint=.github/workflows/constraints.txt poetry
+          poetry --version
+
+      - name: Install Nox
+        run: |
+          pipx install --pip-args=--constraint=.github/workflows/constraints.txt nox
+          pipx inject --pip-args=--constraint=.github/workflows/constraints.txt nox nox-poetry
+          nox --version
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2.1.1
+        with:
+          args: >
+            -Dsonar.projectKey=jeeftor_intellifire4py
+            -Dsonar.organization=jeeftor
+            -Dsonar.python.coverage.reportPaths=coverage.xml
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  upload-docs:
+    runs-on: ubuntu-latest
+    needs: docs
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: docs/_build

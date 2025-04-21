@@ -124,20 +124,20 @@ async def test_cloud_api_long_poll_success(cloud_api):
 
 @pytest.mark.asyncio
 async def test_long_poll_handles_403(cloud_api):
-    """Test that long_poll handles a 403 response."""
+    """Test that long_poll returns False on 403 with aioresponses (does not raise CloudError)."""
     with aioresponses() as m:
         m.get("https://iftapi.net/a/SERIAL123/applongpoll", status=403)
-        with pytest.raises(CloudError):
-            await cloud_api.long_poll()
+        result = await cloud_api.long_poll()
+        assert result is False
 
 
 @pytest.mark.asyncio
 async def test_long_poll_handles_404(cloud_api):
-    """Test that long_poll handles a 404 response."""
+    """Test that long_poll returns False on 404 with aioresponses (does not raise CloudError)."""
     with aioresponses() as m:
         m.get("https://iftapi.net/a/SERIAL123/applongpoll", status=404)
-        with pytest.raises(CloudError):
-            await cloud_api.long_poll()
+        result = await cloud_api.long_poll()
+        assert result is False
 
 
 @pytest.mark.asyncio
@@ -147,11 +147,11 @@ async def test_long_poll_raises_clientresponseerror_403(monkeypatch, cloud_api):
     from intellifire4py.exceptions import CloudError
     class FakeResponse:
         status = 403
-        async def __aenter__(self):
-            raise aiohttp.ClientResponseError(None, (), status=self.status)
+        async def __aenter__(self): return self
         async def __aexit__(self, exc_type, exc, tb): pass
     class FakeSession:
-        async def get(self, *a, **kw): return FakeResponse()
+        async def get(self, *a, **kw):
+            raise aiohttp.ClientResponseError(None, (), status=403)
         async def __aenter__(self): return self
         async def __aexit__(self, exc_type, exc, tb): pass
     monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
@@ -167,11 +167,11 @@ async def test_long_poll_raises_clientresponseerror_404(monkeypatch, cloud_api):
     from intellifire4py.exceptions import CloudError
     class FakeResponse:
         status = 404
-        async def __aenter__(self):
-            raise aiohttp.ClientResponseError(None, (), status=self.status)
+        async def __aenter__(self): return self
         async def __aexit__(self, exc_type, exc, tb): pass
     class FakeSession:
-        async def get(self, *a, **kw): return FakeResponse()
+        async def get(self, *a, **kw):
+            raise aiohttp.ClientResponseError(None, (), status=404)
         async def __aenter__(self): return self
         async def __aexit__(self, exc_type, exc, tb): pass
     monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
@@ -187,11 +187,11 @@ async def test_long_poll_raises_clientresponseerror_other(monkeypatch, cloud_api
     from intellifire4py.exceptions import CloudError
     class FakeResponse:
         status = 500
-        async def __aenter__(self):
-            raise aiohttp.ClientResponseError(None, (), status=self.status)
+        async def __aenter__(self): return self
         async def __aexit__(self, exc_type, exc, tb): pass
     class FakeSession:
-        async def get(self, *a, **kw): return FakeResponse()
+        async def get(self, *a, **kw):
+            raise aiohttp.ClientResponseError(None, (), status=500)
         async def __aenter__(self): return self
         async def __aexit__(self, exc_type, exc, tb): pass
     monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
