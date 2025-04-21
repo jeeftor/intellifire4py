@@ -1,5 +1,5 @@
 """Unified tests."""
-from unittest.mock import patch
+from unittest.mock import patch, PropertyMock
 
 import pytest
 
@@ -205,3 +205,67 @@ async def test_set_control_mode(mock_common_data_local):
     await fp.set_control_mode(IntelliFireApiMode.CLOUD)
     assert fp._control_mode == IntelliFireApiMode.CLOUD
     assert fp._fireplace_data.control_mode == IntelliFireApiMode.CLOUD
+
+@pytest.mark.asyncio
+async def test_is_cloud_and_local_polling_properties(mock_common_data_local):
+    fp = UnifiedFireplace(mock_common_data_local)
+    with patch.object(type(fp._cloud_api), "is_polling_in_background", new_callable=PropertyMock) as cloud_polling, \
+         patch.object(type(fp._local_api), "is_polling_in_background", new_callable=PropertyMock) as local_polling:
+        cloud_polling.return_value = True
+        local_polling.return_value = False
+        assert fp.is_cloud_polling is True
+        assert fp.is_local_polling is False
+        cloud_polling.return_value = False
+        local_polling.return_value = True
+        assert fp.is_cloud_polling is False
+        assert fp.is_local_polling is True
+
+@pytest.mark.asyncio
+async def test_switch_read_mode_else_branch(monkeypatch, mock_common_data_local):
+    fp = UnifiedFireplace(mock_common_data_local)
+    # Simulate an unknown mode
+    class DummyMode:
+        pass
+    mode = DummyMode()
+    # Patch stop_background_polling to be async no-op
+    async def nop(): return None
+    fp._local_api.stop_background_polling = nop
+    fp._cloud_api.stop_background_polling = nop
+    await fp._switch_read_mode(mode)
+    assert fp._read_mode == mode
+    assert fp._fireplace_data.read_mode == mode
+
+@pytest.mark.asyncio
+async def test_build_fireplace_direct(monkeypatch):
+    async def fake_validate(self, timeout):
+        return (True, False)
+    monkeypatch.setattr(UnifiedFireplace, "async_validate_connectivity", fake_validate)
+    fp = await UnifiedFireplace.build_fireplace_direct(
+        ip_address="1.2.3.4",
+        api_key="api",
+        serial="ser",
+        auth_cookie="cookie",
+        user_id="user",
+        web_client_id="webid",
+        read_mode=IntelliFireApiMode.LOCAL,
+        control_mode=IntelliFireApiMode.LOCAL,
+        use_http=True,
+        verify_ssl=False,
+    )
+    assert isinstance(fp, UnifiedFireplace)
+    assert fp.ip_address == "1.2.3.4"
+    assert fp.api_key == "api"
+    assert fp.serial == "ser"
+    assert fp.auth_cookie == "cookie"
+    assert fp.user_id == "user"
+    assert fp.web_client_id == "webid"
+
+@pytest.mark.asyncio
+async def test_build_fireplaces_from_user_data(monkeypatch, mock_user_data):
+    # Patch _create_async_instance to just return a dummy UnifiedFireplace
+    async def dummy_create(fp, **kwargs):
+        return UnifiedFireplace(fp)
+    monkeypatch.setattr(UnifiedFireplace, "_create_async_instance", dummy_create)
+    fps = await UnifiedFireplace.build_fireplaces_from_user_data(mock_user_data)
+    assert isinstance(fps, list)
+    assert all(isinstance(fp, UnifiedFireplace) for fp in fps)
