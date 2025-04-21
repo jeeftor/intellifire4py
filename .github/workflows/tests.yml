@@ -86,6 +86,22 @@ jobs:
         run: |
           nox --python=${{ matrix.python }}
 
+      - name: Run tests and generate coverage report
+        if: matrix.session == 'tests'
+        run: |
+          pytest --cov=. --cov-report=xml
+
+      - name: SonarCloud Scan
+        if: matrix.session == 'tests'
+        uses: SonarSource/sonarcloud-github-action@v2.1.1
+        with:
+          args: >
+            -Dsonar.projectKey=jeeftor_intellifire4py
+            -Dsonar.organization=jeeftor
+            -Dsonar.python.coverage.reportPaths=coverage.xml
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
       - name: Upload coverage data
         if: always() && matrix.session == 'tests'
         uses: "actions/upload-artifact@v4"
