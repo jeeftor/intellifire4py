@@ -183,33 +183,27 @@ def test_construct_payload():
 
 
 @pytest.mark.asyncio
-async def test_get_challenge_connection_error(monkeypatch):
+async def test_get_challenge_connection_error(dummy_session_factory):
     """Test _get_challenge handles ClientConnectionError."""
     api = IntelliFireAPILocal(fireplace_ip=IP, user_id="user", api_key="key")
-    class DummySession:
-        async def get(self, *a, **k):
-            raise aiohttp.ClientConnectionError
-    result = await api._get_challenge(DummySession())
+    session = dummy_session_factory(aiohttp.ClientConnectionError)
+    result = await api._get_challenge(session)
     assert result is None
 
 
 @pytest.mark.asyncio
-async def test_get_challenge_timeout(monkeypatch):
+async def test_get_challenge_timeout(dummy_session_factory):
     """Test _get_challenge handles asyncio.TimeoutError."""
     api = IntelliFireAPILocal(fireplace_ip=IP, user_id="user", api_key="key")
-    class DummySession:
-        async def get(self, *a, **k):
-            raise asyncio.TimeoutError
-    result = await api._get_challenge(DummySession())
+    session = dummy_session_factory(asyncio.TimeoutError)
+    result = await api._get_challenge(session)
     assert result is None
 
 
 @pytest.mark.asyncio
-async def test_get_challenge_unhandled(monkeypatch):
+async def test_get_challenge_unhandled(dummy_session_factory):
     """Test _get_challenge handles generic Exception."""
     api = IntelliFireAPILocal(fireplace_ip=IP, user_id="user", api_key="key")
-    class DummySession:
-        async def get(self, *a, **k):
-            raise Exception("fail")
-    result = await api._get_challenge(DummySession())
+    session = dummy_session_factory(Exception)
+    result = await api._get_challenge(session)
     assert result is None

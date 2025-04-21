@@ -440,3 +440,65 @@ def mock_background_polling() -> Generator:
         }
 
 
+# --- New fixtures for cloud API mocking ---
+import aiohttp
+import pytest
+
+@pytest.fixture
+def fake_session_factory():
+    """Factory fixture to create a FakeSession for a given status code (for GET requests)."""
+    def _factory(status_code):
+        class FakeResponse:
+            status = status_code
+            async def json(self): return {}
+            def raise_for_status(self):
+                raise aiohttp.ClientResponseError(None, (), status=status_code)
+            async def __aenter__(self): return self
+            async def __aexit__(self, exc_type, exc, tb): pass
+        class FakeSession:
+            async def get(self, *a, **kw): return FakeResponse()
+            async def __aenter__(self): return self
+            async def __aexit__(self, exc_type, exc, tb): pass
+        return FakeSession()
+    return _factory
+
+@pytest.fixture
+def fake_poll(monkeypatch, cloud_api, request):
+    """Fixture to patch cloud_api.poll to raise an exception or return as needed."""
+    behavior = getattr(request, 'param', None)
+    async def _fake_poll(*a, **kw):
+        if behavior == 'exception':
+            cloud_api._should_poll_in_background = False
+            raise Exception("fail!")
+        return behavior  # Could be True/False or anything else
+    monkeypatch.setattr(cloud_api, "poll", _fake_poll)
+    yield
+    monkeypatch.undo()
+
+@pytest.fixture
+def patch_asyncio_sleep(monkeypatch):
+    """Fixture to patch asyncio.sleep for tests."""
+    import asyncio as aio
+    calls = {}
+    async def fake_sleep(secs):
+        calls['called'] = True
+    monkeypatch.setattr(aio, "sleep", fake_sleep)
+    yield calls
+    monkeypatch.undo()
+
+# --- Fixture for DummySession for local API error simulation ---
+import types
+import aiohttp
+import asyncio
+
+import pytest
+
+@pytest.fixture
+def dummy_session_factory():
+    """Factory fixture to create a DummySession that raises given exception on .get()."""
+    def _factory(exc_type):
+        class DummySession:
+            async def get(self, *a, **kw):
+                raise exc_type
+        return DummySession()
+    return _factory

@@ -20,6 +20,26 @@ async def cloud_api(dummy_cookie_jar):
     """Fixture for IntelliFireAPICloud with dummy cookie jar."""
     return IntelliFireAPICloud(serial="SERIAL123", cookie_jar=dummy_cookie_jar)
 
+@pytest_asyncio.fixture
+async def fake_session_factory():
+    """Fixture for creating fake aiohttp ClientSession."""
+    class FakeResponse:
+        def __init__(self, status):
+            self.status = status
+        async def json(self): return {}
+        def raise_for_status(self):
+            raise aiohttp.ClientResponseError(None, (), status=self.status)
+        async def __aenter__(self): return self
+        async def __aexit__(self, exc_type, exc, tb): pass
+    class FakeSession:
+        def __init__(self, status):
+            self.status = status
+        async def get(self, *a, **kw): return FakeResponse(self.status)
+        async def __aenter__(self): return self
+        async def __aexit__(self, exc_type, exc, tb): pass
+    def factory(status):
+        return FakeSession(status)
+    return factory
 
 def test_cloud_api_init_and_properties(cloud_api):
     """Test initialization and properties of IntelliFireAPICloud."""
@@ -142,60 +162,30 @@ async def test_long_poll_handles_404(cloud_api):
 
 
 @pytest.mark.asyncio
-async def test_long_poll_raises_clientresponseerror_403(monkeypatch, cloud_api):
+async def test_long_poll_raises_clientresponseerror_403(monkeypatch, cloud_api, fake_session_factory):
     """Test that long_poll raises CloudError on 403 ClientResponseError."""
-    import aiohttp
     from intellifire4py.exceptions import CloudError
-    class FakeResponse:
-        status = 403
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    class FakeSession:
-        async def get(self, *a, **kw):
-            raise aiohttp.ClientResponseError(None, (), status=403)
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
+    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: fake_session_factory(403))
     with pytest.raises(CloudError) as excinfo:
         await cloud_api.long_poll()
     assert "Not authorized" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
-async def test_long_poll_raises_clientresponseerror_404(monkeypatch, cloud_api):
+async def test_long_poll_raises_clientresponseerror_404(monkeypatch, cloud_api, fake_session_factory):
     """Test that long_poll raises CloudError on 404 ClientResponseError."""
-    import aiohttp
     from intellifire4py.exceptions import CloudError
-    class FakeResponse:
-        status = 404
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    class FakeSession:
-        async def get(self, *a, **kw):
-            raise aiohttp.ClientResponseError(None, (), status=404)
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
+    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: fake_session_factory(404))
     with pytest.raises(CloudError) as excinfo:
         await cloud_api.long_poll()
     assert "Fireplace not found" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
-async def test_long_poll_raises_clientresponseerror_other(monkeypatch, cloud_api):
+async def test_long_poll_raises_clientresponseerror_other(monkeypatch, cloud_api, fake_session_factory):
     """Test that long_poll raises CloudError on unexpected ClientResponseError status."""
-    import aiohttp
     from intellifire4py.exceptions import CloudError
-    class FakeResponse:
-        status = 500
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    class FakeSession:
-        async def get(self, *a, **kw):
-            raise aiohttp.ClientResponseError(None, (), status=500)
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
+    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: fake_session_factory(500))
     with pytest.raises(CloudError) as excinfo:
         await cloud_api.long_poll()
     assert "Unexpected status code" in str(excinfo.value)
@@ -218,6 +208,7 @@ async def test_background_poll_loop_handles_exception(monkeypatch, cloud_api):
     """Test that background poll loop handles exceptions without crashing."""
     # Patch poll to raise exception and stop background polling
     async def fake_poll(*a, **kw):
+        print("[DEBUG] fake_poll called, setting _should_poll_in_background = False and raising Exception('fail!')")
         cloud_api._should_poll_in_background = False  # stop loop after exception
         raise Exception("fail!")
     monkeypatch.setattr(cloud_api, "poll", fake_poll)
@@ -227,51 +218,38 @@ async def test_background_poll_loop_handles_exception(monkeypatch, cloud_api):
     import asyncio as aio
     calls = {}
     async def fake_sleep(secs):
+        print(f"[DEBUG] fake_sleep called with secs={secs}")
         calls['called'] = True
     monkeypatch.setattr(aio, "sleep", fake_sleep)
     # Run with timeout to avoid hangs and ensure clean failure if something goes wrong
     try:
+        print("[DEBUG] Starting background polling loop...")
         await asyncio.wait_for(cloud_api._IntelliFireAPICloud__background_poll(minimum_wait_in_seconds=0), timeout=5)
+        print("[DEBUG] Background polling loop finished.")
     except asyncio.TimeoutError:
+        print("[DEBUG] TimeoutError: background polling did not terminate as expected.")
         pytest.fail("Test timed out: background polling did not terminate as expected.")
+    except Exception as exc:
+        print(f"[DEBUG] Exception raised from background polling: {exc!r}")
+        raise
+    print(f"[DEBUG] calls dict: {calls}")
+    print(f"[DEBUG] _should_poll_in_background: {cloud_api._should_poll_in_background}")
     assert 'called' in calls
     assert not cloud_api._should_poll_in_background
 
 
 @pytest.mark.asyncio
-async def test_poll_handles_403(monkeypatch, cloud_api):
+async def test_poll_handles_403(monkeypatch, cloud_api, fake_session_factory):
     """Test that poll handles a 403 response."""
-    class FakeResponse:
-        status = 403
-        async def json(self): return {}
-        def raise_for_status(self):
-            raise aiohttp.ClientResponseError(None, (), status=403)
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    class FakeSession:
-        async def get(self, *a, **kw): return FakeResponse()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
+    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: fake_session_factory(403))
     with pytest.raises(aiohttp.ClientResponseError):
         await cloud_api.poll()
 
 
 @pytest.mark.asyncio
-async def test_poll_handles_404(monkeypatch, cloud_api):
+async def test_poll_handles_404(monkeypatch, cloud_api, fake_session_factory):
     """Test that poll handles a 404 response."""
-    class FakeResponse:
-        status = 404
-        async def json(self): return {}
-        def raise_for_status(self):
-            raise aiohttp.ClientResponseError(None, (), status=404)
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    class FakeSession:
-        async def get(self, *a, **kw): return FakeResponse()
-        async def __aenter__(self): return self
-        async def __aexit__(self, exc_type, exc, tb): pass
-    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
+    monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: fake_session_factory(404))
     with pytest.raises(aiohttp.ClientResponseError):
         await cloud_api.poll()
 
