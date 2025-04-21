@@ -62,6 +62,8 @@ pytest-cov = "^4.1.0"
 ruff = "0.1.4"
 aioresponses = "^0.7.6"
 pytest-xdist = "^3.5.0"
+safety = "^3.3.1"
+pytest-timeout = "^2.3.1"
 
 
 [tool.pytest.ini_options]

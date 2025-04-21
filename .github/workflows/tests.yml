@@ -14,9 +14,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: pip install poetry pre-commit
+      - run: pip install poetry
       - run: poetry install
-      - run: pre-commit run --all-files
+      - run: poetry run pre-commit run --all-files
 
   safety:
     name: safety
@@ -26,10 +26,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: pip install poetry safety
+      - run: pip install poetry
       - run: poetry install
-      - run: poetry export --format=requirements.txt --dev --without-hashes -o requirements.txt
-      - run: safety check --full-report --file=requirements.txt
+      - run: poetry run safety check -r poetry.lock
 
   test:
     name: tests
@@ -41,10 +40,10 @@ jobs:
           python-version: '3.13'
       - run: pip install poetry
       - run: poetry install
-      - run: pytest
-      - run: coverage run --parallel --source=./src -m pytest
-      - run: coverage combine
-      - run: coverage report
+      - run: poetry run pytest
+      - run: poetry run coverage run --parallel --source=./src -m pytest
+      - run: poetry run coverage combine
+      - run: poetry run coverage report
 
   typeguard:
     name: typeguard
@@ -56,8 +55,7 @@ jobs:
           python-version: '3.13'
       - run: pip install poetry
       - run: poetry install
-      - run: pip install typeguard pytest pygments
-      - run: pytest --typeguard-packages=intellifire4py
+      - run: poetry run pytest --typeguard-packages=intellifire4py
 
   xdoctest:
     name: xdoctest
@@ -69,8 +67,7 @@ jobs:
           python-version: '3.13'
       - run: pip install poetry
       - run: poetry install
-      - run: pip install xdoctest[colors]
-      - run: python -m xdoctest --modname=intellifire4py --command=all
+      - run: poetry run python -m xdoctest --modname=intellifire4py --command=all
 
   docs:
     name: docs-build
@@ -82,10 +79,9 @@ jobs:
           python-version: '3.13'
       - run: pip install poetry
       - run: poetry install
-      - run: pip install sphinx sphinx-click furo myst-parser
       - run: |
           if [ -d docs/_build ]; then rm -rf docs/_build; fi
-          sphinx-build docs docs/_build
+          poetry run sphinx-build docs docs/_build
 
   coverage:
     runs-on: ubuntu-latest
@@ -99,21 +95,11 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Upgrade pip
-        run: |
-          pip install --constraint=.github/workflows/constraints.txt pip
-          pip --version
-
       - name: Install Poetry
-        run: |
-          pipx install --pip-args=--constraint=.github/workflows/constraints.txt poetry
-          poetry --version
+        run: pip install poetry
 
-      - name: Install Nox
-        run: |
-          pipx install --pip-args=--constraint=.github/workflows/constraints.txt nox
-          pipx inject --pip-args=--constraint=.github/workflows/constraints.txt nox nox-poetry
-          nox --version
+      - name: Install dependencies
+        run: poetry install
 
       - name: Upload coverage data
         uses: "actions/upload-artifact@v4"
@@ -133,21 +119,11 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Upgrade pip
-        run: |
-          pip install --constraint=.github/workflows/constraints.txt pip
-          pip --version
-
       - name: Install Poetry
-        run: |
-          pipx install --pip-args=--constraint=.github/workflows/constraints.txt poetry
-          poetry --version
+        run: pip install poetry
 
-      - name: Install Nox
-        run: |
-          pipx install --pip-args=--constraint=.github/workflows/constraints.txt nox
-          pipx inject --pip-args=--constraint=.github/workflows/constraints.txt nox nox-poetry
-          nox --version
+      - name: Install dependencies
+        run: poetry install
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2.1.1

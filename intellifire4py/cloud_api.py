@@ -219,12 +219,18 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 if e.status == 404:
                     raise CloudError("Fireplace not found (bad serial number)") from e
                 else:
-                    response_text = await response.text()
+                    response_text = ""
+                    # Only try to get response text if response exists
+                    if hasattr(e, 'response') and e.response is not None:
+                        try:
+                            response_text = await e.response.text()
+                        except Exception:
+                            response_text = "<no body>"
                     self._log.error(
-                        f"Unexpected status code: {response.status}, Response: {response_text}"
+                        f"Unexpected status code: {getattr(e, 'status', '?')}, Response: {response_text}"
                     )
                     raise CloudError(
-                        f"Unexpected status code: {response.status}"
+                        f"Unexpected status code: {getattr(e, 'status', '?')}"
                     ) from e
         return False
 
