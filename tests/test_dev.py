@@ -1,5 +1,6 @@
-import asyncio
+"""Tests for intellifire4py development utilities."""
 
+import asyncio
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 
@@ -9,9 +10,10 @@ from intellifire4py.model import IntelliFirePollData
 
 @pytest.fixture
 def mock_fp(mock_common_data_local, local_poll_json):
-    with patch('intellifire4py.UnifiedFireplace') as MockUnifiedFireplace:
+    """Fixture that mocks UnifiedFireplace with local poll data."""
+    with patch('intellifire4py.UnifiedFireplace') as mock_unified_fireplace:
         # Create an instance of the mock
-        mock_instance = MockUnifiedFireplace.return_value
+        mock_instance = mock_unified_fireplace.return_value
 
         # Mock methods and properties of the instance
         mock_instance.perform_cloud_poll = AsyncMock()
@@ -49,8 +51,9 @@ def mock_fp(mock_common_data_local, local_poll_json):
 
         yield mock_instance  # Provide the mock instance to the test
 
-# Example test using the fixture
+
 def test_unified_fireplace(mock_fp):
+    """Test UnifiedFireplace mock fixture."""
     # The mock_unified_fireplace fixture is automatically used in this test
     assert mock_fp.ip_address == "192.168.1.100"
     assert not mock_fp.is_cloud_polling()

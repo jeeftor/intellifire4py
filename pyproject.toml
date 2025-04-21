@@ -106,58 +106,31 @@ build-backend = "poetry.core.masonry.api"
 
 
 [tool.ruff]
-ignore = ["D202", "D412", "E501"]
-# Same as Black.
 line-length = 88
-select = ["B", "B9", "C", "D", "E", "F", "N", "S", "W"]
-# Assume Python 3.11.
 target-version = "py311"
-
-# Exclude a variety of commonly ignored directories.
 exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
+    ".bzr", ".direnv", ".eggs", ".git", ".hg", ".mypy_cache", ".nox", ".pants.d",
+    ".ruff_cache", ".svn", ".tox", ".venv", "__pypackages__", "_build", "buck-out",
+    "build", "dist", "node_modules", "venv",
 ]
 
-[tool.ruff.flake8-pytest-style]
+[tool.ruff.lint]
+ignore = ["D202", "D412", "E501"]
+select = ["B", "B9", "C", "D", "E", "F", "N", "S", "W"]
+per-file-ignores = { "tests/*" = ["S101"] }
+
+[tool.ruff.lint.mccabe]
+max-complexity = 25
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-pytest-style]
 mark-parentheses = false
 fixture-parentheses = false
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["open_meteo"]
-
-# [tool.ruff.lint.flake8-type-checking]
-# runtime-evaluated-base-classes = [
-#   "mashumaro.mixins.orjson.DataClassORJSONMixin",
-# ]
-
-[tool.ruff.mccabe]
-max-complexity = 25
-
-[tool.ruff.pydocstyle]
-convention = "google"
-
-[tool.ruff.per-file-ignores]
-"tests/*" = ["S101"]
-# aiohttp = "^3.8.3"
-
 
 [tool.pylint.MASTER]
 ignore= [

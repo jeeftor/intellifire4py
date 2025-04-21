@@ -265,68 +265,86 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
 
         async with aiohttp.ClientSession() as session:
             self._log.info(f"Created Client Session {session}")
-            challenge_time = time.time()
             success = False
-            while (time.time() - challenge_time) < 7 and not success:
-                # There is a 10 second timeout on the challenge response - we'll try for 7
+            retries = 0
+            # We're done when we succeed, but also give up after 10 retries
+            while not success and retries < 10:
+                retries += 1
                 challenge = await self._get_challenge(session)
-                if challenge is None:
-                    # Could not get a challenge, skip this iteration
+                # If the challenge timed out or had another error, try again from the top
+                if not challenge:
                     continue
+
+                challenge_time = time.time()
                 data = self._construct_payload(
                     command=command.value["local_command"],  # type: ignore
                     value=value,
-                    challenge=challenge,
+                    challenge=challenge,  # type: ignore
                 )
                 url = f"http://{self.fireplace_ip}/post"
                 try:
-                    self._log.info(
-                        "_send_local_command ➡️ Attempting command via 📬️ post %d [%s]",
-                        (time.time() - challenge_time),
-                        challenge,
-                    )
-                    await asyncio.sleep(0.2)
-                    resp = await session.post(
-                        url=url,
-                        data=data,
-                        headers={
-                            "content-type": "application/x-www-form-urlencoded"
-                        },
-                        timeout=1.0,
-                    )
-                    self._log.debug(
-                        "_send_local_command ➡️ Sending Local IntelliFire command: [%s=%s]",
-                        command.value["local_command"],
-                        value,
-                    )
-                    if resp.status == 403:
-                        self._log.warning(
-                            f"_send_local_command 🟥️ 403 Error - Invalid challenge code (it may have expired): {url}{data}"
+                    while (time.time() - challenge_time) < 7 and not success:
+                        # There is a 10 second timeout on the challenge response - we'll try for 7
+                        self._log.info(
+                            "_send_local_command ➡️ Attempting command via 📬️ post %d [%s]",
+                            (time.time() - challenge_time),
+                            challenge,
                         )
-                    elif resp.status == 404:
-                        self._log.warning(
-                            f"_send_local_command 🟥️ Failed to post: {url}{data}"
+                        await asyncio.sleep(0.2)
+                        resp = await session.post(
+                            url=url,
+                            data=data,
+                            headers={
+                                "content-type": "application/x-www-form-urlencoded"
+                            },
+                            timeout=1.0,
                         )
-                    elif resp.status == 422:
-                        self._log.warning(
-                            f"_send_local_command:: 422 Code on: {url}{data}"
-                        )
-                    elif 200 <= resp.status < 300:
-                        # Success on 2xx status
                         self._log.debug(
-                            "_send_local_command:: Response Code [%d]", resp.status
+                            "_send_local_command ➡️ Sending Local IntelliFire command: [%s=%s]",
+                            command.value["local_command"],
+                            value,
                         )
-                        self._last_send = datetime.now(timezone.utc)
-                        success = True
-                    else:
-                        self._log.warning(
-                            f"_send_local_command:: Unexpected Response Code: {resp.status}"
-                        )
+                        if resp.status == 403:
+                            self._log.warning(
+                                f"_send_local_command 🟥️ 403 Error - Invalid challenge code (it may have expired): {url}{data}"
+                            )
+                        elif resp.status == 404:
+                            self._log.warning(
+                                f"_send_local_command 🟥️ Failed to post: {url}{data}"
+                            )
+                        elif resp.status == 422:
+                            self._log.warning(
+                                f"_send_local_command:: 422 Code on: {url}{data}"
+                            )
+                        elif 200 <= resp.status < 300:
+                            success = True
+                            self._log.debug(
+                                "_send_local_command:: Response Code [%d]", resp.status
+                            )
+                            self._last_send = datetime.now(timezone.utc)
+                        else:
+                            self._log.warning(
+                                f"_send_local_command:: Unexpected Response Code: {resp.status}"
+                            )
                 except asyncio.TimeoutError as error:
                     self._log.warning("Control Endpoint Timeout Error %s", error)
+                    continue
                 except Exception as error:
                     self._log.error("Unhandled exception %s", error)
                     self._log.error(error)
+
+            if success:
+                self._log.debug(
+                    "_send_local_command:: SUCCESS!! - IntelliFire Command Sent [%s=%s]",
+                    command.value["local_command"],
+                    value,
+                )
+            else:
+                self._log.debug(
+                    "_send_local_command:: FAILURE!! - IntelliFire command could not be sent [%s=%s]",
+                    command.value["local_command"],
+                    value,
+                )
 
     async def _get_challenge(
         self, session: ClientSession

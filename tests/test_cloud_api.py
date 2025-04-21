@@ -70,7 +70,7 @@ async def test_cloud_api_send_cloud_command_raises_on_non_204(monkeypatch, cloud
         async def post(self, *a, **kw): return FakeResponse()
     monkeypatch.setattr(cloud_api, "_get_session", lambda *a, **kw: FakeSession())
     monkeypatch.setattr("intellifire4py.cloud_api._convert_aiohttp_response_to_curl", lambda r: "curl ...")
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError):
         await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
 
 
