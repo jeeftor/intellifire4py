@@ -1,15 +1,18 @@
-"""Tests for control.py (low-hanging fruit coverage)."""
+"""Test control module for intellifire4py."""
+
 import pytest
-from unittest.mock import AsyncMock
-from intellifire4py.control import IntelliFireController
 from intellifire4py.const import IntelliFireApiMode, IntelliFireCommand
+from intellifire4py.control import IntelliFireController
 
 class DummyController(IntelliFireController):
+    """Dummy controller for testing."""
     async def send_command(self, command, value):
+        """Mock send_command implementation."""
         self._last_command = (command, value)
 
 @pytest.mark.asyncio
 async def test_controller_basic_methods():
+    """Test basic controller methods."""
     c = DummyController(IntelliFireApiMode.LOCAL)
     await c.flame_on()
     assert c._last_command == (IntelliFireCommand.POWER, 1)

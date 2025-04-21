@@ -1,9 +1,14 @@
-"""Low-hanging fruit: Cover IntelliFirePollData in model.py."""
+"""Test IntelliFirePollData dataclass for intellifire4py."""
+
 from intellifire4py.model import IntelliFirePollData
 
 def test_poll_data_properties():
+    """Test properties and methods of IntelliFirePollData."""
     d = IntelliFirePollData()
     # Access all properties and methods
+    assert hasattr(d, "serial")
+    assert hasattr(d, "to_dict")
+    assert hasattr(d, "update_from_dict")
     assert d.temperature_f == (d.temperature_c * 9 / 5) + 32
     assert d.thermostat_setpoint_c == d.raw_thermostat_setpoint / 100
     assert d.thermostat_setpoint_f == (d.raw_thermostat_setpoint / 100 * 9 / 5) + 32

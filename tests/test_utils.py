@@ -73,9 +73,11 @@ class TestRangeCheck(TestCase):
 
     @pytest.mark.asyncio
     async def test_convert_aiohttp_response_to_curl(self):
+        """Test conversion of aiohttp response to curl command."""
         class DummyRequestInfo:
             method = "POST"
             headers = {"Content-Type": "application/json", "X-Test": "foo"}
+            url = "http://localhost/api"
         class DummyResponse:
             request_info = DummyRequestInfo()
             url = "http://localhost/api"

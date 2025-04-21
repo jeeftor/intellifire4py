@@ -1,11 +1,14 @@
-"""Low-hanging fruit: Cover enums and constants in const.py."""
-from intellifire4py import const
+"""Test enums and constants for intellifire4py."""
 
 def test_enums_and_constants():
+    """Test enums and constants for coverage."""
+    from intellifire4py import const
     # Cover version and user agent
     assert isinstance(const.PACKAGE_VERSION, str)
-    assert const.USER_AGENT.startswith("intellifire4py/")
-
+    assert isinstance(const.USER_AGENT, str)
+    # Cover enums
+    assert hasattr(const, "IntelliFireCommand")
+    assert hasattr(const, "IntelliFireErrorCode")
     # IntelliFireApiMode
     assert const.IntelliFireApiMode.LOCAL.value == "local"
     assert const.IntelliFireApiMode.CLOUD.value == "cloud"

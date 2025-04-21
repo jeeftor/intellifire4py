@@ -1,3 +1,5 @@
+"""Test UDP discovery and protocol for intellifire4py."""
+
 import asyncio
 import json
 import pytest
@@ -6,6 +8,7 @@ from intellifire4py.udp import IFTDiscoveryReaderProtocol, IFTDiscoverySenderPro
 
 @pytest.mark.asyncio
 async def test_ift_discovery_reader_protocol_adds_ip():
+    """Test that IFTDiscoveryReaderProtocol adds discovered IPs."""
     ip_set = set()
     protocol = IFTDiscoveryReaderProtocol(timeout=5, ip_set=ip_set)
     # Simulate receiving a valid datagram
@@ -16,6 +19,7 @@ async def test_ift_discovery_reader_protocol_adds_ip():
 
 
 def test_ift_discovery_reader_protocol_connection_methods():
+    """Test connection_made and connection_lost methods for reader protocol."""
     ip_set = set()
     protocol = IFTDiscoveryReaderProtocol(timeout=5, ip_set=ip_set)
     transport = mock.Mock()
@@ -24,6 +28,7 @@ def test_ift_discovery_reader_protocol_connection_methods():
 
 
 def test_ift_discovery_sender_protocol_sends_message():
+    """Test that IFTDiscoverySenderProtocol sends a message."""
     message = "test message"
     on_con_lost = mock.Mock()
     protocol = IFTDiscoverySenderProtocol(message, on_con_lost)
@@ -36,6 +41,7 @@ def test_ift_discovery_sender_protocol_sends_message():
 
 
 def test_ift_discovery_sender_protocol_error_and_close():
+    """Test error and close handling for sender protocol."""
     protocol = IFTDiscoverySenderProtocol("msg", None)
     protocol.transport = mock.Mock()
     # Should log a warning but not raise
@@ -45,6 +51,7 @@ def test_ift_discovery_sender_protocol_error_and_close():
 
 @pytest.mark.asyncio
 async def test_udp_fireplace_finder_ips_and_init():
+    """Test UDPFireplaceFinder initialization and IPs property."""
     finder = UDPFireplaceFinder(timeout_in_seconds=1)
     assert finder.ips == []
     finder.ip_set.add("1.2.3.4")
@@ -53,6 +60,7 @@ async def test_udp_fireplace_finder_ips_and_init():
 
 @pytest.mark.asyncio
 async def test_udp_fireplace_finder_send_discovery_packet(monkeypatch):
+    """Test sending of UDP discovery packet."""
     finder = UDPFireplaceFinder(timeout_in_seconds=1)
     loop = mock.Mock()
     monkeypatch.setattr(finder, "loop", loop)
@@ -66,6 +74,7 @@ async def test_udp_fireplace_finder_send_discovery_packet(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_udp_fireplace_finder_search_fireplace(monkeypatch):
+    """Test searching for fireplace via UDPFireplaceFinder."""
     finder = UDPFireplaceFinder(timeout_in_seconds=1)
     # Patch send_discovery_packet and start_discovery_reader
     monkeypatch.setattr(finder, "send_discovery_packet", mock.AsyncMock())

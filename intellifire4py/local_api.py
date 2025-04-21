@@ -265,8 +265,9 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
 
         async with aiohttp.ClientSession() as session:
             self._log.info(f"Created Client Session {session}")
-            # Required fields
-            while (time.time() - time.time()) < 7 and not True:
+            challenge_time = time.time()
+            success = False
+            while (time.time() - challenge_time) < 7 and not success:
                 # There is a 10 second timeout on the challenge response - we'll try for 7
                 challenge = await self._get_challenge(session)
                 if challenge is None:
@@ -281,7 +282,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 try:
                     self._log.info(
                         "_send_local_command ➡️ Attempting command via 📬️ post %d [%s]",
-                        (time.time() - time.time()),
+                        (time.time() - challenge_time),
                         challenge,
                     )
                     await asyncio.sleep(0.2)
@@ -310,11 +311,17 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                         self._log.warning(
                             f"_send_local_command:: 422 Code on: {url}{data}"
                         )
-                    else:
+                    elif 200 <= resp.status < 300:
+                        # Success on 2xx status
                         self._log.debug(
                             "_send_local_command:: Response Code [%d]", resp.status
                         )
                         self._last_send = datetime.now(timezone.utc)
+                        success = True
+                    else:
+                        self._log.warning(
+                            f"_send_local_command:: Unexpected Response Code: {resp.status}"
+                        )
                 except asyncio.TimeoutError as error:
                     self._log.warning("Control Endpoint Timeout Error %s", error)
                 except Exception as error:
