@@ -54,7 +54,7 @@ async def main() -> None:
 
     print(f"Local [{fp.local_connectivity}] Cloud [{fp.cloud_connectivity}]")
 
-    print(fp.dump_user_data_json)
+    print(fp.get_user_data_as_json())
 
 
 if __name__ == "__main__":

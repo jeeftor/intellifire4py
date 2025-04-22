@@ -10,7 +10,9 @@ from rich.logging import RichHandler  # type: ignore[import-not-found]
 
 from intellifire4py import UnifiedFireplace  # type: ignore[import-not-found]
 from intellifire4py.cloud_interface import IntelliFireCloudInterface  # type: ignore[import-not-found]
+
 from intellifire4py.const import IntelliFireApiMode
+
 
 FORMAT = "%(message)s"
 logging.basicConfig(

@@ -195,7 +195,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
 
         async with self._get_session() as session:
             try:
-                response = await session.get(long_poll_url, timeout=61)
+                response = await session.get(long_poll_url, timeout=ClientTimeout(61))
 
                 self._log.debug("Long Poll Status Code %d", response.status)
                 if response.status == 200:
@@ -219,12 +219,18 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 if e.status == 404:
                     raise CloudError("Fireplace not found (bad serial number)") from e
                 else:
-                    response_text = await response.text()
+                    response_text = ""
+                    # Only try to get response text if response exists
+                    if hasattr(e, 'response') and e.response is not None:
+                        try:
+                            response_text = await e.response.text()
+                        except Exception:
+                            response_text = "<no body>"
                     self._log.error(
-                        f"Unexpected status code: {response.status}, Response: {response_text}"
+                        f"Unexpected status code: {getattr(e, 'status', '?')}, Response: {response_text}"
                     )
                     raise CloudError(
-                        f"Unexpected status code: {response.status}"
+                        f"Unexpected status code: {getattr(e, 'status', '?')}"
                     ) from e
         return False
 

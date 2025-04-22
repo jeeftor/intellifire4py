@@ -4,7 +4,8 @@ import asyncio
 import os
 from collections.abc import Generator
 from contextlib import ExitStack
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
+import aiohttp
 
 import pytest
 from aioresponses import aioresponses
@@ -33,7 +34,7 @@ def mock_common_data_local(
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_user_data(
     auth_cookie, user_id, web_client_id, mock_common_data_local
 ) -> IntelliFireUserData:
@@ -48,7 +49,7 @@ def mock_user_data(
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_common_data_cloud(
     api_key, user_id, serial, ip, auth_cookie, web_client_id
 ) -> IntelliFireCommonFireplaceData:
@@ -65,7 +66,7 @@ def mock_common_data_cloud(
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_common_data_none(
     api_key, user_id, serial, ip, web_client_id, auth_cookie
 ) -> IntelliFireCommonFireplaceData:
@@ -179,6 +180,25 @@ def mock_aioresponse() -> Generator[aioresponses, None, None]:
     # Context manager for mocking aiohttp responses
     with aioresponses() as m:
         yield m
+
+
+@pytest.fixture
+def mock_aiohttp_session():
+    """Patch aiohttp.ClientSession for all tests, Home Assistant style.
+
+    Yields:
+        mock_session: a mock ClientSession with AsyncMock get/post methods.
+    """
+    with patch("aiohttp.ClientSession", new_callable=AsyncMock) as session_cls:
+        mock_session = session_cls.return_value
+        # Configure get and post as async context managers
+        mock_session.get = AsyncMock()
+        mock_session.get.return_value.__aenter__.return_value.status = 200
+        mock_session.get.return_value.__aexit__.return_value = None
+        mock_session.post = AsyncMock()
+        mock_session.post.return_value.__aenter__.return_value.status = 204
+        mock_session.post.return_value.__aexit__.return_value = None
+        yield mock_session
 
 
 def setup_common_mocks(
@@ -438,3 +458,65 @@ def mock_background_polling() -> Generator:
             "cloud_start": cloud_start_mock,
             # "abstract_start": abstract_start_mock,
         }
+
+
+@pytest.fixture
+def mock_cloud_api():
+    """Patch IntelliFireAPICloud internals for cloud API tests using autospec and correct method names."""
+    from unittest.mock import patch, AsyncMock
+    with patch("intellifire4py.cloud_api.IntelliFireAPICloud.send_command", new_callable=AsyncMock) as send_command, \
+         patch("intellifire4py.cloud_api.IntelliFireAPICloud._send_cloud_command", new_callable=AsyncMock) as _send_cloud_command, \
+         patch("intellifire4py.cloud_api.IntelliFireAPICloud.poll", new_callable=AsyncMock) as poll, \
+         patch("intellifire4py.cloud_api._range_check") as _range_check:
+
+        class Mocks:
+            pass
+        mocks = Mocks()
+        mocks.send_command = send_command
+        mocks._send_cloud_command = _send_cloud_command
+        mocks.poll = poll
+        mocks._range_check = _range_check
+        yield mocks
+
+
+@pytest.fixture
+def fake_error_session_factory():
+    """Factory fixture to create a FakeSession that raises for given status code (GET/POST).
+
+    Usage: session = fake_error_session_factory(status_code, method="get"|"post")
+    """
+    def _factory(status_code, method="get"):
+        class FakeResponse:
+            status = status_code
+            async def json(self): return {}
+            def raise_for_status(self):
+                raise aiohttp.ClientResponseError(None, (), status=status_code)
+            async def __aenter__(self): return self
+            async def __aexit__(self, exc_type, exc, tb): pass
+        class FakeSession:
+            async def get(self, *a, **kw): return FakeResponse()
+            async def post(self, *a, **kw): return FakeResponse()
+            async def __aenter__(self): return self
+            async def __aexit__(self, exc_type, exc, tb): pass
+        return FakeSession()
+    return _factory
+
+
+@pytest.fixture(params=[403, 404, 500])
+def fake_error_session(request, fake_error_session_factory):
+    """Parametrized fixture for sessions that raise for 403, 404, or 500 status codes.
+
+    Usage: pass fake_error_session as a test argument for error handling coverage.
+    """
+    return fake_error_session_factory(request.param)
+
+
+@pytest.fixture
+# NOTE: This fixture is intentionally NOT async. AsyncMock handles async patching.
+def mock_async_validate_connectivity():
+    """Fixture to patch UnifiedFireplace.async_validate_connectivity with an AsyncMock for async method mocking in tests."""
+    with patch(
+        "intellifire4py.unified_fireplace.UnifiedFireplace.async_validate_connectivity",
+        new_callable=AsyncMock,
+    ) as mock:
+        yield mock

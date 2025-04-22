@@ -1,4 +1,4 @@
-"""Asyncio Based UDP Discovery."""
+"""UDP utilities and protocols for intellifire4py."""
 import asyncio
 import json
 import socket
@@ -12,7 +12,7 @@ _log = logging.getLogger(__name__)
 class IFTDiscoveryReaderProtocol(asyncio.DatagramProtocol):
     """UPD Reader protocol for IFT Discovery.
 
-    When testing this you can fire off a data packet similer to this with socat to stimulate the response
+    When testing this you can fire off a data packet similar to this with socat to stimulate the response
     echo -n '{"mac":"58:8E:81:92:52:7B","bssid":"B6:B9:8A:62:3C:E9","channel":1,"ip":"192.168.1.125","ssid":"chomperExtreme","rssi":-40,"remote_terminal_port":2000,"time":1665662949795,"version":"BBBBBBB-SOMECODE-0.0.0.1, 2019-10-23T20:22:36Z, ZentriOS-W-3.6.3.0","uuid":"36413041000000004D0026001251373036363735"}' | socat - UDP-DATAGRAM:255.255.255.255:55555,broadcast
     """
 
@@ -67,11 +67,11 @@ class IFTDiscoverySenderProtocol(asyncio.DatagramProtocol):
 
     def error_received(self, exc):  # type: ignore
         """Display error."""
-        _log.warning("UDP Discovery Send - Error received:", exc)
+        _log.warning("UDP Discovery Send - Error received: %s", exc)
 
     def connection_lost(self, exc):  # type: ignore
         """Close connection."""
-        if not self.on_con_lost:
+        if self.on_con_lost is not None:
             self.on_con_lost.set_result(True)
 
 
