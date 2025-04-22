@@ -115,10 +115,12 @@ async def test_cloud_api_long_poll_success(cloud_api):
 @pytest.mark.asyncio
 async def test_start_and_stop_background_polling(cloud_api):
     """Test starting and stopping the background polling task."""
-    await cloud_api.start_background_polling(minimum_wait_in_seconds=0)
-    assert cloud_api._should_poll_in_background
-    stopped = await cloud_api.stop_background_polling()
-    assert stopped is True or stopped is False
+    with patch.object(cloud_api, "poll", new_callable=AsyncMock) as mock_poll:
+        mock_poll.return_value = None
+        await cloud_api.start_background_polling(minimum_wait_in_seconds=0)
+        assert cloud_api._should_poll_in_background
+        stopped = await cloud_api.stop_background_polling()
+        assert stopped is True or stopped is False
 
 
 @pytest.mark.asyncio
