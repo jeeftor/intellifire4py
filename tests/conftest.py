@@ -509,3 +509,14 @@ def fake_error_session(request, fake_error_session_factory):
     Usage: pass fake_error_session as a test argument for error handling coverage.
     """
     return fake_error_session_factory(request.param)
+
+
+@pytest.fixture
+# NOTE: This fixture is intentionally NOT async. AsyncMock handles async patching.
+def mock_async_validate_connectivity():
+    """Fixture to patch UnifiedFireplace.async_validate_connectivity with an AsyncMock for async method mocking in tests."""
+    with patch(
+        "intellifire4py.unified_fireplace.UnifiedFireplace.async_validate_connectivity",
+        new_callable=AsyncMock,
+    ) as mock:
+        yield mock

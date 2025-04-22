@@ -193,7 +193,7 @@ async def test_data_property(mock_common_data_local):
 
 
 @pytest.mark.asyncio
-async def test_set_read_mode_branches(mocker, mock_common_data_local):
+async def test_set_read_mode_branches(mock_common_data_local):
     """Test set_read_mode covers all branches and error handling."""
     fp = UnifiedFireplace(mock_common_data_local)
     # Same mode: triggers early return
@@ -202,15 +202,15 @@ async def test_set_read_mode_branches(mocker, mock_common_data_local):
     called = {}
     async def fake_switch(mode):
         called['mode'] = mode
-    mocker.patch.object(fp, '_switch_read_mode', new=AsyncMock(side_effect=fake_switch))
-    await fp.set_read_mode(IntelliFireApiMode.CLOUD)
-    assert called['mode'] == IntelliFireApiMode.CLOUD
+    with patch.object(fp, '_switch_read_mode', new=AsyncMock(side_effect=fake_switch)):
+        await fp.set_read_mode(IntelliFireApiMode.CLOUD)
+        assert called['mode'] == IntelliFireApiMode.CLOUD
     # Error branch
-    mocker.patch.object(fp, '_switch_read_mode', new=AsyncMock(side_effect=Exception("fail")))
-    try:
-        await fp.set_read_mode(IntelliFireApiMode.LOCAL)  # Should log error, not raise
-    except Exception as e:
-        logging.error(f"Exception during set_read_mode: {e}")
+    with patch.object(fp, '_switch_read_mode', new=AsyncMock(side_effect=Exception("fail"))):
+        try:
+            await fp.set_read_mode(IntelliFireApiMode.LOCAL)  # Should log error, not raise
+        except Exception as e:
+            logging.error(f"Exception during set_read_mode: {e}")
 
 
 @pytest.mark.asyncio
@@ -244,7 +244,7 @@ async def test_is_cloud_and_local_polling_properties_cleanup(mock_common_data_lo
 
 
 @pytest.mark.asyncio
-async def test_switch_read_mode_else_branch(mocker, mock_common_data_local):
+async def test_switch_read_mode_else_branch( mock_common_data_local):
     """Test else branch of switch_read_mode."""
     fp = UnifiedFireplace(mock_common_data_local)
     # Simulate an unknown mode
@@ -263,8 +263,10 @@ async def test_switch_read_mode_else_branch(mocker, mock_common_data_local):
 @pytest.mark.asyncio
 async def test_build_fireplace_direct(mock_async_validate_connectivity):
     """Test direct build of UnifiedFireplace."""
+    # Customize the mock for this test
+    mock_async_validate_connectivity.return_value = (True, False)
     fp = await UnifiedFireplace.build_fireplace_direct(
-        ip_address="1.2.3.4", #NOSONAR
+        ip_address="1.2.3.4",  # NOSONAR
         api_key="api",
         serial="ser",
         auth_cookie="cookie",
@@ -276,7 +278,7 @@ async def test_build_fireplace_direct(mock_async_validate_connectivity):
         verify_ssl=False,
     )
     assert isinstance(fp, UnifiedFireplace)
-    assert fp.ip_address == "1.2.3.4" #NOSONAR
+    assert fp.ip_address == "1.2.3.4"  # NOSONAR
     assert fp.api_key == "api"
     assert fp.serial == "ser"
     assert fp.auth_cookie == "cookie"
@@ -294,3 +296,97 @@ async def test_build_fireplaces_from_user_data(mock_async_validate_connectivity,
         fps = await UnifiedFireplace.build_fireplaces_from_user_data(mock_user_data)
     assert isinstance(fps, list)
     assert all(isinstance(fp, UnifiedFireplace) for fp in fps)
+
+
+@pytest.mark.asyncio
+async def test_set_read_mode_same_mode_noop(mock_common_data_local):
+    """Test set_read_mode does nothing if mode is unchanged (covers early return)."""
+    fp = UnifiedFireplace(mock_common_data_local)
+    fp._read_mode = IntelliFireApiMode.LOCAL
+    with patch.object(fp._log, 'info') as mock_log_info:
+        await fp.set_read_mode(IntelliFireApiMode.LOCAL)
+        mock_log_info.assert_called_once_with("Not updating mode -- it was the same")
+
+
+@pytest.mark.asyncio
+async def test_async_validate_connectivity_client_response_error(mock_common_data_local):
+    """Test async_validate_connectivity covers ClientResponseError branch."""
+    fp = UnifiedFireplace(mock_common_data_local)
+    class DummyClientResponseError(Exception):
+        pass
+    async def raise_client_response_error(*args, **kwargs):
+        raise DummyClientResponseError("fail")
+    # Patch perform_local_poll to raise ClientResponseError
+    with patch("intellifire4py.unified_fireplace.ClientResponseError", DummyClientResponseError):
+        with patch.object(fp, "perform_local_poll", new=raise_client_response_error):
+            with patch.object(fp, "perform_cloud_poll", new=AsyncMock(return_value=None)):
+                # Should catch DummyClientResponseError and return (False, True)
+                result = await fp.async_validate_connectivity()
+                assert result[0] is False
+
+
+@pytest.mark.asyncio
+async def test_async_validate_connectivity_generic_exception(mock_common_data_local):
+    """Test async_validate_connectivity covers generic Exception branch."""
+    fp = UnifiedFireplace(mock_common_data_local)
+    async def raise_generic(*args, **kwargs):
+        raise Exception("fail")
+    with patch.object(fp, "perform_local_poll", new=raise_generic):
+        with patch.object(fp, "perform_cloud_poll", new=AsyncMock(return_value=None)):
+            # Should catch Exception and return (False, True)
+            result = await fp.async_validate_connectivity()
+            assert result[0] is False
+
+
+@pytest.mark.asyncio
+async def test_async_validate_connectivity_connection_error(mock_common_data_local):
+    """Test async_validate_connectivity covers ConnectionError branch."""
+    fp = UnifiedFireplace(mock_common_data_local)
+    async def raise_connection_error(*args, **kwargs):
+        raise ConnectionError("fail")
+    with patch.object(fp, "perform_local_poll", new=raise_connection_error):
+        with patch.object(fp, "perform_cloud_poll", new=AsyncMock(return_value=None)):
+            # Should catch ConnectionError and return (False, True)
+            result = await fp.async_validate_connectivity()
+            assert result[0] is False
+
+
+@pytest.mark.asyncio
+async def test_set_read_mode_triggers_switch(mock_common_data_local):
+    """Test set_read_mode calls _switch_read_mode when mode changes."""
+    fp = UnifiedFireplace(mock_common_data_local)
+    fp._read_mode = IntelliFireApiMode.LOCAL
+    with patch.object(fp, '_switch_read_mode', new=AsyncMock()) as mock_switch:
+        await fp.set_read_mode(IntelliFireApiMode.CLOUD)
+        mock_switch.assert_called_once_with(IntelliFireApiMode.CLOUD)
+
+
+@pytest.mark.asyncio
+async def test_build_fireplace_from_common_data_real(mock_common_data_local):
+    """Test build_fireplace_from_common_data with real _create_async_instance (no patch), but patch connectivity."""
+    with patch.object(UnifiedFireplace, "async_validate_connectivity", new=AsyncMock(return_value=(True, True))):
+        fp = await UnifiedFireplace.build_fireplace_from_common_data(mock_common_data_local)
+        assert isinstance(fp, UnifiedFireplace)
+
+
+@pytest.mark.asyncio
+async def test_async_validate_connectivity_real(mock_common_data_local):
+    """Test that async_validate_connectivity is called on a real instance (covers signature/line 592)."""
+    fp = UnifiedFireplace(mock_common_data_local)
+    with patch.object(fp, 'perform_local_poll', new=AsyncMock(return_value=None)), \
+         patch.object(fp, 'perform_cloud_poll', new=AsyncMock(return_value=None)):
+        result = await fp.async_validate_connectivity()
+        assert isinstance(result, tuple)
+
+
+@pytest.mark.asyncio
+async def test_async_validate_connectivity_aiohttp_client_connection_error(mock_common_data_local):
+    """Test async_validate_connectivity covers aiohttp.ClientConnectionError branch."""
+    import aiohttp
+    fp = UnifiedFireplace(mock_common_data_local)
+    async def raise_aiohttp_connection_error(*args, **kwargs):
+        raise aiohttp.ClientConnectionError("fail")
+    with patch.object(fp, "perform_local_poll", new=raise_aiohttp_connection_error):
+        with patch.object(fp, "perform_cloud_poll", new=AsyncMock(return_value=None)):
+            result = await fp.async_validate_connectivity()
+            assert result[0] is False

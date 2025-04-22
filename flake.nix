@@ -33,6 +33,8 @@
             
             # Suppress environment variable output from direnv
             export DIRENV_LOG_FORMAT=""
+
+            source .venv/bin/activate
           '';
         };
       });
