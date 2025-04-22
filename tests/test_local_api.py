@@ -6,6 +6,7 @@ from json import JSONDecodeError
 import aiohttp
 import asyncio
 import pytest
+from unittest.mock import patch, AsyncMock
 
 from intellifire4py import UnifiedFireplace
 from intellifire4py.cloud_interface import IntelliFireCloudInterface
@@ -183,27 +184,33 @@ def test_construct_payload():
 
 
 @pytest.mark.asyncio
-async def test_get_challenge_connection_error(dummy_session_factory):
+async def test_get_challenge_connection_error():
     """Test _get_challenge handles ClientConnectionError."""
     api = IntelliFireAPILocal(fireplace_ip=IP, user_id="user", api_key="key")
-    session = dummy_session_factory(aiohttp.ClientConnectionError)
-    result = await api._get_challenge(session)
-    assert result is None
+    with patch("aiohttp.ClientSession") as session_cls:
+        mock_session = session_cls.return_value
+        mock_session.get = AsyncMock(side_effect=aiohttp.ClientConnectionError)
+        result = await api._get_challenge(mock_session)
+        assert result is None
 
 
 @pytest.mark.asyncio
-async def test_get_challenge_timeout(dummy_session_factory):
+async def test_get_challenge_timeout():
     """Test _get_challenge handles asyncio.TimeoutError."""
     api = IntelliFireAPILocal(fireplace_ip=IP, user_id="user", api_key="key")
-    session = dummy_session_factory(asyncio.TimeoutError)
-    result = await api._get_challenge(session)
-    assert result is None
+    with patch("aiohttp.ClientSession") as session_cls:
+        mock_session = session_cls.return_value
+        mock_session.get = AsyncMock(side_effect=asyncio.TimeoutError)
+        result = await api._get_challenge(mock_session)
+        assert result is None
 
 
 @pytest.mark.asyncio
-async def test_get_challenge_unhandled(dummy_session_factory):
+async def test_get_challenge_unhandled():
     """Test _get_challenge handles generic Exception."""
     api = IntelliFireAPILocal(fireplace_ip=IP, user_id="user", api_key="key")
-    session = dummy_session_factory(Exception)
-    result = await api._get_challenge(session)
-    assert result is None
+    with patch("aiohttp.ClientSession") as session_cls:
+        mock_session = session_cls.return_value
+        mock_session.get = AsyncMock(side_effect=Exception)
+        result = await api._get_challenge(mock_session)
+        assert result is None

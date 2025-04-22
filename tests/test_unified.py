@@ -1,6 +1,6 @@
 """Unified tests."""
 import logging
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock, AsyncMock
 
 import pytest
 
@@ -193,7 +193,7 @@ async def test_data_property(mock_common_data_local):
 
 
 @pytest.mark.asyncio
-async def test_set_read_mode_branches(monkeypatch, mock_common_data_local):
+async def test_set_read_mode_branches(mocker, mock_common_data_local):
     """Test set_read_mode covers all branches and error handling."""
     fp = UnifiedFireplace(mock_common_data_local)
     # Same mode: triggers early return
@@ -202,13 +202,11 @@ async def test_set_read_mode_branches(monkeypatch, mock_common_data_local):
     called = {}
     async def fake_switch(mode):
         called['mode'] = mode
-    fp._switch_read_mode = fake_switch
+    mocker.patch.object(fp, '_switch_read_mode', new=AsyncMock(side_effect=fake_switch))
     await fp.set_read_mode(IntelliFireApiMode.CLOUD)
     assert called['mode'] == IntelliFireApiMode.CLOUD
     # Error branch
-    async def raise_exc(mode):
-        raise Exception("fail")
-    fp._switch_read_mode = raise_exc
+    mocker.patch.object(fp, '_switch_read_mode', new=AsyncMock(side_effect=Exception("fail")))
     try:
         await fp.set_read_mode(IntelliFireApiMode.LOCAL)  # Should log error, not raise
     except Exception as e:
@@ -246,7 +244,7 @@ async def test_is_cloud_and_local_polling_properties_cleanup(mock_common_data_lo
 
 
 @pytest.mark.asyncio
-async def test_switch_read_mode_else_branch(monkeypatch, mock_common_data_local):
+async def test_switch_read_mode_else_branch(mocker, mock_common_data_local):
     """Test else branch of switch_read_mode."""
     fp = UnifiedFireplace(mock_common_data_local)
     # Simulate an unknown mode
@@ -263,11 +261,8 @@ async def test_switch_read_mode_else_branch(monkeypatch, mock_common_data_local)
 
 
 @pytest.mark.asyncio
-async def test_build_fireplace_direct(monkeypatch):
+async def test_build_fireplace_direct(mock_async_validate_connectivity):
     """Test direct build of UnifiedFireplace."""
-    async def fake_validate(self, timeout):
-        return (True, False)
-    monkeypatch.setattr(UnifiedFireplace, "async_validate_connectivity", fake_validate)
     fp = await UnifiedFireplace.build_fireplace_direct(
         ip_address="1.2.3.4", #NOSONAR
         api_key="api",
@@ -290,12 +285,12 @@ async def test_build_fireplace_direct(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_build_fireplaces_from_user_data(monkeypatch, mock_user_data):
+async def test_build_fireplaces_from_user_data(mock_async_validate_connectivity, mock_user_data):
     """Test building multiple fireplaces from user data."""
     # Patch _create_async_instance to just return a dummy UnifiedFireplace
     async def dummy_create(fp, **kwargs):
         return UnifiedFireplace(fp)
-    monkeypatch.setattr(UnifiedFireplace, "_create_async_instance", dummy_create)
-    fps = await UnifiedFireplace.build_fireplaces_from_user_data(mock_user_data)
+    with patch("intellifire4py.UnifiedFireplace._create_async_instance", dummy_create):
+        fps = await UnifiedFireplace.build_fireplaces_from_user_data(mock_user_data)
     assert isinstance(fps, list)
     assert all(isinstance(fp, UnifiedFireplace) for fp in fps)
