@@ -462,7 +462,7 @@ def mock_background_polling() -> Generator:
 
 @pytest.fixture
 def mock_cloud_api():
-    """Patch IntelliFireAPICloud internals for cloud API tests, Home Assistant style."""
+    """Patch IntelliFireAPICloud internals for cloud API tests using autospec and correct method names."""
     from unittest.mock import patch, AsyncMock
     with patch("intellifire4py.cloud_api.IntelliFireAPICloud.send_command", new_callable=AsyncMock) as send_command, \
          patch("intellifire4py.cloud_api.IntelliFireAPICloud._send_cloud_command", new_callable=AsyncMock) as _send_cloud_command, \
