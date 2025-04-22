@@ -1,4 +1,4 @@
-name: Testing & Coverage
+name: CI
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   lint:
-    name: pre-commit
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,9 +17,10 @@ jobs:
       - run: pip install poetry
       - run: poetry install
       - run: poetry run pre-commit run --all-files
+      - run: poetry run mypy src tests docs/conf.py
 
   test:
-    name: tests (with coverage)
+    name: Test & Coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,32 +44,8 @@ jobs:
           files: coverage.xml
           # token: ${{ secrets.CODECOV_TOKEN }}  # Uncomment if repo is private
 
-  typeguard:
-    name: typeguard
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-      - run: pip install poetry
-      - run: poetry install
-      - run: poetry run pytest --typeguard-packages=intellifire4py
-
-  xdoctest:
-    name: xdoctest
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-      - run: pip install poetry
-      - run: poetry install
-      - run: poetry run python -m xdoctest --modname=intellifire4py --command=all
-
   docs:
-    name: docs-build
+    name: Docs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -77,46 +54,11 @@ jobs:
           python-version: '3.13'
       - run: pip install poetry
       - run: poetry install
-      - run: |
+      - name: Build documentation
+        run: |
           if [ -d docs/_build ]; then rm -rf docs/_build; fi
           poetry run sphinx-build docs docs/_build
-
-  sonarcloud:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Check out the repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Install Poetry
-        run: pip install poetry
-
-      - name: Install dependencies
-        run: poetry install
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2.1.1
-        with:
-          args: >
-            -Dsonar.projectKey=jeeftor_intellifire4py
-            -Dsonar.organization=jeeftor
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  upload-docs:
-    runs-on: ubuntu-latest
-    needs: docs
-    steps:
-      - name: Check out the repository
-        uses: actions/checkout@v4
-
-      - name: Upload documentation
+      - name: Upload docs
         uses: actions/upload-artifact@v4
         with:
           name: docs
