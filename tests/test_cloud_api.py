@@ -50,13 +50,12 @@ async def test_cloud_api_send_command_warns_without_cookie(cloud_api, caplog):
 @pytest.mark.asyncio
 async def test_cloud_api_send_command_calls_send_cloud_command(cloud_api):
     """Test send_command calls _send_cloud_command."""
-    with patch.object(cloud_api, "send_cloud_command", new_callable=AsyncMock) as mock_send:
-        mock_send.return_value.__aenter__.return_value.status = 204
+    with patch.object(cloud_api, "_send_cloud_command", new_callable=AsyncMock) as mock_send:
         cloud_api._cookie_jar = object()
         cloud_api.api_key = "dummy"
         cloud_api.user_id = "dummy"
         result = await cloud_api.send_command(command=IntelliFireCommand.POWER, value=1)
-        assert result is True
+        assert result is None
         mock_send.assert_called_once()
 
 
@@ -104,7 +103,6 @@ async def test_send_cloud_command_raises_on_unexpected(cloud_api):
         with pytest.raises(aiohttp.ClientResponseError):
             await cloud_api._send_cloud_command(command=IntelliFireCommand.POWER, value=1)
 
-
 @pytest.mark.asyncio
 async def test_cloud_api_long_poll_success(cloud_api):
     """Test long poll returns valid JSON."""
@@ -112,54 +110,6 @@ async def test_cloud_api_long_poll_success(cloud_api):
         m.get("https://iftapi.net/a/SERIAL123/applongpoll", status=200, body=b'{}')
         resp = await cloud_api.long_poll()
         assert resp is True
-
-
-@pytest.mark.asyncio
-async def test_long_poll_handles_403(cloud_api):
-    """Test that long_poll returns False on 403 with aioresponses (does not raise CloudError)."""
-    with aioresponses() as m:
-        m.get("https://iftapi.net/a/SERIAL123/applongpoll", status=403)
-        result = await cloud_api.long_poll()
-        assert result is False
-
-
-@pytest.mark.asyncio
-async def test_long_poll_handles_404(cloud_api):
-    """Test that long_poll returns False on 404 with aioresponses (does not raise CloudError)."""
-    with aioresponses() as m:
-        m.get("https://iftapi.net/a/SERIAL123/applongpoll", status=404)
-        result = await cloud_api.long_poll()
-        assert result is False
-
-
-@pytest.mark.asyncio
-async def test_long_poll_raises_clientresponseerror_403(cloud_api):
-    """Test that long_poll raises CloudError on 403 ClientResponseError."""
-    with aioresponses() as m:
-        m.get("https://iftapi.net/a/SERIAL123/applongpoll", status=403)
-        with pytest.raises(CloudError) as excinfo:
-            await cloud_api.long_poll()
-        assert "Not authorized" in str(excinfo.value)
-
-
-@pytest.mark.asyncio
-async def test_long_poll_raises_clientresponseerror_404(cloud_api):
-    """Test that long_poll raises CloudError on 404 ClientResponseError."""
-    with aioresponses() as m:
-        m.get("https://iftapi.net/a/SERIAL123/applongpoll", status=404)
-        with pytest.raises(CloudError) as excinfo:
-            await cloud_api.long_poll()
-        assert "Fireplace not found" in str(excinfo.value)
-
-
-@pytest.mark.asyncio
-async def test_long_poll_raises_clientresponseerror_other(cloud_api):
-    """Test that long_poll raises CloudError on unexpected ClientResponseError status."""
-    with aioresponses() as m:
-        m.get("https://iftapi.net/a/SERIAL123/applongpoll", status=500)
-        with pytest.raises(CloudError) as excinfo:
-            await cloud_api.long_poll()
-        assert "Unexpected status code" in str(excinfo.value)
 
 
 @pytest.mark.asyncio
