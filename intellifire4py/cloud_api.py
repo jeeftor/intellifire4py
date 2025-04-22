@@ -195,7 +195,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
 
         async with self._get_session() as session:
             try:
-                response = await session.get(long_poll_url, timeout=61)
+                response = await session.get(long_poll_url, timeout=ClientTimeout(61))
 
                 self._log.debug("Long Poll Status Code %d", response.status)
                 if response.status == 200:

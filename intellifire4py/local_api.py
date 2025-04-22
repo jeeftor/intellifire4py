@@ -297,7 +297,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                             headers={
                                 "content-type": "application/x-www-form-urlencoded"
                             },
-                            timeout=1.0,
+                            timeout=ClientTimeout(total=1.0),
                         )
                         self._log.debug(
                             "_send_local_command ➡️ Sending Local IntelliFire command: [%s=%s]",
@@ -354,7 +354,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
         start = time.time()
         try:
             response = await session.get(
-                f"http://{self.fireplace_ip}/get_challenge", timeout=3.0
+                f"http://{self.fireplace_ip}/get_challenge", timeout=ClientTimeout(total=3.0)
             )
             text = await response.text()
             # text = str(await response.text)

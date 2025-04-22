@@ -13,8 +13,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: "3.13"
       - run: pip install poetry
       - run: poetry install
       - run: poetry run pre-commit run --all-files
-      - run: poetry run mypy src tests docs/conf.py
+      - run: poetry run mypy intellifire4py tests docs/conf.py
