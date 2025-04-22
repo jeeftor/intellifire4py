@@ -13,7 +13,7 @@ async def test_ift_discovery_reader_protocol_adds_ip():
     protocol = IFTDiscoveryReaderProtocol(timeout=5, ip_set=ip_set)
     # Simulate receiving a valid datagram
     data = json.dumps({"ip": "192.168.1.100"}).encode() #NOSONAR
-    addr = ("192.168.1.100", 55555)
+    addr = ("192.168.1.100", 55555) #NOSONAR
     protocol.datagram_received(data, addr)
     assert "192.168.1.100" in ip_set #NOSONAR
 
