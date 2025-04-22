@@ -10,26 +10,7 @@ from intellifire4py.exceptions import CloudError
 from aioresponses import aioresponses
 from unittest.mock import patch, AsyncMock
 
-def test_cloud_api_init_and_properties(mock_cloud_api):
-    """Test initialization and properties of IntelliFireAPICloud."""
-    # We can't test real attributes on the mock, so just check mocks exist
-    assert hasattr(mock_cloud_api, "send_cloud_command")
-    assert hasattr(mock_cloud_api, "_send_cloud_command")
-    assert hasattr(mock_cloud_api, "poll")
-    assert hasattr(mock_cloud_api, "_range_check")
 
-
-def test_cloud_api_get_data_warns_on_localhost(mock_cloud_api, caplog):
-    """Test warning when ipv4_address is localhost."""
-    # This test is not meaningful with only mocks, so just check the mock
-    assert hasattr(mock_cloud_api, "poll")
-
-
-@pytest.mark.asyncio
-async def test_cloud_api_send_command_warns_without_cookie(mock_cloud_api, caplog):
-    """Test warning when sending command without cookie jar."""
-    # This test is not meaningful with only mocks, so just check the mock
-    assert hasattr(mock_cloud_api, "send_cloud_command")
 
 
 @pytest.mark.asyncio

@@ -462,18 +462,9 @@ def mock_background_polling() -> Generator:
 
 @pytest.fixture
 def mock_cloud_api(mocker):
-    """Patch common IntelliFireAPICloud internals for cloud API tests, Home Assistant style.
-
-    Patches:
-      - _send_cloud_command (AsyncMock)
-      - send_cloud_command (AsyncMock)
-      - poll (AsyncMock)
-      - _range_check (no-op)
-
-    Yields an object with async mocks as attributes for dot-notation access.
-    """
-    patcher_send_cloud_command = mocker.patch(
-        "intellifire4py.cloud_api.IntelliFireAPICloud.send_cloud_command", new_callable=AsyncMock
+    """Patch IntelliFireAPICloud internals for cloud API tests using new_callable=AsyncMock."""
+    patcher_send_command = mocker.patch(
+        "intellifire4py.cloud_api.IntelliFireAPICloud.send_command", new_callable=AsyncMock
     )
     patcher__send_cloud_command = mocker.patch(
         "intellifire4py.cloud_api.IntelliFireAPICloud._send_cloud_command", new_callable=AsyncMock
@@ -482,13 +473,15 @@ def mock_cloud_api(mocker):
         "intellifire4py.cloud_api.IntelliFireAPICloud.poll", new_callable=AsyncMock
     )
     patcher_range_check = mocker.patch(
-        "intellifire4py.cloud_api.IntelliFireAPICloud._range_check"
+        "intellifire4py.cloud_api._range_check"
     )
+
     class Mocks:
-        send_cloud_command = patcher_send_cloud_command
+        send_command = patcher_send_command
         _send_cloud_command = patcher__send_cloud_command
         poll = patcher_poll
         _range_check = patcher_range_check
+
     yield Mocks()
 
 
