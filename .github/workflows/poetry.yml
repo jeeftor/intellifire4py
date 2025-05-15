@@ -39,6 +39,6 @@ jobs:
       - name: Run the automated tests (for example)
         run: poetry run pytest -n 8 --cov-report xml:cov.xml --cov src --cov-report term-missing --durations-min=1 --durations=0
       - name: Upload coverage report
-        uses: codecov/codecov-action@v4.6.0
+        uses: codecov/codecov-action@v5.4.3
         with:
           files: ./cov.xml
