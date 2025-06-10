@@ -2,3 +2,4 @@ furo==2024.8.6
 sphinx==4.5.0
 sphinx-click==6.0.0
 myst_parser==0.17.2
+requests>=2.32.4 # not directly required, pinned by Snyk to avoid a vulnerability
