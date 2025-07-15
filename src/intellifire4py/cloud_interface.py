@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import inspect
-import json
 import logging
 
 import aiohttp
@@ -217,15 +216,7 @@ class IntelliFireCloudInterface:
         Args:
             json_str (str): A JSON string representing user data.
         """
-        try:
-            # Pydantic V2
-            self._user_data = IntelliFireUserData().model_validate_json(  # type: ignore[attr-defined]
-                json_str
-            )  # type:ignore
-        except AttributeError:
-            # Pydantic V1
-            self._user_data = IntelliFireUserData(**json.loads(json_str))  # type:ignore
-
+        self._user_data = IntelliFireUserData().model_validate_json(json_str)
         return self._user_data
 
     async def _login_check(self) -> None:
