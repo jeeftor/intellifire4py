@@ -14,21 +14,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       
-      # Setup Nix with flakes support
-      - uses: cachix/install-nix-action@v25
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-          extra_nix_config: |
-            experimental-features = nix-command flakes
+      # Install Nix with Determinate Systems (faster and more reliable)
+      - uses: DeterminateSystems/determinate-nix-action@v3
       
-      # Note: To enable Cachix caching, set up a CACHIX_AUTH_TOKEN secret in your repository settings
-      # and uncomment the following section
-      #
-      # - name: Setup Cachix
-      #   uses: cachix/cachix-action@v14
-      #   with:
-      #     name: intellifire4py
-      #     authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Enable zero-configuration binary cache for Nix
+      - uses: DeterminateSystems/flakehub-cache-action@main
+      
+      # Check flake.lock health
+      - uses: DeterminateSystems/flake-checker-action@main
       
       # Simplify by setting up environment once and running all commands in it
       - name: Setup and run tests
