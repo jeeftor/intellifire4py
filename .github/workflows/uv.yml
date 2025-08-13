@@ -3,11 +3,13 @@ permissions:
 name: UV Testing
 
 on:
-  - push
-  - pull_request
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   ci:
+    name: UV Tests
     strategy:
       fail-fast: false
       matrix:
@@ -27,7 +29,7 @@ jobs:
         run: uv venv
 
       - uses: actions/cache@v4
-        name: Define a cache for the virtual environment based on the dependencies lock file
+        name: Cache virtual environment
         with:
           path: ./.venv
           key: venv-${{ hashFiles('uv.lock') }}
@@ -50,6 +52,6 @@ jobs:
           uv run pytest -n 8 --cov-report xml:cov.xml --cov intellifire4py --cov-report term-missing --durations-min=1 --durations=0
 
       - name: Upload coverage report
-        uses: codecov/codecov-action@v4.6.0
+        uses: codecov/codecov-action@v4
         with:
           files: ./cov.xml
