@@ -8,6 +8,7 @@
 [![Read the documentation at https://intellifire4py.readthedocs.io/](https://img.shields.io/readthedocs/intellifire4py/latest.svg?label=Read%20the%20Docs)][read the docs]
 [![Tests](https://github.com/jeeftor/intellifire4py/workflows/Tests/badge.svg)][tests]
 [![Codecov](https://codecov.io/gh/jeeftor/intellifire4py/branch/master/graph/badge.svg)][codecov]
+[![Coverage](https://codecov.io/gh/jeeftor/intellifire4py/graph/badge.svg)](https://codecov.io/gh/jeeftor/intellifire4py)
 
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)][pre-commit]
 [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)][black]

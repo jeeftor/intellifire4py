@@ -21,20 +21,32 @@
           packages = [
             python
             pkgs.uv
-            pkgs.poetry
             python.pkgs.python-lsp-server
             python.pkgs.pytest
           ];
-          
-          shellHook = ''
-            # Set up Poetry environment
-            poetry config virtualenvs.in-project true --quiet
-            poetry install
-            
-            # Suppress environment variable output from direnv
-            export DIRENV_LOG_FORMAT=""
 
-            source .venv/bin/activate
+          shellHook = ''
+            # Create a virtual environment with UV
+            if [ ! -d ".venv" ]; then
+              echo "Creating virtual environment with UV..."
+              uv venv --python ${python}/bin/python .venv
+            fi
+
+            # Activate the virtual environment if it exists
+            if [ -f ".venv/bin/activate" ]; then
+              source .venv/bin/activate
+
+              # Install dependencies with UV if pyproject.toml exists and we're in the venv
+              if [ -f "pyproject.toml" ]; then
+                echo "Installing project in development mode..."
+                uv pip install -e .
+              fi
+            else
+              echo "Warning: Virtual environment activation failed. Run 'uv venv' manually."
+            fi        
+
+            # Display environment info
+            echo "UV $(uv --version) activated with Python $(python --version)"
           '';
         };
       });
