@@ -49,6 +49,8 @@ class UnifiedFireplace:
     cloud_connectivity: bool | None = None
     local_connectivity: bool | None = None
 
+    _polling_enabled: bool
+
     def __init__(
         self,
         fireplace_data: IntelliFireCommonFireplaceData,
@@ -56,6 +58,7 @@ class UnifiedFireplace:
         control_mode: IntelliFireApiMode = IntelliFireApiMode.LOCAL,
         use_http: bool = False,
         verify_ssl: bool = True,
+        polling_enabled: bool = True,
     ):
         """Initializes a new instance of the UnifiedFireplace class, configuring it for both local and cloud interactions with an IntelliFire fireplace.
 
@@ -67,6 +70,7 @@ class UnifiedFireplace:
             control_mode (IntelliFireApiMode, optional): Determines how the fireplace is controlled (LOCAL for local network, CLOUD for cloud). Defaults to LOCAL.
             use_http (bool, optional): Indicates whether to use HTTP (True) or HTTPS (False) for communication. Defaults to False (HTTPS).
             verify_ssl (bool, optional): Toggles SSL certificate verification. Defaults to True (verification enabled).
+            polling_enabled (bool, optional): Enables background polling.  If disabled the user must poll manually. Defaults to True (polling enabled).
 
         The constructor prepares two API interfaces:
             - _local_api (IntelliFireAPILocal): Configured for direct local network communication, using the IP address, user ID, and API key from the fireplace_data.
@@ -81,6 +85,7 @@ class UnifiedFireplace:
 
         self._verify_ssl = verify_ssl
         self._use_http = use_http
+        self._polling_enabled = polling_enabled
 
         self._local_api: IntelliFireAPILocal = IntelliFireAPILocal(
             fireplace_ip=self.ip_address, user_id=self.user_id, api_key=self.api_key
@@ -109,6 +114,19 @@ class UnifiedFireplace:
         """
         await self._local_api.poll(timeout_seconds=timeout_seconds)
 
+    async def perform_poll(self, timeout_seconds: float = 10.0) -> None:
+        """Perform a poll of the correct API based on the current read mode.
+
+        Use data() to get the data after this completes.
+
+        Parameters:
+        timeout_seconds (float): The timeout in seconds for the cloud poll request.
+        """
+        if self.read_mode == IntelliFireApiMode.LOCAL:
+            await self.perform_local_poll(timeout_seconds)
+        else:
+            await self.perform_cloud_poll(timeout_seconds)
+
     @property
     def is_cloud_polling(self) -> bool:
         """Returns True if the cloud API is currently polling in the background."""
@@ -118,6 +136,11 @@ class UnifiedFireplace:
     def is_local_polling(self) -> bool:
         """Returns True if the local API is currently polling in the background."""
         return self._local_api.is_polling_in_background
+
+    @property
+    def is_polling_enabled(self) -> bool:
+        """Returns True if background polling is enabled."""
+        return self._polling_enabled
 
     def get_user_data_as_json(self) -> str:
         """Dump the internal _fireplace_data object to a JSON String."""
@@ -271,13 +294,17 @@ class UnifiedFireplace:
         selected mode. It's designed to be an internal method, not exposed externally.
         """
         if mode == IntelliFireApiMode.LOCAL:
-            await self._cloud_api.stop_background_polling()
+            if self._polling_enabled:
+                await self._cloud_api.stop_background_polling()
             self._local_api.overwrite_data(self._cloud_api.data)
-            await self._local_api.start_background_polling()
+            if self._polling_enabled:
+                await self._local_api.start_background_polling()
         elif mode == IntelliFireApiMode.CLOUD:
-            await self._local_api.stop_background_polling()
+            if self._polling_enabled:
+                await self._local_api.stop_background_polling()
             self._cloud_api.overwrite_data(self._local_api.data)
-            await self._cloud_api.start_background_polling()
+            if self._polling_enabled:
+                await self._cloud_api.start_background_polling()
         else:
             await self._local_api.stop_background_polling()
             await self._cloud_api.stop_background_polling()
@@ -360,6 +387,7 @@ class UnifiedFireplace:
         desired_control_mode: IntelliFireApiMode | None = None,
         use_http: bool = False,
         verify_ssl: bool = True,
+        polling_enabled: bool = True,
     ) -> UnifiedFireplace:
         """Asynchronously creates an instance of the class with specified fireplace data and operating modes.
 
@@ -377,6 +405,7 @@ class UnifiedFireplace:
                 local or cloud. Defaults to IntelliFireApiMode.LOCAL.
             use_http (bool, optional): Indicates whether to use HTTP (True) or HTTPS (False) for communication.
             verify_ssl (bool, optional): Toggles SSL certificate verification.
+            polling_enabled (bool, optional): Enables background polling.  If disabled the user must poll manually. Defaults to True (polling enabled).
 
         Returns:
             [cls]: An initialized instance of the class with the specified configuration.
@@ -393,6 +422,7 @@ class UnifiedFireplace:
             control_mode=IntelliFireApiMode.NONE,
             verify_ssl=verify_ssl,
             use_http=use_http,
+            polling_enabled=polling_enabled,
         )
         local_connect, cloud_connect = await instance.async_validate_connectivity(
             timeout=30
@@ -556,6 +586,7 @@ class UnifiedFireplace:
         common_fireplace: IntelliFireCommonFireplaceData,
         use_http: bool = False,
         verify_ssl: bool = True,
+        polling_enabled: bool = True,
     ) -> UnifiedFireplace:
         """Asynchronously creates a UnifiedFireplace instance from a common fireplace data structure.
 
@@ -569,6 +600,7 @@ class UnifiedFireplace:
             object containing all necessary details for the fireplace.
             use_http (bool, optional): Indicates whether to use HTTP or HTTPS for communication.
             verify_ssl (bool, optional): Determines whether SSL certificate verification is enabled.
+            polling_enabled (bool, optional): Enables background polling.  If disabled the user must poll manually. Defaults to True (polling enabled).
 
         Returns:
             UnifiedFireplace: An instance of the UnifiedFireplace class initialized with the given common fireplace data.
@@ -578,6 +610,7 @@ class UnifiedFireplace:
             common_fireplace,
             use_http=use_http,
             verify_ssl=verify_ssl,
+            polling_enabled=polling_enabled,
             desired_read_mode=common_fireplace.read_mode,
             desired_control_mode=common_fireplace.control_mode,
         )
