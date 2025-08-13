@@ -20,19 +20,21 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.13"
 
-      - name: Upgrade pip
+      - name: Install UV and build tools
         run: |
-          pip install --constraint=.github/workflows/constraints.txt pip
-          pip --version
+          pip install uv build
+          uv --version
 
-      - name: Install Poetry
+      - name: Setup virtual environment
+        run: uv venv
+
+      - name: Install dependencies
         run: |
-          pip install --constraint=.github/workflows/constraints.txt poetry
-          poetry --version
-          poetry version
-          cat pyproject.toml
+          source .venv/bin/activate
+          uv pip install -e ".[dev]"
+          uv pip install build twine
 
       - name: Check if there is a parent commit
         id: check-parent-commit
@@ -45,18 +47,21 @@ jobs:
         uses: salsify/action-detect-and-tag-new-version@v2.0.3
         with:
           version-command: |
-            bash -o pipefail -c "poetry version | awk '{ print \$2 }'"
+            bash -o pipefail -c "grep -m1 'version =' pyproject.toml | cut -d '"' -f 2"
 
       - name: Bump version for developmental release
-        if: "! steps.check-version.outputs.tag"
+        if: ${{ ! steps.check-version.outputs.tag }}
         run: |
-          poetry version patch &&
-          version=$(poetry version | awk '{ print $2 }') &&
-          poetry version $version.dev.$(date +%s)
+          source .venv/bin/activate
+          current_version=$(grep -m1 'version =' pyproject.toml | cut -d '"' -f 2)
+          uv version --bump patch
+          new_version=$(grep -m1 'version =' pyproject.toml | cut -d '"' -f 2)
+          sed -i "s/version = \"$new_version\"/version = \"$new_version.dev.$(date +%s)\"/" pyproject.toml
 
       - name: Build package
         run: |
-          poetry build --ansi
+          source .venv/bin/activate
+          python -m build
 
       - name: Publish package on PyPI
         if: steps.check-version.outputs.tag
@@ -66,12 +71,17 @@ jobs:
           password: ${{ secrets.PYPI_TOKEN }}
 
       - name: Publish package on TestPyPI
+<<<<<<< HEAD
+        if: ${{ ! steps.check-version.outputs.tag }}
+        uses: pypa/gh-action-pypi-publish@v1.10.3
+=======
         if: "! steps.check-version.outputs.tag"
         uses: pypa/gh-action-pypi-publish@v1.12.4
+>>>>>>> master
         with:
           user: __token__
           password: ${{ secrets.TEST_PYPI_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
+          repository-url: https://test.pypi.org/legacy/
 
       - name: Publish the release notes
         uses: release-drafter/release-drafter@v6.1.0

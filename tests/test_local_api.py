@@ -4,7 +4,9 @@ from __future__ import annotations
 from json import JSONDecodeError
 
 import aiohttp
+import asyncio
 import pytest
+from unittest.mock import patch, AsyncMock
 
 from intellifire4py import UnifiedFireplace
 from intellifire4py.cloud_interface import IntelliFireCloudInterface
@@ -139,3 +141,76 @@ def test_needs_login() -> None:
     """Login test."""
     local_api = IntelliFireAPILocal(fireplace_ip="192.168.1.5")
     assert local_api._needs_login() is True
+
+
+@pytest.mark.asyncio
+async def test_poll_timeout(monkeypatch):
+    """Test poll handles asyncio.TimeoutError."""
+    api = IntelliFireAPILocal(fireplace_ip=IP, user_id="user", api_key="key")
+    async def raise_timeout(*args, **kwargs):
+        raise asyncio.TimeoutError
+    monkeypatch.setattr(aiohttp.ClientSession, "get", raise_timeout)
+    with pytest.raises(asyncio.TimeoutError):
+        await api.poll()
+
+
+@pytest.mark.asyncio
+async def test_poll_client_response_error(monkeypatch):
+    """Test poll handles aiohttp.ClientResponseError."""
+    api = IntelliFireAPILocal(fireplace_ip=IP, user_id="user", api_key="key")
+    class DummyResponse:
+        def raise_for_status(self):
+            raise aiohttp.ClientResponseError(None, (), status=404)
+        async def json(self, *a, **k):
+            return {}
+    async def dummy_get(*args, **kwargs):
+        return DummyResponse()
+    monkeypatch.setattr(aiohttp.ClientSession, "get", dummy_get)
+    with pytest.raises(aiohttp.ClientResponseError):
+        await api.poll()
+
+
+def test_needs_login_missing_api_key_and_user_id():
+    """Test _needs_login returns True when api_key and user_id are missing."""
+    api = IntelliFireAPILocal(fireplace_ip=IP)
+    assert api._needs_login() is True
+
+
+def test_construct_payload():
+    """Test _construct_payload returns expected string format."""
+    api = IntelliFireAPILocal(fireplace_ip=IP, user_id="abc", api_key="deadbeefdeadbeefdeadbeefdeadbeef")
+    result = api._construct_payload("cmd", 1, "deadbeefdeadbeefdeadbeefdeadbeef")
+    assert "command=cmd" in result and "user=abc" in result
+
+
+@pytest.mark.asyncio
+async def test_get_challenge_connection_error():
+    """Test _get_challenge handles ClientConnectionError."""
+    api = IntelliFireAPILocal(fireplace_ip=IP, user_id="user", api_key="key")
+    with patch("aiohttp.ClientSession") as session_cls:
+        mock_session = session_cls.return_value
+        mock_session.get = AsyncMock(side_effect=aiohttp.ClientConnectionError)
+        result = await api._get_challenge(mock_session)
+        assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_challenge_timeout():
+    """Test _get_challenge handles asyncio.TimeoutError."""
+    api = IntelliFireAPILocal(fireplace_ip=IP, user_id="user", api_key="key")
+    with patch("aiohttp.ClientSession") as session_cls:
+        mock_session = session_cls.return_value
+        mock_session.get = AsyncMock(side_effect=asyncio.TimeoutError)
+        result = await api._get_challenge(mock_session)
+        assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_challenge_unhandled():
+    """Test _get_challenge handles generic Exception."""
+    api = IntelliFireAPILocal(fireplace_ip=IP, user_id="user", api_key="key")
+    with patch("aiohttp.ClientSession") as session_cls:
+        mock_session = session_cls.return_value
+        mock_session.get = AsyncMock(side_effect=Exception)
+        result = await api._get_challenge(mock_session)
+        assert result is None

@@ -11,3 +11,7 @@ __pycache__/
 /.idea/
 .DS_Store
 /.project
+
+# UV specific
+/.direnv/
+/.venv/

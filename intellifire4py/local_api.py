@@ -74,18 +74,6 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 "control the device. "
             )
 
-        # self._session: ClientSession | None = None
-
-    # async def ensure_session(self) -> None:
-    #     """Ensure that the aiohttp ClientSession is created and open."""
-    #     if self._session is None or self._session.closed:
-    #         self._session = aiohttp.ClientSession(headers={"user-agent": USER_AGENT})
-    #
-    # async def close_session(self) -> None:
-    #     """Close the aiohttp ClientSession."""
-    #     if self._session and not self._session.closed:
-    #         await self._session.close()
-
     def log_status(self) -> None:
         """Log a status message."""
         self._log.info(
@@ -277,33 +265,17 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
 
         async with aiohttp.ClientSession() as session:
             self._log.info(f"Created Client Session {session}")
-            # Required fields
-            # payload = f"post:command={command.value['local_command']}&value={value}"
-            # api_bytes = bytes.fromhex(self._api_key)
             success = False
             retries = 0
             # We're done when we succeed, but also give up after 10 retries
             while not success and retries < 10:
                 retries += 1
-                # Make a client session
-                # async with self._session as client:
-                # Await a challenge
                 challenge = await self._get_challenge(session)
                 # If the challenge timed out or had another error, try again from the top
                 if not challenge:
                     continue
 
                 challenge_time = time.time()
-                #
-                # challenge_bytes = bytes.fromhex(challenge)
-                # payload_bytes = payload.encode()
-                #
-                # response = sha256(
-                #     api_bytes
-                #     + sha256(api_bytes + challenge_bytes + payload_bytes).digest()
-                # ).hexdigest()
-
-                # data = f"command={command.value['local_command']}&value={value}&user={self._user_id}&response={response}"
                 data = self._construct_payload(
                     command=command.value["local_command"],  # type: ignore
                     value=value,
@@ -325,7 +297,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                             headers={
                                 "content-type": "application/x-www-form-urlencoded"
                             },
-                            timeout=1.0,
+                            timeout=ClientTimeout(total=1.0),
                         )
                         self._log.debug(
                             "_send_local_command ➡️ Sending Local IntelliFire command: [%s=%s]",
@@ -344,12 +316,16 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                             self._log.warning(
                                 f"_send_local_command:: 422 Code on: {url}{data}"
                             )
-                        else:
+                        elif 200 <= resp.status < 300:
                             success = True
                             self._log.debug(
                                 "_send_local_command:: Response Code [%d]", resp.status
                             )
                             self._last_send = datetime.now(timezone.utc)
+                        else:
+                            self._log.warning(
+                                f"_send_local_command:: Unexpected Response Code: {resp.status}"
+                            )
                 except asyncio.TimeoutError as error:
                     self._log.warning("Control Endpoint Timeout Error %s", error)
                     continue
@@ -372,13 +348,13 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
 
     async def _get_challenge(
         self, session: ClientSession
-    ) -> str | None:  # due to a bug in typeguard this can't be str | None
+    ) -> str | None:
         """Retrieve a challenge result from the fireplace."""
 
         start = time.time()
         try:
             response = await session.get(
-                f"http://{self.fireplace_ip}/get_challenge", timeout=3.0
+                f"http://{self.fireplace_ip}/get_challenge", timeout=ClientTimeout(total=3.0)
             )
             text = await response.text()
             # text = str(await response.text)
@@ -390,13 +366,11 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 "time[%.2f] get_challenge returned ClientConnectError",
                 (end - start),
             )
-            pass
         except asyncio.TimeoutError:
             end = time.time()
             self._log.warning(
                 "time[%.2f] get_challenge returned TimeoutError 🕰️", (end - start)
             )
-            pass
         except Exception as error:
             end = time.time()
             self._log.error(

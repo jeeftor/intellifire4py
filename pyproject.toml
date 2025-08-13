@@ -1,76 +1,105 @@
-[tool.poetry]
-name = "intellifire4py"
-version = "4.1.10"
-description = "Intellifire4Py"
-authors = ["Jeff Stein <jeffstein@gmail.com>"]
-license = "MIT"
-readme = "README.md"
-homepage = "https://github.com/jeeftor/intellifire4py"
-repository = "https://github.com/jeeftor/intellifire4py"
-documentation = "https://intellifire4py.readthedocs.io"
-classifiers = ["Development Status :: 5 - Production/Stable",
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
- "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3",
-
+[tool.hatch.build]
+exclude = [
+    "/.direnv",
+    "/.venv",
+    "/.git",
+    "/.github",
+    "/.nox",
 ]
 
-[virtualenvs]
-create = true
-in-project = true
+[project]
+name = "intellifire4py"
+version = "4.1.11"
+description = "Intellifire4Py"
+authors = [
+    {name = "Jeff Stein", email = "jeffstein@gmail.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "pydantic>=1.10.8",
+    "aenum>=3.1.11",
+    "rich>=10.0.0",
+    "aiohttp>=3.9.1",
+]
 
-[tool.poetry.urls]
+[project.urls]
+Homepage = "https://github.com/jeeftor/intellifire4py"
+Repository = "https://github.com/jeeftor/intellifire4py"
+Documentation = "https://intellifire4py.readthedocs.io"
 "Bug Tracker" = "https://github.com/jeeftor/intellifire4py/issues"
 Changelog = "https://github.com/jeeftor/intellifire4py/releases"
 
-[tool.poetry.dependencies]
-python = "^3.11"
-pydantic = ">=2.0.0"
-aenum = ">=3.1.11"
-# Rich is needed
-rich = ">= 10.0.0"
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.5.1",
+    "black>=23.9.1,<25.0.0",
+    "pytest>=7.4.2",
+    "sphinx>=7.2.6",
+    "pre-commit>=3.4.0",
+    "pre-commit-hooks==4.5.0",
+    "pyupgrade>=3.13.0",
+    "nox>=2023.4.22",
+    "pytest-asyncio>=0.21.1",
+    "sphinx-copybutton>=0.5.2",
+    "myst-parser>=2.0.0",
+    "sphinx-click>=5.0.1",
+    "sphinx-autobuild>=2021.3.14",
+    "typeguard>=4.1.5",
+    "xdoctest>=1.1.1",
+    "pytest-cov>=4.1.0",
+    "ruff==0.1.4",
+    "aioresponses>=0.7.6",
+    "pytest-xdist>=3.5.0",
+    "safety>=3.3.1",
+    "pytest-timeout>=2.3.1",
+    "furo>=2024.8.6",
+    "pytest-mock>=3.14.0",
+    "build>=1.0.0",
+    "twine>=4.0.0",
+]
 
-# Installing pre-versions
-# pip install --pre -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple intellifire4py --upgrade
-aiohttp = "^3.9.1"
-
-
-
-[tool.poetry.scripts]
+[project.scripts]
 intellifire4py = "intellifire4py.__main__:main"
 
-[tool.poetry.group.dev.dependencies]
-mypy = "^1.5.1"
-black = ">=23.9.1,<25.0.0"
-pytest = "^7.4.2"
-sphinx = "^7.2.6"
-pre-commit = "^3.4.0"
-pre-commit-hooks = "4.5.0"
+[bumpver]
+current_version = "4.1.11"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "bump version to {new_version}"
+tag_message = "{new_version}"
+commit = true
+tag = true
+push = true
 
-pyupgrade = "^3.13.0"
-nox = "^2023.4.22"
-nox-poetry = "^1.0.3"
-pytest-asyncio = "^0.21.1"
-sphinx-copybutton = "^0.5.2"
-myst-parser = "^2.0.0"
-sphinx-click = "^5.0.1"
-sphinx-autobuild = "^2021.3.14"
-typeguard = "^4.1.5"
-xdoctest = "^1.1.1"
-pytest-cov = "^4.1.0"
-ruff = "0.1.4"
-aioresponses = "^0.7.6"
-pytest-xdist = "^3.5.0"
-
+[bumpver.file_patterns]
+"pyproject.toml" = [
+    'version = "{version}"',
+]
+"intellifire4py/__init__.py" = [
+    '__version__ = "{version}"',
+]
+"README.md" = [
+    'Version: {version}',
+]
 
 [tool.pytest.ini_options]
-#addopts = "-n 8 --cov-report xml:cov.xml --cov src --cov-report term-missing --durations-min=1 --durations=0"
 testpaths = [
     "tests"
 ]
+
 [tool.coverage.paths]
-source = ["src", "*/site-packages"]
+source = ["intellifire4py", "*/site-packages"]
 tests = ["tests", "*/tests"]
 
 [tool.coverage.run]
@@ -79,8 +108,6 @@ source = ["intellifire4py", "tests"]
 
 [tool.coverage.report]
 show_missing = true
-#fail_under = 100
-
 
 [tool.isort]
 profile = "black"
@@ -89,7 +116,6 @@ lines_after_imports = 2
 
 [tool.mypy]
 python_version = "3.11"
-
 strict = false
 warn_unreachable = false
 pretty = true
@@ -99,70 +125,38 @@ show_error_context = true
 plugins = "pydantic.mypy"
 ignore_missing_imports = true
 
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-
 [tool.ruff]
-ignore = ["D202", "D412", "E501"]
-# Same as Black.
 line-length = 88
-select = ["B", "B9", "C", "D", "E", "F", "N", "S", "W"]
-# Assume Python 3.11.
 target-version = "py311"
-
-# Exclude a variety of commonly ignored directories.
 exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
+    ".bzr", ".direnv", ".eggs", ".git", ".hg", ".mypy_cache", ".nox", ".pants.d",
+    ".ruff_cache", ".svn", ".tox", ".venv", "__pypackages__", "_build", "buck-out",
+    "build", "dist", "node_modules", "venv",
 ]
 
-[tool.ruff.flake8-pytest-style]
+[tool.ruff.lint]
+ignore = ["D202", "D412", "E501"]
+select = ["B", "B9", "C", "D", "E", "F", "N", "S", "W"]
+per-file-ignores = { "tests/*" = ["S101"] }
+
+[tool.ruff.lint.mccabe]
+max-complexity = 25
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-pytest-style]
 mark-parentheses = false
 fixture-parentheses = false
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["open_meteo"]
 
-# [tool.ruff.lint.flake8-type-checking]
-# runtime-evaluated-base-classes = [
-#   "mashumaro.mixins.orjson.DataClassORJSONMixin",
-# ]
-
-[tool.ruff.mccabe]
-max-complexity = 25
-
-[tool.ruff.pydocstyle]
-convention = "google"
-
-[tool.ruff.per-file-ignores]
-"tests/*" = ["S101"]
-# aiohttp = "^3.8.3"
-
-
 [tool.pylint.MASTER]
-ignore= [
-  "tests"
+ignore = [
+    "tests"
 ]
+
 [tool.pylint.BASIC]
 good-names = [
     "_",
@@ -177,9 +171,8 @@ good-names = [
     "T",
 ]
 
-
 [tool.pylint."MESSAGES CONTROL"]
-disable= [
+disable = [
     "duplicate-code",
     "format",
     "unsubscriptable-object",
