@@ -3,12 +3,8 @@ from __future__ import annotations
 
 from http.cookies import SimpleCookie
 
-try:
-    from pydantic.v1 import Field, validator  # type: ignore # noqa F401 # pragma: no cover
-    from pydantic.v1 import BaseModel  # type: ignore # pragma: no cover
-except ImportError:
-    from pydantic import Field  # type: ignore # pragma: no cover
-    from pydantic import BaseModel  # type: ignore # pragma: no cover
+from pydantic import ConfigDict, Field
+from pydantic import BaseModel
 
 from .const import IntelliFireErrorCode, IntelliFireApiMode
 from aiohttp import CookieJar
@@ -46,13 +42,7 @@ class IntelliFirePollData(BaseModel):
     timeremaining_s: int = Field(alias="timeremaining", default=0)
     uptime: int = Field(default=0, alias="remote_uptime")
 
-    class Config:
-        """Set configuration values for pydantic."""
-
-        # pydantic v1 version (i think)
-        populate_by_name = True
-        # Pydantic v2 version
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     @property
     def temperature_f(self) -> float:

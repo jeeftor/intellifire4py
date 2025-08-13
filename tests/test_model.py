@@ -1,9 +1,6 @@
 """Test File."""
 
-try:
-    from pydantic.v1 import ValidationError
-except ImportError:
-    from pydantic import ValidationError  # type: ignore
+from pydantic import ValidationError
 
 from intellifire4py.model import IntelliFirePollData
 
@@ -12,15 +9,15 @@ def test_json_files(local_poll_json: str, poll_response_text_error_6_642: str) -
     """Test Function."""
     for json_text in [local_poll_json, poll_response_text_error_6_642]:
         try:
-            IntelliFirePollData.parse_raw(json_text)
+            IntelliFirePollData.model_validate_json(json_text)
         except ValidationError as e:
             print(e)
 
 
 def test_jsons(cloud_poll_json, local_poll_json):
     """Test Function."""
-    cloud = IntelliFirePollData.parse_raw(cloud_poll_json)
-    local = IntelliFirePollData.parse_raw(local_poll_json)
+    cloud = IntelliFirePollData.model_validate_json(cloud_poll_json)
+    local = IntelliFirePollData.model_validate_json(local_poll_json)
     assert cloud.battery == local.battery
 
     assert cloud.brand == "H&G"

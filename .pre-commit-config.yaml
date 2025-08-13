@@ -1,18 +1,11 @@
 repos:
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.1
+    rev: v3.20.0
     hooks:
       - id: pyupgrade
         args: [--py39-plus]
-  #  - repo: https://github.com/psf/black
-  #    rev: 23.12.1
-  #    hooks:
-  #      - id: black
-  #        args:
-  #          - --quiet
-  # files: ^((homeassistant|pylint|script|tests)/.+)?[^/]+\.py$
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.0
+    rev: v2.4.1
     hooks:
       - id: codespell
         args:
@@ -21,6 +14,7 @@ repos:
           - --quiet-level=2
         exclude_types: [csv, json]
         exclude: ^tests/fixtures/|homeassistant/generated/
+
         
   - repo: local
     hooks:
@@ -32,7 +26,7 @@ repos:
         args: ["--fix"]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.14.1"
+    rev: "v1.17.1"
     hooks:
       - id: mypy
         args: [--config-file=pyproject.toml]
@@ -49,79 +43,3 @@ repos:
     hooks:
       - id: commitlint
         stages: [commit-msg]
-
-  # Using local ruff hook with UV instead of the remote ruff-pre-commit hook
-
-  #
-  #  - repo: local
-  #    hooks:
-  #      - id: mypy
-  #        name: mypy
-  #        entry: scripts/run-in-env.sh mypy
-  #        language: script
-  #        types: [python]
-  #        require_serial: true
-
-  # repos:
-  #   - repo: local
-  #     hooks:
-  #       - id: black
-  #         name: black
-  #         entry: black
-  #         language: system
-  #         types: [python]
-  #         require_serial: true
-  #       - id: check-added-large-files
-  #         name: Check for added large files
-  #         entry: check-added-large-files
-  #         language: system
-  #       - id: check-toml
-  #         name: Check Toml
-  #         entry: check-toml
-  #         language: system
-  #         types: [toml]
-  #       - id: check-yaml
-  #         name: Check Yaml
-  #         entry: check-yaml
-  #         language: system
-  #         types: [yaml]
-  #       - id: darglint
-  #         name: darglint
-  #         entry: darglint
-  #         language: system
-  #         types: [python]
-  #         stages: [manual]
-  #       - id: end-of-file-fixer
-  #         name: Fix End of Files
-  #         entry: end-of-file-fixer
-  #         language: system
-  #         types: [text]
-  #         stages: [commit, push, manual]
-  #       # - id: flake8
-  #       #   name: flake8
-  #       #   entry: flake8
-  #       #   language: system
-  #       #   types: [python]
-  #       #   require_serial: true
-  #       #   args: [--darglint-ignore-regex, .*]
-  #       - id: isort
-  #         name: isort
-  #         entry: isort
-  #         require_serial: true
-  #         language: system
-  #         types_or: [cython, pyi, python]
-  #         args: ["--filter-files"]
-  #       - id: pyupgrade
-  #         name: pyupgrade
-  #         description: Automatically upgrade syntax for newer versions.
-  #         entry: pyupgrade
-  #         language: system
-  #         types: [python]
-  #         args: [--py39-plus, --keep-runtime-typing]
-  #       - id: trailing-whitespace
-  #         name: Trim Trailing Whitespace
-  #         entry: trailing-whitespace-fixer
-  #         language: system
-  #         types: [text]
-  #         stages: [commit, push, manual]
-
