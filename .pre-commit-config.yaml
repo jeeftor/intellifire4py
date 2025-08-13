@@ -21,13 +21,15 @@ repos:
           - --quiet-level=2
         exclude_types: [csv, json]
         exclude: ^tests/fixtures/|homeassistant/generated/
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    # Ruff version.
-    rev: "v0.9.3"
+        
+  - repo: local
     hooks:
       - id: ruff
-        args:
-          - --fix
+        name: ruff
+        entry: uv run ruff
+        language: system
+        types: [python]
+        args: ["--fix"]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: "v1.14.1"
@@ -35,6 +37,20 @@ repos:
       - id: mypy
         args: [--config-file=pyproject.toml]
         additional_dependencies: [pydantic]
+        
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.2.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]  
+
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: v9.22.0
+    hooks:
+      - id: commitlint
+        stages: [commit-msg]
+
+  # Using local ruff hook with UV instead of the remote ruff-pre-commit hook
 
   #
   #  - repo: local
@@ -109,7 +125,3 @@ repos:
   #         types: [text]
   #         stages: [commit, push, manual]
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v4.0.0-alpha.8
-    hooks:
-      - id: prettier
