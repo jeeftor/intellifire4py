@@ -13,26 +13,47 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      
+      # Setup Nix with flakes support
+      - uses: cachix/install-nix-action@v25
         with:
-          python-version: "3.13"
-      - run: pip install uv
-      - name: Setup virtual environment
-        run: uv venv
-      - name: Install dependencies
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      
+      # Note: To enable Cachix caching, set up a CACHIX_AUTH_TOKEN secret in your repository settings
+      # and uncomment the following section
+      #
+      # - name: Setup Cachix
+      #   uses: cachix/cachix-action@v14
+      #   with:
+      #     name: intellifire4py
+      #     authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      
+      # Simplify by setting up environment once and running all commands in it
+      - name: Setup and run tests
         run: |
-          source .venv/bin/activate
-          uv pip install -e ".[dev]"
-      - name: Run tests and generate coverage
-        run: |
-          source .venv/bin/activate
-          uv run pytest --cov --cov-report=xml
+          nix develop -c bash -c '
+            # Create and activate virtual environment
+            uv venv
+            source .venv/bin/activate
+            
+            # Install dependencies
+            uv pip install -e ".[dev]"
+            
+            # Run tests with coverage
+            pytest --cov=intellifire4py --cov-report=xml
+          '
+      
+      # Upload coverage report
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage.xml
+      
+      # Upload coverage to Codecov
       - name: Upload coverage to Codecov
         if: always()
         uses: codecov/codecov-action@v4

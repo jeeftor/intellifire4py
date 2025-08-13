@@ -17,29 +17,38 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      # Install Nix with flakes support
+      - uses: cachix/install-nix-action@v26
         with:
-          python-version: "3.13"
-
-      - name: Install UV and build tools
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      
+      # Note: To enable Cachix caching, set up a CACHIX_AUTH_TOKEN secret in your repository settings
+      # and uncomment the following section
+      #
+      # - name: Setup Cachix
+      #   uses: cachix/cachix-action@v14
+      #   with:
+      #     name: intellifire4py
+      #     authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      
+      # Setup environment with dependencies
+      - name: Setup environment
         run: |
-          pip install uv build
-          uv --version
-
-      - name: Setup virtual environment
-        run: uv venv
-
-      - name: Install dependencies
-        run: |
-          source .venv/bin/activate
-          uv pip install -e ".[dev]"
-          uv pip install build twine
+          nix develop -c bash -c '
+            # Create and activate virtual environment
+            uv venv
+            source .venv/bin/activate
+            
+            # Install dependencies
+            uv pip install -e ".[dev]"
+            uv pip install build twine
+          '
 
       - name: Check if there is a parent commit
         id: check-parent-commit
         run: |
-          echo "::set-output name=sha::$(git rev-parse --verify --quiet HEAD^)"
+          echo "sha=$(git rev-parse --verify --quiet HEAD^)" >> $GITHUB_OUTPUT
 
       - name: Detect and tag new version
         id: check-version
