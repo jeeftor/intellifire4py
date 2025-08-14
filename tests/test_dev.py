@@ -11,7 +11,7 @@ from intellifire4py.model import IntelliFirePollData
 @pytest.fixture
 def mock_fp(mock_common_data_local, local_poll_json):
     """Fixture that mocks UnifiedFireplace with local poll data."""
-    with patch('intellifire4py.UnifiedFireplace') as mock_unified_fireplace:
+    with patch("intellifire4py.UnifiedFireplace") as mock_unified_fireplace:
         # Create an instance of the mock
         mock_instance = mock_unified_fireplace.return_value
 
@@ -47,7 +47,9 @@ def mock_fp(mock_common_data_local, local_poll_json):
         mock_instance.set_read_mode = AsyncMock()
         mock_instance.set_control_mode = AsyncMock()
 
-        mock_instance.async_validate_connectivity = AsyncMock(return_value=(True, False))
+        mock_instance.async_validate_connectivity = AsyncMock(
+            return_value=(True, False)
+        )
 
         yield mock_instance  # Provide the mock instance to the test
 
@@ -65,7 +67,6 @@ def test_unified_fireplace(mock_fp):
 
     asyncio.run(mock_fp.perform_local_poll())
     mock_fp.perform_local_poll.assert_called_once()
-
 
     assert mock_fp.data.battery == 0
     assert mock_fp.data.connection_quality == 995871

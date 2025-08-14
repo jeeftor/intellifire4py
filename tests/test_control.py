@@ -4,11 +4,14 @@ import pytest
 from intellifire4py.const import IntelliFireApiMode, IntelliFireCommand
 from intellifire4py.control import IntelliFireController
 
+
 class DummyController(IntelliFireController):
     """Dummy controller for testing."""
+
     async def send_command(self, command, value):
         """Mock send_command implementation."""
         self._last_command = (command, value)
+
 
 @pytest.mark.asyncio
 async def test_controller_basic_methods():

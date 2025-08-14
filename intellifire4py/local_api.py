@@ -1,4 +1,5 @@
 """IntelliFire Local API for accessing the fireplace over the lan."""
+
 from __future__ import annotations
 import asyncio
 import time
@@ -346,15 +347,14 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                     value,
                 )
 
-    async def _get_challenge(
-        self, session: ClientSession
-    ) -> str | None:
+    async def _get_challenge(self, session: ClientSession) -> str | None:
         """Retrieve a challenge result from the fireplace."""
 
         start = time.time()
         try:
             response = await session.get(
-                f"http://{self.fireplace_ip}/get_challenge", timeout=ClientTimeout(total=3.0)
+                f"http://{self.fireplace_ip}/get_challenge",
+                timeout=ClientTimeout(total=3.0),
             )
             text = await response.text()
             # text = str(await response.text)

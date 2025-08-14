@@ -4,7 +4,12 @@ import asyncio
 import json
 import pytest
 from unittest import mock
-from intellifire4py.udp import IFTDiscoveryReaderProtocol, IFTDiscoverySenderProtocol, UDPFireplaceFinder
+from intellifire4py.udp import (
+    IFTDiscoveryReaderProtocol,
+    IFTDiscoverySenderProtocol,
+    UDPFireplaceFinder,
+)
+
 
 @pytest.mark.asyncio
 async def test_ift_discovery_reader_protocol_adds_ip():
@@ -12,10 +17,10 @@ async def test_ift_discovery_reader_protocol_adds_ip():
     ip_set = set()
     protocol = IFTDiscoveryReaderProtocol(timeout=5, ip_set=ip_set)
     # Simulate receiving a valid datagram
-    data = json.dumps({"ip": "192.168.1.100"}).encode() #NOSONAR
-    addr = ("192.168.1.100", 55555) #NOSONAR
+    data = json.dumps({"ip": "192.168.1.100"}).encode()  # NOSONAR
+    addr = ("192.168.1.100", 55555)  # NOSONAR
     protocol.datagram_received(data, addr)
-    assert "192.168.1.100" in ip_set #NOSONAR
+    assert "192.168.1.100" in ip_set  # NOSONAR
 
 
 def test_ift_discovery_reader_protocol_connection_methods():
@@ -54,8 +59,8 @@ async def test_udp_fireplace_finder_ips_and_init():
     """Test UDPFireplaceFinder initialization and IPs property."""
     finder = UDPFireplaceFinder(timeout_in_seconds=1)
     assert finder.ips == []
-    finder.ip_set.add("1.2.3.4") #NOSONAR
-    assert finder.ips == ["1.2.3.4"] #NOSONAR
+    finder.ip_set.add("1.2.3.4")  # NOSONAR
+    assert finder.ips == ["1.2.3.4"]  # NOSONAR
 
 
 @pytest.mark.asyncio
@@ -64,7 +69,9 @@ async def test_udp_fireplace_finder_send_discovery_packet(monkeypatch):
     finder = UDPFireplaceFinder(timeout_in_seconds=1)
     loop = mock.Mock()
     monkeypatch.setattr(finder, "loop", loop)
-    loop.create_datagram_endpoint = mock.AsyncMock(return_value=(mock.Mock(), mock.Mock()))
+    loop.create_datagram_endpoint = mock.AsyncMock(
+        return_value=(mock.Mock(), mock.Mock())
+    )
     fut = asyncio.Future()
     fut.set_result(True)
     loop.create_future = mock.Mock(return_value=fut)

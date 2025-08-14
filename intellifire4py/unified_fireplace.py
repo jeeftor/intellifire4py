@@ -1,4 +1,5 @@
 """Unified Fireplace Object encapsulating both Local and Cloud."""
+
 from __future__ import annotations
 
 import asyncio

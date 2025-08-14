@@ -464,13 +464,25 @@ def mock_background_polling() -> Generator:
 def mock_cloud_api():
     """Patch IntelliFireAPICloud internals for cloud API tests using autospec and correct method names."""
     from unittest.mock import patch, AsyncMock
-    with patch("intellifire4py.cloud_api.IntelliFireAPICloud.send_command", new_callable=AsyncMock) as send_command, \
-         patch("intellifire4py.cloud_api.IntelliFireAPICloud._send_cloud_command", new_callable=AsyncMock) as _send_cloud_command, \
-         patch("intellifire4py.cloud_api.IntelliFireAPICloud.poll", new_callable=AsyncMock) as poll, \
-         patch("intellifire4py.cloud_api._range_check") as _range_check:
+
+    with (
+        patch(
+            "intellifire4py.cloud_api.IntelliFireAPICloud.send_command",
+            new_callable=AsyncMock,
+        ) as send_command,
+        patch(
+            "intellifire4py.cloud_api.IntelliFireAPICloud._send_cloud_command",
+            new_callable=AsyncMock,
+        ) as _send_cloud_command,
+        patch(
+            "intellifire4py.cloud_api.IntelliFireAPICloud.poll", new_callable=AsyncMock
+        ) as poll,
+        patch("intellifire4py.cloud_api._range_check") as _range_check,
+    ):
 
         class Mocks:
             pass
+
         mocks = Mocks()
         mocks.send_command = send_command
         mocks._send_cloud_command = _send_cloud_command
@@ -485,20 +497,38 @@ def fake_error_session_factory():
 
     Usage: session = fake_error_session_factory(status_code, method="get"|"post")
     """
+
     def _factory(status_code, method="get"):
         class FakeResponse:
             status = status_code
-            async def json(self): return {}
+
+            async def json(self):
+                return {}
+
             def raise_for_status(self):
                 raise aiohttp.ClientResponseError(None, (), status=status_code)
-            async def __aenter__(self): return self
-            async def __aexit__(self, exc_type, exc, tb): pass
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, exc_type, exc, tb):
+                pass
+
         class FakeSession:
-            async def get(self, *a, **kw): return FakeResponse()
-            async def post(self, *a, **kw): return FakeResponse()
-            async def __aenter__(self): return self
-            async def __aexit__(self, exc_type, exc, tb): pass
+            async def get(self, *a, **kw):
+                return FakeResponse()
+
+            async def post(self, *a, **kw):
+                return FakeResponse()
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, exc_type, exc, tb):
+                pass
+
         return FakeSession()
+
     return _factory
 
 

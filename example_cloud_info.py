@@ -1,4 +1,5 @@
 """Example showing stuff found in the cloud."""
+
 # noqa F401
 import asyncio
 import logging

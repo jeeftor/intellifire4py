@@ -1,4 +1,5 @@
 """Smoke test."""
+
 import asyncio
 import os
 

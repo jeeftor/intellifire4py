@@ -1,8 +1,10 @@
 """Test enums and constants for intellifire4py."""
 
+
 def test_enums_and_constants():
     """Test enums and constants for coverage."""
     from intellifire4py import const
+
     # Cover version and user agent
     assert isinstance(const.PACKAGE_VERSION, str)
     assert isinstance(const.USER_AGENT, str)

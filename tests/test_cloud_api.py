@@ -12,9 +12,9 @@ from intellifire4py.exceptions import LoginError
 
 @pytest.mark.asyncio
 async def test_cloud_login(  # type: ignore
-        mock_cloud_login_flow_no_local,
-        user_id,
-        api_key,
+    mock_cloud_login_flow_no_local,
+    user_id,
+    api_key,
 ):
     """Test cloud login."""
     username = "user"
@@ -45,9 +45,9 @@ async def test_cloud_login(  # type: ignore
 @pytest.mark.asyncio
 @pytest.mark.asyncio
 async def test_control(  # type: ignore
-        mock_login_for_control_testing,
-        user_id: str,
-        api_key: str,
+    mock_login_for_control_testing,
+    user_id: str,
+    api_key: str,
 ) -> None:  # Build cookies
     """Test control."""
     username = "user"

@@ -40,7 +40,7 @@ async def _convert_aiohttp_response_to_curl(response) -> str:
 
     # Add the request body if present
     if body:
-        curl_command += f'    -d \'{body.decode("utf-8")}\' \\\n'
+        curl_command += f"    -d '{body.decode('utf-8')}' \\\n"
 
     # Add the URL
     curl_command += f"    {response.url}"

@@ -1,4 +1,5 @@
 """Main API access to the Cloud enumerations for the fireplaces."""
+
 from __future__ import annotations
 
 import inspect

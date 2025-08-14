@@ -2,6 +2,7 @@
 
 from intellifire4py.model import IntelliFirePollData
 
+
 def test_poll_data_properties():
     """Test properties and methods of IntelliFirePollData."""
     d = IntelliFirePollData()

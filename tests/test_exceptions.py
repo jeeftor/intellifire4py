@@ -1,11 +1,14 @@
 """Test exceptions for intellifire4py."""
+
 import pytest
 from intellifire4py.exceptions import CloudError, InputRangError
+
 
 def test_cloud_error():
     """Test CloudError exception."""
     with pytest.raises(CloudError):
         raise CloudError("API call failed")
+
 
 def test_input_range_error():
     """Test InputRangError exception."""

@@ -1,4 +1,5 @@
 """IntelliFire CLoud API."""
+
 from __future__ import annotations
 import time
 import asyncio
@@ -221,7 +222,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 else:
                     response_text = ""
                     # Only try to get response text if response exists
-                    if hasattr(e, 'response') and e.response is not None:
+                    if hasattr(e, "response") and e.response is not None:
                         try:
                             response_text = await e.response.text()
                         except Exception:
