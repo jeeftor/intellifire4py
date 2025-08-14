@@ -4,7 +4,6 @@ import asyncio
 import json
 import socket
 from typing import Any
-from typing import Union
 import logging
 
 _log = logging.getLogger(__name__)
@@ -27,7 +26,7 @@ class IFTDiscoveryReaderProtocol(asyncio.DatagramProtocol):
         self.transport = transport
         _log.debug("UDP Discovery Listen - Socket connection created")
 
-    def datagram_received(self, data: bytes, addr: tuple[Union[str, Any], int]) -> None:
+    def datagram_received(self, data: bytes, addr: tuple[str | Any, int]) -> None:
         """Process datagram data."""
         message = data.decode()
         _log.debug(f"Received {message!r} from {addr}")
@@ -104,7 +103,7 @@ class UDPFireplaceFinder:
         try:
             await asyncio.wait_for(on_con_lost, timeout=self.timeout)
             _log.debug("UDP Discovery Send - Discovery packet sent")
-        except (asyncio.TimeoutError, asyncio.CancelledError):
+        except (TimeoutError, asyncio.CancelledError):
             _log.debug("UDP Discovery Send - Discovery packet could not send")
         finally:
             transport.close()

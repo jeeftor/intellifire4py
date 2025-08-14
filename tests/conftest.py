@@ -175,7 +175,7 @@ def web_client_id() -> str:
 
 
 @pytest.fixture
-def mock_aioresponse() -> Generator[aioresponses, None, None]:
+def mock_aioresponse() -> Generator[aioresponses]:
     """Mock out an aioresponse but i'm not sure if we even use this."""
     # Context manager for mocking aiohttp responses
     with aioresponses() as m:
@@ -240,7 +240,7 @@ def mock_cloud_login_flow_no_local(
     local_poll_json: str,
     serial: str,
     ip: str,
-) -> Generator[aioresponses, None, None]:
+) -> Generator[aioresponses]:
     """Mock the login flow."""
     with aioresponses() as m:
         setup_common_mocks(
@@ -264,7 +264,7 @@ def mock_login_flow_with_local_and_cloud(
     local_poll_json: str,
     serial: str,
     ip: str,
-) -> Generator[aioresponses, None, None]:
+) -> Generator[aioresponses]:
     """Mock the login flow."""
     with aioresponses() as m:
         setup_common_mocks(
@@ -289,7 +289,7 @@ def mock_login_flow_with_cloud_only(
     local_poll_json: str,
     serial: str,
     ip: str,
-) -> Generator[aioresponses, None, None]:
+) -> Generator[aioresponses]:
     """Mock the login flow."""
     with aioresponses() as m:
         setup_common_mocks(
@@ -314,7 +314,7 @@ def mock_cloud_login_flow_connectivity_testing(
     local_poll_json: str,
     serial: str,
     ip: str,
-) -> Generator[aioresponses, None, None]:
+) -> Generator[aioresponses]:
     """Test connectivity."""
     with aioresponses() as m:
         # Mock the POST login request
@@ -376,7 +376,7 @@ def mock_login_for_control_testing(
     challenge_text: str,
     serial: str,
     ip: str,
-) -> Generator[aioresponses, None, None]:
+) -> Generator[aioresponses]:
     """Fixture for mocking login process for control testing."""
     # Using 'aioresponses' for mocking asynchronous HTTP responses.
     with aioresponses() as m:
@@ -418,7 +418,7 @@ def mock_login_for_control_testing(
 
 
 @pytest.fixture
-def mock_login_bad_credentials() -> Generator[aioresponses, None, None]:
+def mock_login_bad_credentials() -> Generator[aioresponses]:
     """Fixture for mocking a login process with bad credentials."""
     # Using 'aioresponses' to mock asynchronous HTTP responses.
     with aioresponses() as m:

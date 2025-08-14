@@ -625,7 +625,7 @@ class UnifiedFireplace:
             try:
                 await asyncio.wait_for(coroutine, timeout)
                 return True
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 return False
             except (ClientConnectionError, ConnectionError) as ex:
                 self._log.debug("Connectivity error: %s", ex)

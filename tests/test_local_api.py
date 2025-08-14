@@ -150,7 +150,7 @@ async def test_poll_timeout(monkeypatch):
     api = IntelliFireAPILocal(fireplace_ip=IP, user_id="user", api_key="key")
 
     async def raise_timeout(*args, **kwargs):
-        raise asyncio.TimeoutError
+        raise TimeoutError
 
     monkeypatch.setattr(aiohttp.ClientSession, "get", raise_timeout)
     with pytest.raises(asyncio.TimeoutError):

@@ -208,7 +208,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
             if e.status == 404 and not suppress_warnings:
                 self._log.warning(f"poll() Error accessing {url} - 404")
             raise e
-        except asyncio.TimeoutError as error:
+        except TimeoutError as error:
             if not suppress_warnings:
                 self._log.warning(f"Timeout [{timeout_seconds}] 🕰️ on reading {url} ")
             raise error
@@ -327,7 +327,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                             self._log.warning(
                                 f"_send_local_command:: Unexpected Response Code: {resp.status}"
                             )
-                except asyncio.TimeoutError as error:
+                except TimeoutError as error:
                     self._log.warning("Control Endpoint Timeout Error %s", error)
                     continue
                 except Exception as error:
@@ -366,7 +366,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 "time[%.2f] get_challenge returned ClientConnectError",
                 (end - start),
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             end = time.time()
             self._log.warning(
                 "time[%.2f] get_challenge returned TimeoutError 🕰️", (end - start)
