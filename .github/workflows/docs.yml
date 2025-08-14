@@ -17,9 +17,6 @@ jobs:
       # Install Nix with Determinate Systems (faster and more reliable)
       - uses: DeterminateSystems/determinate-nix-action@v3
       
-      # Enable zero-configuration binary cache for Nix
-      - uses: DeterminateSystems/flakehub-cache-action@main
-      
       # Check flake.lock health
       - uses: DeterminateSystems/flake-checker-action@main
       

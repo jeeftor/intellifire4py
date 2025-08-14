@@ -20,9 +20,6 @@ jobs:
       # Install Nix with Determinate Systems (faster and more reliable)
       - uses: DeterminateSystems/determinate-nix-action@v3
       
-      # Enable zero-configuration binary cache for Nix
-      - uses: DeterminateSystems/flakehub-cache-action@main
-      
       # Check flake.lock health
       - uses: DeterminateSystems/flake-checker-action@main
       
@@ -49,7 +46,7 @@ jobs:
         if: steps.check-parent-commit.outputs.sha
         uses: salsify/action-detect-and-tag-new-version@v2.0.3
         with:
-          version-command: "grep -m1 'version =' pyproject.toml | cut -d \" -f 2"
+          version-command: python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['project']['version'])"
           create-tag: true
           tag-template: v{VERSION}
           tag-annotation-template: Released version {VERSION}
