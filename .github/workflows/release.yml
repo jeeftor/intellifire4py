@@ -55,7 +55,7 @@ jobs:
         if: steps.check-parent-commit.outputs.sha
         uses: salsify/action-detect-and-tag-new-version@v2.0.3
         with:
-          version-command: python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['project']['version'])"
+          version-command: python -c "import re; print(re.search(r'version = \"([^\"]+)\"', open('pyproject.toml').read()).group(1))"
           create-tag: true
           tag-template: v{VERSION}
           tag-annotation-template: Released version {VERSION}
