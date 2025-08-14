@@ -16,14 +16,12 @@ repos:
         exclude: ^tests/fixtures/|homeassistant/generated/
 
         
-  - repo: local
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.8
     hooks:
       - id: ruff
-        name: ruff
-        entry: uv run ruff
-        language: system
-        types: [python]
-        args: ["--fix"]
+        args: [--fix]
+      - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: "v1.17.1"
@@ -36,10 +34,4 @@ repos:
     rev: v4.2.0
     hooks:
       - id: conventional-pre-commit
-        stages: [commit-msg]  
-
-  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
-    rev: v9.22.0
-    hooks:
-      - id: commitlint
         stages: [commit-msg]
