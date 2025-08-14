@@ -60,13 +60,11 @@ jobs:
         if: steps.check-version.outputs.tag
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
+          verbose: true
 
       - name: Publish package on TestPyPI
         if: ${{ ! steps.check-version.outputs.tag }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          user: __token__
-          password: ${{ secrets.TEST_PYPI_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
+          verbose: true
