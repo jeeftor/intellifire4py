@@ -14,38 +14,29 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       
-      # Install Nix with flakes support
-      - uses: cachix/install-nix-action@v31
+      # Set up Python using the version from pyproject.toml
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
+          python-version-file: "pyproject.toml"
+          cache: "pip"
+
+      # Install UV using the official action
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.10"  # Pin to a specific version for stability
       
-      # Note: To enable Cachix caching, set up a CACHIX_AUTH_TOKEN secret in your repository settings
-      # and uncomment the following section
-      #
-      # - name: Setup Cachix
-      #   uses: cachix/cachix-action@v14
-      #   with:
-      #     name: intellifire4py
-      #     authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      
-      # Simplify by setting up environment once and running all commands in it
+      # Setup and build docs
       - name: Setup and build docs
         run: |
-          nix develop -c bash -c '
-            # Create and activate virtual environment
-            uv venv
-            source .venv/bin/activate
-            
-            # Install dependencies
-            uv pip install -e ".[dev]"
-            
-            # Build documentation
-            if [ -d docs/_build ]; then rm -rf docs/_build; fi
-            sphinx-build docs docs/_build
-          '
-      - name: Upload docs
-        uses: actions/upload-artifact@v4
-        with:
-          name: docs
-          path: docs/_build
+          # Create and activate virtual environment
+          uv venv
+          source .venv/bin/activate
+          
+          # Install dependencies
+          uv pip install -e ".[dev,docs]"
+          
+          # Build docs
+          cd docs
+          make html

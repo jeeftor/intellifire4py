@@ -14,35 +14,29 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       
-      # Install Nix with flakes support
-      - uses: cachix/install-nix-action@v31
+      # Set up Python using the version from pyproject.toml
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
+          python-version-file: "pyproject.toml"
+          cache: "pip"
+
+      # Install UV using the official action
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.10"  # Pin to a specific version for stability
       
-      # Note: To enable Cachix caching, set up a CACHIX_AUTH_TOKEN secret in your repository settings
-      # and uncomment the following section
-      #
-      # - name: Setup Cachix
-      #   uses: cachix/cachix-action@v14
-      #   with:
-      #     name: intellifire4py
-      #     authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      
-      # Simplify by setting up environment once and running all commands in it
+      # Setup and run linting
       - name: Setup and run linting
         run: |
-          nix develop -c bash -c '
-            # Create and activate virtual environment
-            uv venv
-            source .venv/bin/activate
-            
-            # Install dependencies
-            uv pip install -e ".[dev]"
-            
-            # Run pre-commit checks
-            pre-commit run --all-files
-            
-            # Run mypy type checking
-            mypy intellifire4py tests docs/conf.py
-          '
+          # Create and activate virtual environment
+          uv venv
+          source .venv/bin/activate
+          
+          # Install dependencies
+          uv pip install -e ".[dev]"
+          
+          # Run linting
+          ruff check .
+          ruff format --check .

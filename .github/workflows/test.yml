@@ -14,48 +14,35 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       
-      # Install Nix with flakes support
-      - uses: cachix/install-nix-action@v31
+      # Set up Python using the version from pyproject.toml
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
+          python-version-file: "pyproject.toml"
+          cache: "pip"
+
+      # Install UV using the official action
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.10"  # Pin to a specific version for stability
       
-      # Note: To enable Cachix caching, set up a CACHIX_AUTH_TOKEN secret in your repository settings
-      # and uncomment the following section
-      #
-      # - name: Setup Cachix
-      #   uses: cachix/cachix-action@v14
-      #   with:
-      #     name: intellifire4py
-      #     authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-      
-      # Simplify by setting up environment once and running all commands in it
+      # Setup and run tests
       - name: Setup and run tests
         run: |
-          nix develop -c bash -c '
-            # Create and activate virtual environment
-            uv venv
-            source .venv/bin/activate
-            
-            # Install dependencies
-            uv pip install -e ".[dev]"
-            
-            # Run tests with coverage
-            pytest --cov=intellifire4py --cov-report=xml
-          '
-      
-      # Upload coverage report
-      - name: Upload coverage report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage.xml
-      
-      # Upload coverage to Codecov
+          # Create and activate virtual environment
+          uv venv
+          source .venv/bin/activate
+          
+          # Install dependencies
+          uv pip install -e ".[dev]"
+          
+          # Run tests with coverage
+          python -m pytest --cov=intellifire4py --cov-report=xml
+
       - name: Upload coverage to Codecov
-        if: always()
         uses: codecov/codecov-action@v4
         with:
-          files: coverage.xml
-          # token: ${{ secrets.CODECOV_TOKEN }}  # Uncomment if repo is private
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          fail_ci_if_error: true

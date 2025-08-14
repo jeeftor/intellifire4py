@@ -17,36 +17,29 @@ jobs:
         with:
           fetch-depth: 2
 
-      # Install Nix with flakes support
-      - uses: cachix/install-nix-action@v31
+      # Set up Python using the version from pyproject.toml
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-      
-      # Note: To enable Cachix caching, set up a CACHIX_AUTH_TOKEN secret in your repository settings
-      # and uncomment the following section
-      #
-      # - name: Setup Cachix
-      #   uses: cachix/cachix-action@v14
-      #   with:
-      #     name: intellifire4py
-      #     authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          python-version-file: "pyproject.toml"
+          cache: "pip"
+
+      # Install UV using the official action
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.10"  # Pin to a specific version for stability
       
       # Setup environment with dependencies
       - name: Setup environment
         run: |
-          nix develop -c bash -c '
-            # Install UV
-            pip install uv
-            
-            # Create and activate virtual environment
-            uv venv
-            source .venv/bin/activate
-            
-            # Install dependencies
-            uv pip install -e ".[dev]"
-            uv pip install build twine
-          '
+          # Create and activate virtual environment
+          uv venv
+          source .venv/bin/activate
+          
+          # Install dependencies
+          uv pip install -e ".[dev]"
+          uv pip install build twine
 
       - name: Check if there is a parent commit
         id: check-parent-commit
@@ -67,9 +60,8 @@ jobs:
         if: ${{ ! steps.check-version.outputs.tag }}
         run: |
           source .venv/bin/activate
-          current_version=$(grep -m1 'version =' pyproject.toml | cut -d '"' -f 2)
           uv version --bump patch
-          new_version=$(grep -m1 'version =' pyproject.toml | cut -d '"' -f 2)
+          new_version=$(grep -m1 "version =" pyproject.toml | cut -d '"' -f 2)
           sed -i "s/version = \"$new_version\"/version = \"$new_version.dev.$(date +%s)\"/" pyproject.toml
 
       - name: Build package
@@ -79,23 +71,15 @@ jobs:
 
       - name: Publish package on PyPI
         if: steps.check-version.outputs.tag
-        uses: pypa/gh-action-pypi-publish@v1.12.4
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
 
       - name: Publish package on TestPyPI
-        if: ${{ !steps.check-version.outputs.tag }}
-        uses: pypa/gh-action-pypi-publish@v1.12.4
+        if: ${{ ! steps.check-version.outputs.tag }}
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.TEST_PYPI_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
-
-      - name: Publish the release notes
-        uses: release-drafter/release-drafter@v6.1.0
-        with:
-          publish: ${{ steps.check-version.outputs.tag != '' }}
-          tag: ${{ steps.check-version.outputs.tag }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
