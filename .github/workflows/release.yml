@@ -49,8 +49,10 @@ jobs:
         if: steps.check-parent-commit.outputs.sha
         uses: salsify/action-detect-and-tag-new-version@v2.0.3
         with:
-          version-command: |
-            bash -o pipefail -c "grep -m1 'version =' pyproject.toml | cut -d '"' -f 2"
+          version-command: "grep -m1 'version =' pyproject.toml | cut -d \" -f 2"
+          create-tag: true
+          tag-template: v{VERSION}
+          tag-annotation-template: Released version {VERSION}
 
       - name: Bump version for developmental release
         if: ${{ ! steps.check-version.outputs.tag }}
