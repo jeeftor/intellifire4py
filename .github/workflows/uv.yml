@@ -52,6 +52,6 @@ jobs:
           uv run pytest -n 8 --cov-report xml:cov.xml --cov intellifire4py --cov-report term-missing --durations-min=1 --durations=0
 
       - name: Upload coverage report
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./cov.xml
