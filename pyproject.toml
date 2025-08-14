@@ -71,7 +71,6 @@ dev = [
     "twine>=4.0.0",
     "uv>=0.8.10",
     "codespell>=2.4.1",
-    "commitlint>=18.0.0",
 ]
 
 [project.scripts]
