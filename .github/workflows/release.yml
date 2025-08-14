@@ -27,9 +27,13 @@ jobs:
       # Install UV using the official action
       - name: Install UV
         uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.8.10"  # Pin to a specific version for stability
+        # with:
+        #   version: "0.8.10"  # Pin to a specific version for stability
       
+
+      - name: Set up Python
+        run: uv python install
+
       # Setup environment with dependencies
       - name: Setup environment
         run: |
