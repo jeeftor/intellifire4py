@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.13"
 
 [[package]]
@@ -594,7 +594,7 @@ wheels = [
 
 [[package]]
 name = "intellifire4py"
-version = "4.1.12"
+version = "4.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "aenum" },
