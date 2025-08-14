@@ -36,6 +36,9 @@ jobs:
       - name: Setup environment
         run: |
           nix develop -c bash -c '
+            # Install UV
+            pip install uv
+            
             # Create and activate virtual environment
             uv venv
             source .venv/bin/activate
