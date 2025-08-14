@@ -17,33 +17,19 @@ jobs:
         with:
           fetch-depth: 2
 
-      # Set up Python using the version from pyproject.toml
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: "pyproject.toml"
-          cache: "pip"
-
-      # Install UV using the official action
+      # Install UV using the official action with caching enabled
       - name: Install UV
         uses: astral-sh/setup-uv@v6
-        # with:
-        #   version: "0.8.10"  # Pin to a specific version for stability
-      
+        with:
+          enable-cache: true
 
+      # Set up Python using UV and .python-version file
       - name: Set up Python
         run: uv python install
 
-      # Setup environment with dependencies
-      - name: Setup environment
-        run: |
-          # Create and activate virtual environment
-          uv venv
-          source .venv/bin/activate
-          
-          # Install dependencies
-          uv pip install -e ".[dev]"
-          uv pip install build twine
+      # Install project dependencies
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
 
       - name: Check if there is a parent commit
         id: check-parent-commit
@@ -63,15 +49,12 @@ jobs:
       - name: Bump version for developmental release
         if: ${{ ! steps.check-version.outputs.tag }}
         run: |
-          source .venv/bin/activate
-          uv version --bump patch
+          uv run uv version --bump patch
           new_version=$(grep -m1 "version =" pyproject.toml | cut -d '"' -f 2)
           sed -i "s/version = \"$new_version\"/version = \"$new_version.dev.$(date +%s)\"/" pyproject.toml
 
       - name: Build package
-        run: |
-          source .venv/bin/activate
-          python -m build
+        run: uv run python -m build
 
       - name: Publish package on PyPI
         if: steps.check-version.outputs.tag

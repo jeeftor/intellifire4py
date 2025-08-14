@@ -14,29 +14,22 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       
-      # Set up Python using the version from pyproject.toml
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: "pyproject.toml"
-          cache: "pip"
-
-      # Install UV using the official action
+      # Install UV using the official action with caching enabled
       - name: Install UV
         uses: astral-sh/setup-uv@v6
         with:
-          version: "0.8.10"  # Pin to a specific version for stability
+          enable-cache: true
+
+      # Set up Python using UV and .python-version file
+      - name: Set up Python
+        run: uv python install
+
+      # Install project dependencies
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
       
-      # Setup and run linting
-      - name: Setup and run linting
+      # Run linting
+      - name: Run linting
         run: |
-          # Create and activate virtual environment
-          uv venv
-          source .venv/bin/activate
-          
-          # Install dependencies
-          uv pip install -e ".[dev]"
-          
-          # Run linting
-          ruff check .
-          ruff format --check .
+          uv run ruff check .
+          uv run ruff format --check .
