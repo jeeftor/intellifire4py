@@ -1,5 +1,5 @@
 furo==2025.9.25
-sphinx==8.2.3
+sphinx==9.0.1
 sphinx-click==6.0.0
 myst_parser==0.17.2
 urllib3>=2.5.0 # not directly required, pinned by Snyk to avoid a vulnerability
