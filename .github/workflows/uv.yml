@@ -28,7 +28,7 @@ jobs:
       - name: Setup a local virtual environment
         run: uv venv
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         name: Cache virtual environment
         with:
           path: ./.venv
