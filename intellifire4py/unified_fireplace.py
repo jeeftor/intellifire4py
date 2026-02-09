@@ -279,7 +279,9 @@ class UnifiedFireplace:
         """
         self._log.debug("Changing READ mode: %s=>%s", self._read_mode.name, mode.name)
         if self._read_mode == mode:
-            self._log.info("Not Changing READ mode from: %s=>%s", self._read_mode.name, mode.name)            
+            self._log.info(
+                "Not Changing READ mode from: %s=>%s", self._read_mode.name, mode.name
+            )
             return
 
         try:
