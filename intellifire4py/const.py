@@ -109,7 +109,7 @@ class IntelliFireCommand(Enum):
         "max": 4,
     }
     THERMOSTAT_SETPOINT = {
-        "cloud_command": "thermostat_setpoint",
+        "cloud_command": "setpoint",
         "local_command": "thermostat_setpoint",
         "min": 0,
         "max": 3700,
