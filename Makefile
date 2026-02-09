@@ -1,6 +1,11 @@
 # Makefile for intellifire4py
 
-.PHONY: coverage test update-deps
+.PHONY: venv coverage test update-deps lint
+
+# Create virtual environment and install dependencies
+venv:
+	uv venv
+	uv sync --all-extras
 
 # Update dependencies and lock file
 update-deps:
@@ -14,3 +19,8 @@ test:
 # Run tests with coverage
 coverage:
 	uv run pytest --cov --cov-report=term-missing
+
+# Run linting and formatting
+lint:
+	uv run ruff check --fix .
+	uv run ruff format .
