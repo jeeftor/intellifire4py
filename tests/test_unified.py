@@ -326,7 +326,9 @@ async def test_set_read_mode_same_mode_noop(mock_common_data_local):
     fp._read_mode = IntelliFireApiMode.LOCAL
     with patch.object(fp._log, "info") as mock_log_info:
         await fp.set_read_mode(IntelliFireApiMode.LOCAL)
-        mock_log_info.assert_called_once_with("Not updating mode -- it was the same")
+        mock_log_info.assert_called_once_with(
+            "Not Changing READ mode from: %s=>%s", "LOCAL", "LOCAL"
+        )
 
 
 @pytest.mark.asyncio
