@@ -1,15 +1,24 @@
 permissions:
   contents: read
+  pages: write
+  id-token: write
+
 name: Docs
 
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:  # Allow manual trigger
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  docs:
-    name: Docs
+  build:
+    name: Build Docs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -28,8 +37,28 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
       
-      # Build docs
+      # Build docs with Sphinx
       - name: Build docs
         run: |
           cd docs
-          uv run make html
+          uv run sphinx-build -b html . _build/html
+      
+      # Upload artifact for GitHub Pages
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build/html
+
+  # Deploy to GitHub Pages (only on main branch)
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
