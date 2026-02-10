@@ -1,0 +1,96 @@
+name: SLSA Provenance
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: read
+
+jobs:
+  # Build the package
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      # Install UV using the official action with caching enabled
+      - name: Install UV
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      # Set up Python using UV and .python-version file
+      - name: Set up Python
+        run: uv python install
+
+      # Install project dependencies
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      # Build the package
+      - name: Build package
+        run: uv build
+
+      # Generate hashes for SLSA provenance
+      - name: Generate hashes
+        id: hash
+        run: |
+          cd dist
+          echo "hashes=$(sha256sum * | base64 -w0)" >> "$GITHUB_OUTPUT"
+
+      # Upload artifacts for provenance generation
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 5
+
+  # Generate SLSA provenance
+  provenance:
+    name: Generate SLSA provenance
+    needs: [build]
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    # Use the SLSA generator from slsa-framework
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    with:
+      base64-subjects: "${{ needs.build.outputs.hashes }}"
+      upload-assets: true
+      provenance-name: provenance.intoto.jsonl
+
+  # Publish to PyPI with SLSA provenance
+  publish:
+    name: Publish to PyPI
+    needs: [build, provenance]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for PyPI trusted publishing
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Download provenance
+        uses: actions/download-artifact@v4
+        with:
+          name: provenance.intoto.jsonl
+          path: .
+
+      - name: Publish package on PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
+          attestations: true  # Include SLSA attestations

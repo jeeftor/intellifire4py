@@ -1,0 +1,65 @@
+name: Coverage Comment
+
+on:
+  pull_request:
+  push:
+    branches:
+      - '**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  coverage:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      # Install UV using the official action with caching enabled
+      - name: Install UV
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      # Set up Python using UV and .python-version file
+      - name: Set up Python
+        run: uv python install
+
+      # Install project dependencies
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      # Run tests with coverage
+      - name: Run tests with coverage
+        run: uv run pytest --cov=intellifire4py --cov-report=xml --cov-report=term-missing
+
+      # Upload coverage to Codecov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: false
+          flags: unittests
+          name: codecov-umbrella
+
+      # Generate coverage badge and comment (for PRs)
+      - name: Coverage comment
+        id: coverage_comment
+        if: github.event_name == 'pull_request'
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MINIMUM_GREEN: 90
+          MINIMUM_ORANGE: 80
+
+      # Store coverage for comparison
+      - name: Store Pull Request comment to be posted
+        uses: actions/upload-artifact@v4
+        if: github.event_name == 'pull_request' && steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
+        with:
+          name: python-coverage-comment-action
+          path: python-coverage-comment-action.txt
