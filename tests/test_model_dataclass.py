@@ -17,8 +17,8 @@ def test_poll_data_properties():
     assert isinstance(d.error_codes, list)
     assert isinstance(d.error_codes_string, str)
     # Dict and JSON
-    as_dict = d.dict()
-    as_json = d.json()
+    as_dict = d.model_dump()
+    as_json = d.model_dump_json()
     assert isinstance(as_dict, dict)
     assert isinstance(as_json, str)
     # Test instantiation with some fields

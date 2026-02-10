@@ -1,6 +1,6 @@
 """Test IntelliFireDataProvider and related read logic for intellifire4py."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from intellifire4py.read import IntelliFireDataProvider
 from intellifire4py.model import IntelliFirePollData
 
@@ -33,7 +33,7 @@ def test_init_and_last_poll():
     provider = DummyProvider()
     assert isinstance(provider._data, IntelliFirePollData)
     assert provider.last_poll_utc is None
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     provider._last_poll = now
     assert provider.last_poll_utc == now
     # data property returns the _data instance

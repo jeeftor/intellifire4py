@@ -41,7 +41,7 @@ def mock_fp(mock_common_data_local, local_poll_json):
         mock_instance._control_mode = IntelliFireApiMode.LOCAL
 
         # Use poll data locally
-        data = IntelliFirePollData.parse_raw(local_poll_json)
+        data = IntelliFirePollData.model_validate_json(local_poll_json)
         mock_instance.data = data
 
         mock_instance.set_read_mode = AsyncMock()
