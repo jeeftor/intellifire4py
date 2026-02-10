@@ -65,7 +65,7 @@ async def test_context_manager_usage():
     """Test that methods require async context manager."""
     cloud_interface = IntelliFireCloudInterface()
 
-    with pytest.raises(RuntimeError, match="must be called within an 'async with' context"):
-        await cloud_interface.login_with_credentials(
-            username="user", password="pass"
-        )
+    with pytest.raises(
+        RuntimeError, match="must be called within an 'async with' context"
+    ):
+        await cloud_interface.login_with_credentials(username="user", password="pass")

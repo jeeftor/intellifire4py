@@ -65,12 +65,16 @@ async def test_long_poll_408_no_change(cloud_api):
 async def test_long_poll_403_not_authorized(cloud_api):
     """Test long_poll with 403 status code (not authorized)."""
     from aiohttp import ClientResponseError, RequestInfo
-    
+
     with aioresponses() as m:
         m.get(
             "https://iftapi.net/a/TEST123/applongpoll",
             exception=ClientResponseError(
-                request_info=RequestInfo(url="https://iftapi.net/a/TEST123/applongpoll", method="GET", headers={}),
+                request_info=RequestInfo(
+                    url="https://iftapi.net/a/TEST123/applongpoll",
+                    method="GET",
+                    headers={},
+                ),
                 history=(),
                 status=403,
             ),
@@ -84,12 +88,16 @@ async def test_long_poll_403_not_authorized(cloud_api):
 async def test_long_poll_404_not_found(cloud_api):
     """Test long_poll with 404 status code (fireplace not found)."""
     from aiohttp import ClientResponseError, RequestInfo
-    
+
     with aioresponses() as m:
         m.get(
             "https://iftapi.net/a/TEST123/applongpoll",
             exception=ClientResponseError(
-                request_info=RequestInfo(url="https://iftapi.net/a/TEST123/applongpoll", method="GET", headers={}),
+                request_info=RequestInfo(
+                    url="https://iftapi.net/a/TEST123/applongpoll",
+                    method="GET",
+                    headers={},
+                ),
                 history=(),
                 status=404,
             ),
@@ -103,12 +111,16 @@ async def test_long_poll_404_not_found(cloud_api):
 async def test_long_poll_unexpected_status(cloud_api):
     """Test long_poll with unexpected status code."""
     from aiohttp import ClientResponseError, RequestInfo
-    
+
     with aioresponses() as m:
         m.get(
             "https://iftapi.net/a/TEST123/applongpoll",
             exception=ClientResponseError(
-                request_info=RequestInfo(url="https://iftapi.net/a/TEST123/applongpoll", method="GET", headers={}),
+                request_info=RequestInfo(
+                    url="https://iftapi.net/a/TEST123/applongpoll",
+                    method="GET",
+                    headers={},
+                ),
                 history=(),
                 status=500,
             ),
@@ -150,12 +162,16 @@ async def test_send_cloud_command_unexpected_status(cloud_api):
 async def test_poll_403_not_authorized(cloud_api):
     """Test poll with 403 status code."""
     from aiohttp import ClientResponseError, RequestInfo
-    
+
     with aioresponses() as m:
         m.get(
             "https://iftapi.net/a/TEST123//apppoll",
             exception=ClientResponseError(
-                request_info=RequestInfo(url="https://iftapi.net/a/TEST123//apppoll", method="GET", headers={}),
+                request_info=RequestInfo(
+                    url="https://iftapi.net/a/TEST123//apppoll",
+                    method="GET",
+                    headers={},
+                ),
                 history=(),
                 status=403,
             ),
@@ -169,12 +185,16 @@ async def test_poll_403_not_authorized(cloud_api):
 async def test_poll_404_not_found(cloud_api):
     """Test poll with 404 status code."""
     from aiohttp import ClientResponseError, RequestInfo
-    
+
     with aioresponses() as m:
         m.get(
             "https://iftapi.net/a/TEST123//apppoll",
             exception=ClientResponseError(
-                request_info=RequestInfo(url="https://iftapi.net/a/TEST123//apppoll", method="GET", headers={}),
+                request_info=RequestInfo(
+                    url="https://iftapi.net/a/TEST123//apppoll",
+                    method="GET",
+                    headers={},
+                ),
                 history=(),
                 status=404,
             ),
@@ -188,7 +208,7 @@ async def test_poll_404_not_found(cloud_api):
 async def test_background_poll_short_mode(cloud_api):
     """Test background polling with SHORT poll mode."""
     import asyncio
-    
+
     cloud_api.set_poll_mode(IntelliFireCloudPollType.SHORT)
 
     poll_data = {
@@ -219,17 +239,17 @@ async def test_background_poll_short_mode(cloud_api):
 async def test_background_poll_exception_handling(cloud_api):
     """Test background polling handles exceptions gracefully."""
     import asyncio
-    
+
     # Set to SHORT mode so it uses poll() which uses //apppoll URL
     cloud_api.set_poll_mode(IntelliFireCloudPollType.SHORT)
-    
+
     poll_data = {
         "temperature": 22,
         "pilot": 1,
         "power": 1,
         "serial": "TEST123",
     }
-    
+
     with aioresponses() as m:
         # First call succeeds to start polling
         m.get(
