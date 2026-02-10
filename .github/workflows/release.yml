@@ -57,13 +57,14 @@ jobs:
           sed -i "s/version = \"$new_version\"/version = \"$new_version.dev.$(date +%s)\"/" pyproject.toml
 
       - name: Build package
-        run: uv run python -m build
+        run: uv build
 
       - name: Publish package on PyPI
         if: steps.check-version.outputs.tag
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           verbose: true
+          attestations: true  # Generate and upload SLSA provenance attestations
 
       - name: Publish package on TestPyPI
         if: ${{ ! steps.check-version.outputs.tag }}
@@ -71,3 +72,4 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           verbose: true
+          attestations: true  # Generate and upload SLSA provenance attestations
