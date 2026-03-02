@@ -276,6 +276,10 @@ class UnifiedFireplace:
         This method allows dynamically changing the read mode between local and cloud.
         It also handles the necessary setup or teardown operations needed when switching
         between these modes.
+
+        Raises:
+            Exception: If switching the read mode fails (e.g., network errors when
+                stopping/starting background polling).
         """
         self._log.debug("Changing READ mode: %s=>%s", self._read_mode.name, mode.name)
         if self._read_mode == mode:
@@ -284,10 +288,7 @@ class UnifiedFireplace:
             )
             return
 
-        try:
-            await self._switch_read_mode(mode)
-        except Exception as e:
-            self._log.error(f"Error switching read mode: {e}")
+        await self._switch_read_mode(mode)
 
     async def _switch_read_mode(self, mode: IntelliFireApiMode) -> None:
         """Internal helper method to switch the read mode.
