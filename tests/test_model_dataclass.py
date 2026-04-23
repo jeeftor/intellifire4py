@@ -22,7 +22,9 @@ def test_poll_data_properties():
     assert isinstance(as_dict, dict)
     assert isinstance(as_json, str)
     # Test instantiation with some fields
-    d2 = IntelliFirePollData(battery=5, temperature=21, setpoint=2300, errors=[2, 4])
+    d2 = IntelliFirePollData(
+        battery=5, temperature_c=21, raw_thermostat_setpoint=2300, errors=[2, 4]
+    )
     assert d2.battery == 5
     assert d2.temperature_c == 21
     assert d2.raw_thermostat_setpoint == 2300

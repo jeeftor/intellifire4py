@@ -1,7 +1,7 @@
 """Additional tests to push coverage above 94%."""
 
 import asyncio
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
@@ -134,8 +134,8 @@ async def test_local_api_start_polling_when_sending():
 
 
 @pytest.mark.asyncio
-async def test_unified_fireplace_get_user_data_json_fallback():
-    """Test get_user_data_as_json with AttributeError fallback (lines 150-151)."""
+async def test_unified_fireplace_get_user_data_json():
+    """Test get_user_data_as_json returns a JSON string."""
     mock_data = IntelliFireCommonFireplaceData(
         serial="12345",
         api_key="test_key",
@@ -143,18 +143,9 @@ async def test_unified_fireplace_get_user_data_json_fallback():
         ip_address="192.168.1.1",
     )
     fireplace = UnifiedFireplace(fireplace_data=mock_data, use_http=True)
-
-    # Mock fireplace data without model_dump_json
-    mock_data = MagicMock()
-    del mock_data.model_dump_json  # Remove the method
-    mock_data.json = MagicMock(return_value='{"test": "data"}')
-
-    fireplace._fireplace_data = mock_data
-
-    fireplace.get_user_data_as_json()
-
-    # Should fall back to .json() method
-    mock_data.json.assert_called_once_with(indent=2)
+    result = fireplace.get_user_data_as_json()
+    assert isinstance(result, str)
+    assert "12345" in result
 
 
 @pytest.mark.asyncio
@@ -194,8 +185,8 @@ async def test_unified_fireplace_validate_connectivity_timeout():
     async def slow_poll(*args, **kwargs):
         await asyncio.sleep(10)  # Longer than timeout
 
-    fireplace._local_api.poll = slow_poll
-    fireplace._cloud_api.poll = slow_poll
+    fireplace._local_api.poll = slow_poll  # type: ignore
+    fireplace._cloud_api.poll = slow_poll  # type: ignore
 
     local_ok, cloud_ok = await fireplace.async_validate_connectivity(timeout=0.1)
 

@@ -39,7 +39,7 @@ class UnifiedFireplace:
 
     _log: logging.Logger = logging.getLogger(__name__)
     _control_mode: IntelliFireApiMode
-    _read_mode: IntelliFireApiMode
+    _read_mode: object
     _polling_enabled: bool
     # Data of importance
     _fireplace_data: IntelliFireCommonFireplaceData
@@ -145,10 +145,7 @@ class UnifiedFireplace:
 
     def get_user_data_as_json(self) -> str:
         """Dump the internal _fireplace_data object to a JSON String."""
-        try:
-            return str(self._fireplace_data.model_dump_json(indent=2))  # type: ignore[attr-defined]
-        except AttributeError:
-            return str(self._fireplace_data.json(indent=2))
+        return str(self._fireplace_data.model_dump_json(indent=2))
 
     @property
     def ip_address(self) -> str:
@@ -261,7 +258,7 @@ class UnifiedFireplace:
         )
 
     @property
-    def read_mode(self) -> IntelliFireApiMode:
+    def read_mode(self) -> object:
         """Returns the current read mode of the fireplace instance.
 
         This property provides access to the current mode used for reading data from the fireplace,
@@ -270,7 +267,7 @@ class UnifiedFireplace:
         """
         return self._read_mode
 
-    async def set_read_mode(self, mode: IntelliFireApiMode) -> None:
+    async def set_read_mode(self, mode: object) -> None:
         """Sets the read mode of the fireplace instance.
 
         This method allows dynamically changing the read mode between local and cloud.
@@ -281,16 +278,22 @@ class UnifiedFireplace:
             Exception: If switching the read mode fails (e.g., network errors when
                 stopping/starting background polling).
         """
-        self._log.debug("Changing READ mode: %s=>%s", self._read_mode.name, mode.name)
+        self._log.debug(
+            "Changing READ mode: %s=>%s",
+            getattr(self._read_mode, "name", str(self._read_mode)),
+            getattr(mode, "name", str(mode)),
+        )
         if self._read_mode == mode:
             self._log.info(
-                "Not Changing READ mode from: %s=>%s", self._read_mode.name, mode.name
+                "Not Changing READ mode from: %s=>%s",
+                getattr(self._read_mode, "name", str(self._read_mode)),
+                getattr(mode, "name", str(mode)),
             )
             return
 
         await self._switch_read_mode(mode)
 
-    async def _switch_read_mode(self, mode: IntelliFireApiMode) -> None:
+    async def _switch_read_mode(self, mode: object) -> None:
         """Internal helper method to switch the read mode.
 
         This method performs the actual switching of read modes. It stops background polling
@@ -318,7 +321,7 @@ class UnifiedFireplace:
                 await self._cloud_api.stop_background_polling()
 
         self._read_mode = mode
-        self._fireplace_data.read_mode = mode
+        self._fireplace_data.read_mode = mode  # type: ignore
 
     @property
     def control_mode(self) -> IntelliFireApiMode:
@@ -644,7 +647,7 @@ class UnifiedFireplace:
         inspect(self, methods=True, help=True)
 
     async def async_validate_connectivity(
-        self, timeout: int = 600
+        self, timeout: float = 600
     ) -> tuple[bool, bool]:
         """Asynchronously validate connectivity for both local and cloud services.
 

@@ -53,7 +53,7 @@ async def test_poll(local_poll_json: str) -> None:
 
 
 @pytest.mark.asyncio
-async def test_local_control(mock_login_for_control_testing):  # type: ignore
+async def test_local_control(mock_login_for_control_testing):
     """Test local tonrol options."""
     username = "user"
     password = "pass"  # noqa: S105
@@ -164,7 +164,19 @@ async def test_poll_client_response_error(monkeypatch):
 
     class DummyResponse:
         def raise_for_status(self):
-            raise aiohttp.ClientResponseError(None, (), status=404)
+            from aiohttp import RequestInfo
+            from yarl import URL
+            from multidict import CIMultiDictProxy, CIMultiDict
+
+            raise aiohttp.ClientResponseError(
+                RequestInfo(
+                    url=URL("http://localhost"),
+                    method="GET",
+                    headers=CIMultiDictProxy(CIMultiDict()),
+                ),
+                (),
+                status=404,
+            )
 
         async def json(self, *a, **k):
             return {}

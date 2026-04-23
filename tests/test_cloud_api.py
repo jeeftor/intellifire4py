@@ -11,7 +11,7 @@ from intellifire4py.exceptions import LoginError
 
 
 @pytest.mark.asyncio
-async def test_cloud_login(  # type: ignore
+async def test_cloud_login(
     mock_cloud_login_flow_no_local,
     user_id,
     api_key,
@@ -44,7 +44,7 @@ async def test_cloud_login(  # type: ignore
 
 @pytest.mark.asyncio
 @pytest.mark.asyncio
-async def test_control(  # type: ignore
+async def test_control(
     mock_login_for_control_testing,
     user_id: str,
     api_key: str,
@@ -92,7 +92,7 @@ async def test_control(  # type: ignore
 
 
 @pytest.mark.asyncio
-async def test_incorrect_login_credentials(mock_login_bad_credentials) -> None:  # type: ignore
+async def test_incorrect_login_credentials(mock_login_bad_credentials) -> None:
     """Test login with incorrect credentials."""
     username = "incorrect_user"
     password = "incorrect_password"  # noqa S105)
@@ -105,7 +105,7 @@ async def test_incorrect_login_credentials(mock_login_bad_credentials) -> None: 
 
 
 @pytest.mark.asyncio
-async def test_bad_command_param(mock_cloud_login_flow_no_local) -> None:  # type:ignore
+async def test_bad_command_param(mock_cloud_login_flow_no_local) -> None:
     """Test bad command parameter handling."""
     username = "user"
     password = "pass"  # noqa: S105
@@ -120,7 +120,7 @@ async def test_bad_command_param(mock_cloud_login_flow_no_local) -> None:  # typ
             desired_control_mode=IntelliFireApiMode.CLOUD,
             desired_read_mode=IntelliFireApiMode.CLOUD,
         )
-        fireplace = fireplaces[0]  # type: ignore #noqa: F841
+        fireplace = fireplaces[0]  # noqa: F841
 
 
 #

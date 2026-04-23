@@ -219,9 +219,12 @@ class IntelliFireCookieData(BaseModel):
         Args:
             cookies (SimpleCookie): An `aiohttp.CookieJar` object containing the response cookies.
         """
-        self.user_id = cookies.get("user", "UNSET").value  # type: ignore[union-attr]
-        self.auth_cookie = cookies.get("auth_cookie", "UNSET").value  # type: ignore[union-attr]
-        self.web_client_id = cookies.get("web_client_id", "UNSET").value  # type: ignore[union-attr]
+        user = cookies.get("user")
+        self.user_id = user.value if user is not None else "UNSET"
+        auth = cookies.get("auth_cookie")
+        self.auth_cookie = auth.value if auth is not None else "UNSET"
+        web = cookies.get("web_client_id")
+        self.web_client_id = web.value if web is not None else "UNSET"
 
     @property
     def cookie_jar(self) -> CookieJar:

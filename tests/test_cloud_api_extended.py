@@ -3,13 +3,21 @@
 import pytest
 import json
 import pytest_asyncio
-from aiohttp import CookieJar, ClientResponseError
+from aiohttp import CookieJar, ClientResponseError, RequestInfo
 from aioresponses import aioresponses
+from multidict import CIMultiDict, CIMultiDictProxy
+from yarl import URL
 
 from intellifire4py.cloud_api import IntelliFireAPICloud
 from intellifire4py.exceptions import CloudError
 from intellifire4py.const import IntelliFireCloudPollType, IntelliFireCommand
 from intellifire4py.model import IntelliFirePollData
+
+
+def _make_request_info(url: str, method: str = "GET") -> RequestInfo:
+    return RequestInfo(
+        url=URL(url), method=method, headers=CIMultiDictProxy(CIMultiDict())
+    )
 
 
 @pytest_asyncio.fixture
@@ -64,16 +72,12 @@ async def test_long_poll_408_no_change(cloud_api):
 @pytest.mark.asyncio
 async def test_long_poll_403_not_authorized(cloud_api):
     """Test long_poll with 403 status code (not authorized)."""
-    from aiohttp import ClientResponseError, RequestInfo
-
     with aioresponses() as m:
         m.get(
             "https://iftapi.net/a/TEST123/applongpoll",
             exception=ClientResponseError(
-                request_info=RequestInfo(
-                    url="https://iftapi.net/a/TEST123/applongpoll",
-                    method="GET",
-                    headers={},
+                request_info=_make_request_info(
+                    "https://iftapi.net/a/TEST123/applongpoll"
                 ),
                 history=(),
                 status=403,
@@ -87,16 +91,12 @@ async def test_long_poll_403_not_authorized(cloud_api):
 @pytest.mark.asyncio
 async def test_long_poll_404_not_found(cloud_api):
     """Test long_poll with 404 status code (fireplace not found)."""
-    from aiohttp import ClientResponseError, RequestInfo
-
     with aioresponses() as m:
         m.get(
             "https://iftapi.net/a/TEST123/applongpoll",
             exception=ClientResponseError(
-                request_info=RequestInfo(
-                    url="https://iftapi.net/a/TEST123/applongpoll",
-                    method="GET",
-                    headers={},
+                request_info=_make_request_info(
+                    "https://iftapi.net/a/TEST123/applongpoll"
                 ),
                 history=(),
                 status=404,
@@ -110,16 +110,12 @@ async def test_long_poll_404_not_found(cloud_api):
 @pytest.mark.asyncio
 async def test_long_poll_unexpected_status(cloud_api):
     """Test long_poll with unexpected status code."""
-    from aiohttp import ClientResponseError, RequestInfo
-
     with aioresponses() as m:
         m.get(
             "https://iftapi.net/a/TEST123/applongpoll",
             exception=ClientResponseError(
-                request_info=RequestInfo(
-                    url="https://iftapi.net/a/TEST123/applongpoll",
-                    method="GET",
-                    headers={},
+                request_info=_make_request_info(
+                    "https://iftapi.net/a/TEST123/applongpoll"
                 ),
                 history=(),
                 status=500,
@@ -161,16 +157,12 @@ async def test_send_cloud_command_unexpected_status(cloud_api):
 @pytest.mark.asyncio
 async def test_poll_403_not_authorized(cloud_api):
     """Test poll with 403 status code."""
-    from aiohttp import ClientResponseError, RequestInfo
-
     with aioresponses() as m:
         m.get(
             "https://iftapi.net/a/TEST123//apppoll",
             exception=ClientResponseError(
-                request_info=RequestInfo(
-                    url="https://iftapi.net/a/TEST123//apppoll",
-                    method="GET",
-                    headers={},
+                request_info=_make_request_info(
+                    "https://iftapi.net/a/TEST123//apppoll"
                 ),
                 history=(),
                 status=403,
@@ -184,16 +176,12 @@ async def test_poll_403_not_authorized(cloud_api):
 @pytest.mark.asyncio
 async def test_poll_404_not_found(cloud_api):
     """Test poll with 404 status code."""
-    from aiohttp import ClientResponseError, RequestInfo
-
     with aioresponses() as m:
         m.get(
             "https://iftapi.net/a/TEST123//apppoll",
             exception=ClientResponseError(
-                request_info=RequestInfo(
-                    url="https://iftapi.net/a/TEST123//apppoll",
-                    method="GET",
-                    headers={},
+                request_info=_make_request_info(
+                    "https://iftapi.net/a/TEST123//apppoll"
                 ),
                 history=(),
                 status=404,

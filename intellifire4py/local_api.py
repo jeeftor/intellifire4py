@@ -280,7 +280,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 data = self._construct_payload(
                     command=command.value["local_command"],  # type: ignore
                     value=value,
-                    challenge=challenge,  # type: ignore
+                    challenge=challenge,
                 )
                 url = f"http://{self.fireplace_ip}/post"
                 try:

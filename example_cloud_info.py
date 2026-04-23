@@ -101,7 +101,7 @@ async def main() -> None:
         user_data, use_http=True, verify_ssl=False
     )
 
-    fireplace = fireplaces[0]  # type: ignore
+    fireplace = fireplaces[0]
 
     # Tweak Local IP
 

@@ -38,7 +38,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         serial: str,
         use_http: bool = False,
         verify_ssl: bool = True,
-        cookie_jar: CookieJar,
+        cookie_jar: CookieJar | None = None,
     ):
         """Initialize the class with specific configuration for fireplace communication.
 
@@ -222,9 +222,10 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 else:
                     response_text = ""
                     # Only try to get response text if response exists
-                    if hasattr(e, "response") and e.response is not None:
+                    e_response = getattr(e, "response", None)
+                    if e_response is not None:
                         try:
-                            response_text = await e.response.text()
+                            response_text = await e_response.text()
                         except Exception:
                             response_text = "<no body>"
                     self._log.error(

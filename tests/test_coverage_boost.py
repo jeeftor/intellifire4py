@@ -4,14 +4,22 @@ import pytest
 import pytest_asyncio
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
-from aiohttp import CookieJar, ClientResponseError
+from aiohttp import CookieJar, ClientResponseError, RequestInfo
 from aioresponses import aioresponses
+from multidict import CIMultiDict, CIMultiDictProxy
+from yarl import URL
 
 from intellifire4py.cloud_api import IntelliFireAPICloud
 from intellifire4py.local_api import IntelliFireAPILocal
 from intellifire4py.exceptions import CloudError
 from intellifire4py.const import IntelliFireCommand
 from intellifire4py.udp import UDPFireplaceFinder
+
+
+def _make_request_info(url: str, method: str = "GET") -> RequestInfo:
+    return RequestInfo(
+        url=URL(url), method=method, headers=CIMultiDictProxy(CIMultiDict())
+    )
 
 
 @pytest_asyncio.fixture
@@ -30,21 +38,17 @@ async def cloud_api():
 @pytest.mark.asyncio
 async def test_long_poll_response_text_error(cloud_api):
     """Test long_poll when response.text() fails during error handling."""
-    from aiohttp import RequestInfo
-
     # Create a mock response that will fail when text() is called
     mock_response = MagicMock()
     mock_response.text = AsyncMock(side_effect=Exception("Text extraction failed"))
 
     # Create exception with the mock response
     exception = ClientResponseError(
-        request_info=RequestInfo(
-            url="https://iftapi.net/a/TEST123/applongpoll", method="GET", headers={}
-        ),
+        request_info=_make_request_info("https://iftapi.net/a/TEST123/applongpoll"),
         history=(),
         status=500,
     )
-    exception.response = mock_response
+    exception.response = mock_response  # type: ignore
 
     with aioresponses() as m:
         m.get(

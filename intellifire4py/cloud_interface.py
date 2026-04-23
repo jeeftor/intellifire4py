@@ -106,12 +106,12 @@ class IntelliFireCloudInterface:
     #         None: This method does not return anything. It sets the authenticated state internally.
     #     """
     #     if not self._in_context:
-    #         current_method = inspect.currentframe().f_code.co_name  # type: ignore
+    #         current_method = inspect.currentframe().f_code.co_name
     #         raise RuntimeError(
     #             f"The {current_method} must be called within an 'async with' context"
     #         )
     #
-    #     self._session.cookie_jar.update_cookies(  # type: ignore[union-attr]
+    #     self._session.cookie_jar.update_cookies(
     #         {
     #             "user": user_id,
     #             "auth_cookie": auth_cookie,
@@ -128,7 +128,7 @@ class IntelliFireCloudInterface:
     #     """
     #
     #     if not self._in_context:
-    #         current_method = inspect.currentframe().f_code.co_name  # type: ignore
+    #         current_method = inspect.currentframe().f_code.co_name
     #         raise RuntimeError(
     #             f"The {current_method} must be called within an 'async with' context"
     #         )
@@ -172,7 +172,8 @@ class IntelliFireCloudInterface:
         """
 
         if not self._in_context:
-            current_method = inspect.currentframe().f_code.co_name  # type: ignore[union-attr]
+            frame = inspect.currentframe()
+            current_method = frame.f_code.co_name if frame is not None else "unknown"
             raise RuntimeError(
                 f"The {current_method} must be called within an 'async with' context"
             )
@@ -183,8 +184,10 @@ class IntelliFireCloudInterface:
         self._user_data.username = username
         self._user_data.password = password
 
+        if self._session is None:
+            raise RuntimeError("Session is not initialized")
         try:
-            async with self._session.post(  # type: ignore[union-attr]
+            async with self._session.post(
                 f"{self.prefix}://iftapi.net/a/login", data=data
             ) as response:
                 if response.status != 204:
@@ -195,7 +198,7 @@ class IntelliFireCloudInterface:
                 self._user_data.parse_cookie_jar(response.cookies)
                 self._is_logged_in = True
                 self._log.info("Success - Logged into IFTAPI")
-                self._log.debug(f"Cookie Info: {self._session.cookie_jar}")  # type: ignore[union-attr]
+                self._log.debug(f"Cookie Info: {self._session.cookie_jar}")
 
                 await self._parse_user_data()
 

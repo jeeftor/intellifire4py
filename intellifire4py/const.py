@@ -2,7 +2,7 @@
 
 from enum import Enum
 
-from aenum import MultiValueEnum  # type: ignore
+from aenum import MultiValueEnum
 
 
 import importlib.metadata
@@ -26,7 +26,7 @@ class IntelliFireCloudPollType(Enum):
     SHORT = "short"
 
 
-class IntelliFireErrorCode(MultiValueEnum):  # type: ignore
+class IntelliFireErrorCode(MultiValueEnum):
     """The following is a description of various error codes. These were obtained by decompiling the Android APK.
 
     Attributes:

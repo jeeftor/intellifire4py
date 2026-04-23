@@ -481,7 +481,10 @@ def mock_cloud_api():
     ):
 
         class Mocks:
-            pass
+            send_command: object
+            _send_cloud_command: object
+            poll: object
+            _range_check: object
 
         mocks = Mocks()
         mocks.send_command = send_command
@@ -506,7 +509,19 @@ def fake_error_session_factory():
                 return {}
 
             def raise_for_status(self):
-                raise aiohttp.ClientResponseError(None, (), status=status_code)
+                from aiohttp import RequestInfo
+                from yarl import URL
+                from multidict import CIMultiDictProxy, CIMultiDict
+
+                raise aiohttp.ClientResponseError(
+                    RequestInfo(
+                        url=URL("http://localhost"),
+                        method="GET",
+                        headers=CIMultiDictProxy(CIMultiDict()),
+                    ),
+                    (),
+                    status=status_code,
+                )
 
             async def __aenter__(self):
                 return self
