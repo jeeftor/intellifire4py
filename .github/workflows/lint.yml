@@ -4,7 +4,7 @@ name: Lint
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
 
 jobs:
@@ -13,23 +13,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
-      # Install UV using the official action with caching enabled
+
       - name: Install UV
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
 
-      # Set up Python using UV and .python-version file
       - name: Set up Python
         run: uv python install
 
-      # Install project dependencies
       - name: Install dependencies
         run: uv sync --all-extras --dev
-      
-      # Run linting
-      - name: Run linting
-        run: |
-          uv run ruff check .
-          uv run ruff format --check .
+
+      - name: ruff check
+        run: uv run ruff check .
+
+      - name: ruff format
+        run: uv run ruff format --check .
+
+      - name: mypy
+        run: uv run mypy --config-file=pyproject.toml
+
+      - name: ty check
+        run: uvx ty check
