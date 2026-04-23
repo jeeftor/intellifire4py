@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Tests
+
+- **Coverage improvements**: Increased test coverage from 95% to 96% overall; production modules `cloud_api.py`, `local_api.py`, and `udp.py` now at 100%
+  - Fixed `test_coverage_final_push.py`: mocked `time.time` to prevent tests from spinning in the real-time 7-second challenge window inside `_send_local_command`, eliminating indefinite hangs during `make coverage`
+  - Added `tests/test_coverage_gaps.py`: covers 403/404/422 status codes in `local_api._send_local_command`, exhausted-retry failure path, `__background_poll` exit flag, already-cancelled task branch in `stop_background_polling` for both local and cloud APIs, `cloud_api.__background_poll` exception handler, and `cloud_interface.login_with_credentials` with no session
+  - Added tests in `test_udp.py`: covers `IFTDiscoverySenderProtocol.datagram_received` with and without a transport set
+  - Added test in `test_unified.py`: covers `UnifiedFireplace.debug()` via mocked `rich.inspect`
+  - Added test in `test_coverage_gaps.py`: covers `cloud_api._send_cloud_command` raising on non-204 2xx status
+
 ## [4.5.1] - 2026-04-23
 
 ### Fixed

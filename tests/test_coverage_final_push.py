@@ -109,32 +109,56 @@ async def test_local_send_command_challenge_failure_retry(local_api):
 # ============================================================================
 
 
+def _make_fast_time():
+    """Return a time.time() mock that lets the inner command loop run exactly once per retry.
+
+    Per outer-loop retry, time.time() is called in this order:
+      1. _get_challenge: start = time.time()        -> 0.0
+      2. challenge_time = time.time()               -> 0.0
+      3. first inner while check: 0.0 - 0.0 = 0    -> enters loop (< 7)
+      4. second inner while check: 100.0 - 0.0     -> exits loop (>= 7)
+
+    Pattern repeats every 4 calls so all outer retries behave the same.
+    """
+    count = 0
+
+    def fake_time():
+        nonlocal count
+        count += 1
+        pos = count % 4  # 1,2,3 -> enters; 0 -> exits
+        return 100.0 if pos == 0 else 0.0
+
+    return fake_time
+
+
 @pytest.mark.asyncio
 async def test_local_send_command_unexpected_status_logs_warning(local_api):
     """Test _send_local_command logs warning for unexpected status (lines 327-329)."""
     with aioresponses() as m:
         m.get(
             "http://192.168.1.100/get_challenge",
-            body="deadbeef",  # Plain text response
+            body="deadbeef",
             repeat=True,
         )
-        # Return unexpected status code
+        # First post returns 418 (triggers the warning), second returns 200 (exits the loop)
         m.post(
             "http://192.168.1.100/post",
             status=418,
-            repeat=True,
+        )
+        m.post(
+            "http://192.168.1.100/post",
+            status=200,
         )
 
-        with patch.object(local_api._log, "warning") as mock_warning:
-            await local_api._send_local_command(
-                command=IntelliFireCommand.POWER, value=1
-            )
+        with patch("intellifire4py.local_api.time.time", side_effect=_make_fast_time()):
+            with patch.object(local_api._log, "warning") as mock_warning:
+                await local_api._send_local_command(
+                    command=IntelliFireCommand.POWER, value=1
+                )
 
-            # Should log warning about unexpected status
-            assert mock_warning.called
-            # Check that warning mentions unexpected response
-            warning_calls = [str(call) for call in mock_warning.call_args_list]
-            assert any("Unexpected Response Code" in call for call in warning_calls)
+                assert mock_warning.called
+                warning_calls = [str(call) for call in mock_warning.call_args_list]
+                assert any("Unexpected Response Code" in call for call in warning_calls)
 
 
 # ============================================================================
@@ -151,24 +175,22 @@ async def test_local_send_command_timeout_error_retry(local_api):
             body="deadbeef",
             repeat=True,
         )
-        # First post times out
         m.post(
             "http://192.168.1.100/post",
             exception=TimeoutError("Connection timeout"),
         )
-        # Second post succeeds
         m.post(
             "http://192.168.1.100/post",
             status=200,
         )
 
-        with patch.object(local_api._log, "warning") as mock_warning:
-            await local_api._send_local_command(
-                command=IntelliFireCommand.POWER, value=1
-            )
+        with patch("intellifire4py.local_api.time.time", side_effect=_make_fast_time()):
+            with patch.object(local_api._log, "warning") as mock_warning:
+                await local_api._send_local_command(
+                    command=IntelliFireCommand.POWER, value=1
+                )
 
-            # Should log timeout warning
-            assert mock_warning.called
+                assert mock_warning.called
 
 
 # ============================================================================
@@ -185,24 +207,22 @@ async def test_local_send_command_unhandled_exception_logs_error(local_api):
             body="deadbeef",
             repeat=True,
         )
-        # Raise unexpected exception
         m.post(
             "http://192.168.1.100/post",
             exception=RuntimeError("Unexpected error"),
         )
-        # Eventually succeed
         m.post(
             "http://192.168.1.100/post",
             status=200,
         )
 
-        with patch.object(local_api._log, "error") as mock_error:
-            await local_api._send_local_command(
-                command=IntelliFireCommand.POWER, value=1
-            )
+        with patch("intellifire4py.local_api.time.time", side_effect=_make_fast_time()):
+            with patch.object(local_api._log, "error") as mock_error:
+                await local_api._send_local_command(
+                    command=IntelliFireCommand.POWER, value=1
+                )
 
-            # Should log error
-            assert mock_error.called
+                assert mock_error.called
 
 
 # ============================================================================

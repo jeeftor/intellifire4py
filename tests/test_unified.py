@@ -439,3 +439,12 @@ async def test_async_validate_connectivity_aiohttp_client_connection_error(
         with patch.object(fp, "perform_cloud_poll", new=AsyncMock(return_value=None)):
             result = await fp.async_validate_connectivity()
             assert result[0] is False
+
+
+@pytest.mark.asyncio
+async def test_debug_method(mock_common_data_local):
+    """Cover unified_fireplace.py line 647 — debug() calls rich inspect."""
+    fp = UnifiedFireplace(mock_common_data_local)
+    with patch("intellifire4py.unified_fireplace.inspect") as mock_inspect:
+        fp.debug()
+        mock_inspect.assert_called_once_with(fp, methods=True, help=True)

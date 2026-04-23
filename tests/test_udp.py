@@ -88,3 +88,19 @@ async def test_udp_fireplace_finder_search_fireplace(monkeypatch):
     monkeypatch.setattr(finder, "start_discovery_reader", mock.AsyncMock())
     result = await finder.search_fireplace(timeout=1)
     assert isinstance(result, list)
+
+
+def test_ift_discovery_sender_datagram_received_closes_transport():
+    """Cover udp.py lines 65-67 — datagram_received logs and closes transport."""
+    protocol = IFTDiscoverySenderProtocol("msg", None)
+    protocol.transport = mock.Mock()
+    protocol.datagram_received(b"response", ("192.168.1.1", 3785))
+    protocol.transport.close.assert_called_once()
+
+
+def test_ift_discovery_sender_datagram_received_no_transport():
+    """Cover udp.py line 66 branch — datagram_received with no transport set."""
+    protocol = IFTDiscoverySenderProtocol("msg", None)
+    protocol.transport = None
+    # Should not raise even when transport is None
+    protocol.datagram_received(b"response", ("192.168.1.1", 3785))
