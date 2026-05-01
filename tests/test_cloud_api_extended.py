@@ -3,13 +3,18 @@
 import pytest
 import json
 import pytest_asyncio
+import aiohttp
 from aiohttp import CookieJar, ClientResponseError, RequestInfo
 from aioresponses import aioresponses
 from multidict import CIMultiDict, CIMultiDictProxy
 from yarl import URL
 
 from intellifire4py.cloud_api import IntelliFireAPICloud
-from intellifire4py.exceptions import CloudError
+from intellifire4py.exceptions import (
+    CloudError,
+    CommandRejectedError,
+    MissingCredentialsError,
+)
 from intellifire4py.const import IntelliFireCloudPollType, IntelliFireCommand
 from intellifire4py.model import IntelliFirePollData
 
@@ -136,7 +141,10 @@ async def test_send_command_no_cookie_jar():
         cookie_jar=None,
     )
 
-    await api.send_command(command=IntelliFireCommand.POWER, value=1)
+    with pytest.raises(MissingCredentialsError):
+        await api.flame_on()
+
+    assert api.data.is_on is False
 
 
 @pytest.mark.asyncio
@@ -148,7 +156,7 @@ async def test_send_cloud_command_unexpected_status(cloud_api):
             status=500,
         )
 
-        with pytest.raises(ClientResponseError):
+        with pytest.raises(CommandRejectedError):
             await cloud_api._send_cloud_command(
                 command=IntelliFireCommand.POWER, value=1
             )
@@ -190,6 +198,33 @@ async def test_poll_404_not_found(cloud_api):
 
         with pytest.raises(ClientResponseError):
             await cloud_api.poll()
+
+
+@pytest.mark.asyncio
+async def test_poll_uses_external_session(cloud_poll_json: str) -> None:
+    """Test poll uses but does not own a caller-provided session."""
+    async with aiohttp.ClientSession() as session:
+        api = IntelliFireAPICloud(
+            serial="TEST123",
+            use_http=False,
+            verify_ssl=True,
+            cookie_jar=CookieJar(),
+            session=session,
+        )
+
+        with aioresponses() as m:
+            m.get(
+                "https://iftapi.net/a/TEST123//apppoll",
+                status=200,
+                body=cloud_poll_json,
+            )
+
+            await api.poll(timeout_seconds=1)
+
+        await api.close_session()
+
+        assert api.data.name == "Living Room"
+        assert session.closed is False
 
 
 @pytest.mark.asyncio

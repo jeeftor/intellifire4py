@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Command failure handling**: Local and cloud command calls now raise typed command errors when credentials are missing, when cloud control is rejected, or when local retries are exhausted. This prevents optimistic cached state updates when a fireplace command was not actually accepted.
+
+### Fixed
+
+- **Cloud session management**: Cloud APIs can now use a caller-provided `aiohttp.ClientSession` without taking ownership of it, and library-created sessions now apply explicit timeouts and SSL verification settings.
+
 ### Tests
 
 - **Coverage improvements**: Increased test coverage from 95% to 96% overall; production modules `cloud_api.py`, `local_api.py`, and `udp.py` now at 100%

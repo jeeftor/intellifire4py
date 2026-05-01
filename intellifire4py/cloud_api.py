@@ -4,14 +4,16 @@ from __future__ import annotations
 import time
 import asyncio
 from datetime import datetime, timezone
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from asyncio import Task
 from typing import Any
 import json
 import aiohttp
-from aiohttp import CookieJar, ClientSession, ClientTimeout
+from aiohttp import CookieJar, ClientSession, ClientTimeout, TCPConnector
 
-from .exceptions import CloudError
+from .exceptions import CloudError, CommandRejectedError, MissingCredentialsError
 from .model import (
     IntelliFireUserData,
 )
@@ -39,6 +41,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         use_http: bool = False,
         verify_ssl: bool = True,
         cookie_jar: CookieJar | None = None,
+        session: ClientSession | None = None,
     ):
         """Initialize the class with specific configuration for fireplace communication.
 
@@ -60,6 +63,8 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
             cookie_jar (CookieJar): A `Cookies` object containing authentication or session cookies required for
                           communicating with the fireplace. This is essential for maintaining a secure and
                           authenticated session.
+            session (ClientSession | None): Optional externally managed aiohttp session. When provided, the caller
+                          remains responsible for closing it.
 
         Note:
             Modifying `use_http` and `verify_ssl` from their default values should be done with caution, as
@@ -72,6 +77,8 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         self._log = logging.getLogger(__name__)
 
         self._cookie_jar = cookie_jar
+        self._session = session
+        self._owns_session = False
 
         if use_http:
             self.prefix = "http"  # pragma: no cover
@@ -90,12 +97,32 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
 
     def _get_session(self, timeout_seconds: float = 10.0) -> ClientSession:
         """Ensure that the aiohttp ClientSession is created and open."""
-        timeout = ClientTimeout(timeout_seconds)
+        timeout = ClientTimeout(total=timeout_seconds)
         return aiohttp.ClientSession(
             timeout=timeout,
             headers={"user-agent": USER_AGENT},
             cookie_jar=self._cookie_jar,
+            connector=TCPConnector(ssl=self._verify_ssl),
         )
+
+    @asynccontextmanager
+    async def _session_context(
+        self, timeout_seconds: float = 10.0
+    ) -> AsyncIterator[ClientSession]:
+        """Yield a session without closing caller-owned sessions."""
+        if self._session is not None:
+            if self._session.closed:
+                raise RuntimeError("Session is closed")
+            yield self._session
+            return
+
+        async with self._get_session(timeout_seconds=timeout_seconds) as session:
+            yield session
+
+    async def close_session(self) -> None:
+        """Close the session only when this instance owns it."""
+        if self._owns_session and self._session and not self._session.closed:
+            await self._session.close()
 
     def get_data(self) -> IntelliFirePollData:
         """Return data to the user."""
@@ -120,7 +147,7 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 command.name,
                 value,
             )
-            return
+            raise MissingCredentialsError("Missing cloud authentication cookies")
 
         await self._send_cloud_command(command=command, value=value)
 
@@ -129,40 +156,53 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         *,
         command: IntelliFireCommand,
         value: int,
+        timeout_seconds: float = 10.0,
     ) -> None:
         url = f"{self.prefix}://iftapi.net/a/{self._serial}//apppost"
         content = f"{command.value['cloud_command']}={value}".encode()
 
-        async with self._get_session().post(url, data=content) as response:
-            self._log.info(f">> Created Session {response}")
+        async with self._session_context(timeout_seconds=timeout_seconds) as session:
+            async with session.post(
+                url,
+                data=content,
+                timeout=ClientTimeout(total=timeout_seconds),
+            ) as response:
+                self._log.info(f">> Created Session {response}")
 
-            curl_command = await _convert_aiohttp_response_to_curl(response)
-            self._log.debug(f"Generated curl command: {curl_command}")
-            response.raise_for_status()
+                curl_command = await _convert_aiohttp_response_to_curl(response)
+                self._log.debug(f"Generated curl command: {curl_command}")
+                try:
+                    response.raise_for_status()
+                except aiohttp.ClientResponseError as error:
+                    raise CommandRejectedError(
+                        f"Command {command.name} was rejected with status {error.status}"
+                    ) from error
 
-            log_msg = f"POST {url} [{content.decode()}]  [{self._cookie_jar}]"
-            self._log.debug(log_msg)
-            """
-            204 Success – command accepted
-            403 Not authorized (bad email address or authorization cookie)
-            404 Fireplace not found (bad serial number)
-            422 Invalid Parameter (invalid command id or command value)
-            """
-            if response.status == 204:
-                self._last_send = datetime.now(timezone.utc)
-                return
-            # elif (
-            #     response.status == 403
-            # ):  # Not authorized (bad email address or authorization cookie)
-            #     raise CloudError("Not authorized")
-            # elif response.status == 404:
-            #     raise CloudError("Fireplace not found (bad serial number)")
-            # elif response.status == 422:
-            #     raise CloudError(
-            #         "Invalid Parameter (invalid command id or command value)"
-            #     )
-            else:
-                raise Exception(f"Unexpected return code {response.status}")
+                log_msg = f"POST {url} [{content.decode()}]  [{self._cookie_jar}]"
+                self._log.debug(log_msg)
+                """
+                204 Success – command accepted
+                403 Not authorized (bad email address or authorization cookie)
+                404 Fireplace not found (bad serial number)
+                422 Invalid Parameter (invalid command id or command value)
+                """
+                if response.status == 204:
+                    self._last_send = datetime.now(timezone.utc)
+                    return
+                # elif (
+                #     response.status == 403
+                # ):  # Not authorized (bad email address or authorization cookie)
+                #     raise CloudError("Not authorized")
+                # elif response.status == 404:
+                #     raise CloudError("Fireplace not found (bad serial number)")
+                # elif response.status == 422:
+                #     raise CloudError(
+                #         "Invalid Parameter (invalid command id or command value)"
+                #     )
+                else:
+                    raise CommandRejectedError(
+                        f"Unexpected return code {response.status}"
+                    )
 
     async def long_poll(self) -> bool:
         """Perform a LongPoll to wait for a Status update.
@@ -194,9 +234,11 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         long_poll_url = f"{self.prefix}://iftapi.net/a/{self._serial}/applongpoll"
         self._log.debug(f"long_poll() {long_poll_url}")
 
-        async with self._get_session() as session:
+        async with self._session_context(timeout_seconds=61) as session:
             try:
-                response = await session.get(long_poll_url, timeout=ClientTimeout(61))
+                response = await session.get(
+                    long_poll_url, timeout=ClientTimeout(total=61)
+                )
 
                 self._log.debug("Long Poll Status Code %d", response.status)
                 if response.status == 200:
@@ -288,9 +330,11 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         poll_url = f"{self.prefix}://iftapi.net/a/{self._serial}//apppoll"
 
         self._log.debug(f"poll() {poll_url}")
-        async with self._get_session() as session:
+        async with self._session_context(timeout_seconds=timeout_seconds) as session:
             try:
-                response = await session.get(poll_url)
+                response = await session.get(
+                    poll_url, timeout=ClientTimeout(total=timeout_seconds)
+                )
                 response.raise_for_status()  # Handle 4xx/5xx responses here
                 json_data = await response.json()
                 self._data = IntelliFirePollData(**json_data)
