@@ -11,7 +11,7 @@ from yarl import URL
 
 from intellifire4py.cloud_api import IntelliFireAPICloud
 from intellifire4py.local_api import IntelliFireAPILocal
-from intellifire4py.exceptions import CloudError
+from intellifire4py.exceptions import CloudError, CommandRetryError
 from intellifire4py.const import IntelliFireCommand
 from intellifire4py.udp import UDPFireplaceFinder
 
@@ -20,6 +20,18 @@ def _make_request_info(url: str, method: str = "GET") -> RequestInfo:
     return RequestInfo(
         url=URL(url), method=method, headers=CIMultiDictProxy(CIMultiDict())
     )
+
+
+def _make_fast_time():
+    """Return a time.time() mock that runs one post attempt per retry."""
+    count = 0
+
+    def fake_time():
+        nonlocal count
+        count += 1
+        return 100.0 if count % 5 == 0 else 0.0
+
+    return fake_time
 
 
 @pytest_asyncio.fixture
@@ -78,7 +90,11 @@ async def test_local_api_poll_timeout_error():
 @pytest.mark.asyncio
 async def test_local_api_send_command_challenge_timeout():
     """Test send_command when challenge retrieval times out repeatedly."""
-    api = IntelliFireAPILocal(fireplace_ip="192.168.1.100")
+    api = IntelliFireAPILocal(
+        fireplace_ip="192.168.1.100",
+        user_id="test_user",
+        api_key="deadbeefdeadbeefdeadbeefdeadbeef",
+    )
 
     with aioresponses() as m:
         # All challenge requests timeout
@@ -88,14 +104,19 @@ async def test_local_api_send_command_challenge_timeout():
             repeat=True,
         )
 
-        # This should eventually give up after retries
-        await api.send_command(command=IntelliFireCommand.POWER, value=1)
+        with patch("intellifire4py.local_api.asyncio.sleep"):
+            with pytest.raises(CommandRetryError):
+                await api.send_command(command=IntelliFireCommand.POWER, value=1)
 
 
 @pytest.mark.asyncio
 async def test_local_api_send_command_post_failure():
     """Test send_command when post request fails."""
-    api = IntelliFireAPILocal(fireplace_ip="192.168.1.100")
+    api = IntelliFireAPILocal(
+        fireplace_ip="192.168.1.100",
+        user_id="test_user",
+        api_key="deadbeefdeadbeefdeadbeefdeadbeef",
+    )
 
     with aioresponses() as m:
         # Challenge succeeds
@@ -112,8 +133,10 @@ async def test_local_api_send_command_post_failure():
             repeat=True,
         )
 
-        # Should retry and eventually give up
-        await api.send_command(command=IntelliFireCommand.POWER, value=1)
+        with patch("intellifire4py.local_api.time.time", side_effect=_make_fast_time()):
+            with patch("intellifire4py.local_api.asyncio.sleep"):
+                with pytest.raises(CommandRetryError):
+                    await api.send_command(command=IntelliFireCommand.POWER, value=1)
 
 
 @pytest.mark.asyncio
