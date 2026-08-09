@@ -76,7 +76,7 @@ dev = [
 intellifire4py = "intellifire4py.__main__:main"
 
 [bumpver]
-current_version = "4.1.11"
+current_version = "4.5.1"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version to {new_version}"
 tag_message = "{new_version}"
