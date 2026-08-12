@@ -13,7 +13,7 @@ exclude = [
 
 [project]
 name = "intellifire4py"
-version = "4.5.2"
+version = "4.5.3"
 description = "Intellifire4Py"
 authors = [
     {name = "Jeff Stein", email = "jeffstein@gmail.com"}
@@ -62,7 +62,6 @@ dev = [
     "ruff>=0.1.4",
     "aioresponses>=0.7.6",
     "pytest-xdist>=3.5.0",
-    "safety>=3.3.1",
     "pytest-timeout>=2.3.1",
     "furo>=2024.8.6",
     "pytest-mock>=3.14.0",
@@ -76,7 +75,7 @@ dev = [
 intellifire4py = "intellifire4py.__main__:main"
 
 [bumpver]
-current_version = "4.5.2"
+current_version = "4.5.3"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version to {new_version}"
 tag_message = "{new_version}"
