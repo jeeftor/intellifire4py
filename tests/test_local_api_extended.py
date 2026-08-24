@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 from aioresponses import aioresponses
 import aiohttp
 
+from intellifire4py.exceptions import CommandRetryError, MissingCredentialsError
 from intellifire4py.local_api import IntelliFireAPILocal
 
 
@@ -69,13 +70,37 @@ async def test_send_command_needs_login():
     """Test send_command when login is needed."""
     api = IntelliFireAPILocal(fireplace_ip="192.168.1.100")
 
-    from intellifire4py.const import IntelliFireCommand
-
     with aioresponses() as m:
         m.get("http://192.168.1.100/get_challenge", status=200, body="challenge123")
         m.post("http://192.168.1.100/post", status=200)
 
-        await api.send_command(command=IntelliFireCommand.POWER, value=1)
+        with pytest.raises(MissingCredentialsError):
+            await api.flame_on()
+
+        assert api.data.is_on is False
+
+
+@pytest.mark.asyncio
+async def test_send_command_raises_after_retries() -> None:
+    """Test send_command raises when local retries are exhausted."""
+    api = IntelliFireAPILocal(
+        fireplace_ip="192.168.1.100",
+        user_id="test_user",
+        api_key="deadbeefdeadbeefdeadbeefdeadbeef",
+    )
+
+    with aioresponses() as m:
+        m.get(
+            "http://192.168.1.100/get_challenge",
+            exception=asyncio.TimeoutError(),
+            repeat=True,
+        )
+
+        with patch("intellifire4py.local_api.asyncio.sleep"):
+            with pytest.raises(CommandRetryError):
+                await api.flame_on()
+
+    assert api.data.is_on is False
 
 
 @pytest.mark.asyncio

@@ -18,6 +18,7 @@ from intellifire4py.model import (
 from .const import IntelliFireCommand
 from .const import IntelliFireApiMode
 from .control import IntelliFireController
+from .exceptions import CommandRetryError, MissingCredentialsError
 from .read import IntelliFireDataProvider
 from .utils import _range_check
 import aiohttp
@@ -229,7 +230,7 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                 command.name,
                 value,
             )
-            return
+            raise MissingCredentialsError("Missing user_id or api_key")
 
         was_running = await self.stop_background_polling()
         self._log.debug(
@@ -237,11 +238,12 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
             was_running,
         )
 
-        await self._send_local_command(command=command, value=value)
-
-        if was_running:
-            await self.start_background_polling()
-            self._log.info("send_command:: Restarting background polling")
+        try:
+            await self._send_local_command(command=command, value=value)
+        finally:
+            if was_running:
+                await self.start_background_polling()
+                self._log.info("send_command:: Restarting background polling")
 
     def _construct_payload(self, command: str, value: int, challenge: str) -> str:
         """Construct a payload."""
@@ -345,6 +347,9 @@ class IntelliFireAPILocal(IntelliFireController, IntelliFireDataProvider):
                     "_send_local_command:: FAILURE!! - IntelliFire command could not be sent [%s=%s]",
                     command.value["local_command"],
                     value,
+                )
+                raise CommandRetryError(
+                    f"Command {command.name} could not be sent after {retries} retries"
                 )
 
     async def _get_challenge(self, session: ClientSession) -> str | None:

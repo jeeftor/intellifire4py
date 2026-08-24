@@ -9,6 +9,7 @@ from aioresponses import aioresponses
 from intellifire4py.cloud_api import IntelliFireAPICloud
 from intellifire4py.cloud_interface import IntelliFireCloudInterface
 from intellifire4py.const import IntelliFireCommand
+from intellifire4py.exceptions import CommandRetryError
 from intellifire4py.local_api import IntelliFireAPILocal
 
 
@@ -131,9 +132,10 @@ async def test_local_send_command_all_retries_exhausted(local_api):
 
         with patch("intellifire4py.local_api.asyncio.sleep"):
             with patch.object(local_api._log, "debug") as mock_debug:
-                await local_api._send_local_command(
-                    command=IntelliFireCommand.POWER, value=1
-                )
+                with pytest.raises(CommandRetryError):
+                    await local_api._send_local_command(
+                        command=IntelliFireCommand.POWER, value=1
+                    )
                 debug_calls = [str(c) for c in mock_debug.call_args_list]
                 assert any("FAILURE" in c for c in debug_calls)
 

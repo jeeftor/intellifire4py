@@ -9,7 +9,7 @@ import aiohttp
 
 from .const import USER_AGENT
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientTimeout, TCPConnector
 
 from intellifire4py import (
     IntelliFireAPICloud,
@@ -41,23 +41,33 @@ class IntelliFireCloudInterface:
     _cloud_fireplaces: dict[str, IntelliFireAPICloud] = {}
     _is_logged_in = False
 
-    def __init__(self, use_http: bool = False, verify_ssl: bool = True):
+    def __init__(
+        self,
+        use_http: bool = False,
+        verify_ssl: bool = True,
+        session: ClientSession | None = None,
+        timeout_seconds: float = 10.0,
+    ):
         """Initializes the IntelliFireCloudInterface with optional HTTP settings.
 
         Args:
             use_http (bool, optional): If True, use HTTP instead of HTTPS. Default is False.
             verify_ssl (bool, optional): If True, enable SSL certificate verification. Default is True.
+            session (ClientSession | None): Optional externally managed aiohttp session.
+            timeout_seconds (float): Timeout for sessions created by this class.
         """
 
         self._use_http = use_http
         self._verify_ssl = verify_ssl
+        self._timeout_seconds = timeout_seconds
 
         if use_http:
             self.prefix = "http"  # pragma: no cover
         else:
             self.prefix = "https"
 
-        self._session: ClientSession | None = None
+        self._session: ClientSession | None = session
+        self._owns_session = session is None
         self._in_context = False
 
     async def __aenter__(self) -> IntelliFireCloudInterface:
@@ -78,14 +88,18 @@ class IntelliFireCloudInterface:
 
     async def _create_session(self) -> None:
         """Create an aiohttp ClientSession with the required settings."""
-        if self._session is None or self._session.closed:
+        if self._session is None or (self._owns_session and self._session.closed):
             self._session = ClientSession(
                 headers={"user-agent": USER_AGENT},
+                timeout=ClientTimeout(total=self._timeout_seconds),
+                connector=TCPConnector(ssl=self._verify_ssl),
             )
+        elif self._session.closed:
+            raise RuntimeError("Session is closed")
 
     async def close_session(self) -> None:
         """Close the aiohttp ClientSession."""
-        if self._session and not self._session.closed:
+        if self._owns_session and self._session and not self._session.closed:
             await self._session.close()
 
     # async def login_with_cookie_vars(
@@ -258,6 +272,7 @@ class IntelliFireCloudInterface:
                     use_http=self._use_http,
                     verify_ssl=self._verify_ssl,
                     cookie_jar=self.user_data.cookie_jar,
+                    session=self._session,
                 )
 
                 # Poll the fireplace
@@ -353,6 +368,7 @@ class IntelliFireCloudInterface:
                 cookie_jar=common_fireplace.cookie_jar,
                 use_http=self.use_http,
                 verify_ssl=self.verify_ssl,
+                session=self._session,
             )
             for common_fireplace in self._user_data.fireplaces
         ]

@@ -1,6 +1,7 @@
 """Extended tests for cloud_interface.py to improve coverage."""
 
 import pytest
+import aiohttp
 from aiohttp import ClientError
 from aioresponses import aioresponses
 
@@ -69,3 +70,63 @@ async def test_context_manager_usage():
         RuntimeError, match="must be called within an 'async with' context"
     ):
         await cloud_interface.login_with_credentials(username="user", password="pass")
+
+
+@pytest.mark.asyncio
+async def test_context_manager_does_not_close_external_session() -> None:
+    """Test caller-provided sessions remain caller-owned."""
+    async with aiohttp.ClientSession() as session:
+        cloud_interface = IntelliFireCloudInterface(session=session)
+
+        async with cloud_interface:
+            assert cloud_interface._session is session
+
+        assert session.closed is False
+
+
+@pytest.mark.asyncio
+async def test_create_session_applies_timeout_and_ssl(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test owned sessions receive configured timeout and SSL verification."""
+    created_kwargs: dict[str, object] = {}
+    created_connector_ssl_values: list[bool] = []
+
+    class FakeConnector:
+        """Fake aiohttp connector for constructor inspection."""
+
+        def __init__(self, *, ssl: bool) -> None:
+            """Initialize the fake connector."""
+            self.ssl = ssl
+            created_connector_ssl_values.append(ssl)
+
+    class FakeSession:
+        """Fake aiohttp session for constructor inspection."""
+
+        closed = False
+
+        def __init__(self, **kwargs) -> None:
+            """Store constructor keyword arguments."""
+            created_kwargs.update(kwargs)
+
+        async def close(self) -> None:
+            """Close the fake session."""
+            self.closed = True
+
+    monkeypatch.setattr("intellifire4py.cloud_interface.TCPConnector", FakeConnector)
+    monkeypatch.setattr("intellifire4py.cloud_interface.ClientSession", FakeSession)
+
+    cloud_interface = IntelliFireCloudInterface(
+        verify_ssl=False,
+        timeout_seconds=7.5,
+    )
+
+    await cloud_interface._create_session()
+    await cloud_interface.close_session()
+
+    timeout = created_kwargs["timeout"]
+    assert isinstance(timeout, aiohttp.ClientTimeout)
+    assert timeout.total == 7.5
+    assert created_connector_ssl_values == [False]
+    assert cloud_interface._session is not None
+    assert cloud_interface._session.closed is True
