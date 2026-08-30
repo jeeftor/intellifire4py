@@ -58,7 +58,7 @@ jobs:
 
       # Store coverage for comparison
       - name: Store Pull Request comment to be posted
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: github.event_name == 'pull_request' && steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
         with:
           name: python-coverage-comment-action
