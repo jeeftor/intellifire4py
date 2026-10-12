@@ -64,7 +64,7 @@ async def test_control(
         )
         fp = fireplaces[0]
 
-        assert fp.data.serial == "unset"
+        assert fp.data.serial == "XXXXXE834CE109D849CBB15CDDBAFF381"
         assert fp.data.brand == "H&G"
         assert fp.data.battery == 0
         assert fp.data.connection_quality == 987690

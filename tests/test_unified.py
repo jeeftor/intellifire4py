@@ -1,6 +1,7 @@
 """Unified tests."""
 
 import logging
+from typing import cast
 from unittest.mock import patch, PropertyMock, AsyncMock
 
 import pytest
@@ -64,6 +65,24 @@ async def test_build_from_common_data_local_without_local_connectivity2(
     assert local_fp.control_mode == IntelliFireApiMode.CLOUD
     try:
         await local_fp.read_api.stop_background_polling()
+    except Exception as e:
+        logging.error(f"Exception during cleanup: {e}")
+
+
+@pytest.mark.asyncio
+async def test_cloud_poll_data_survives_local_timeout(
+    mock_common_data_local, mock_login_flow_with_cloud_only, serial
+) -> None:
+    """Cloud poll data must not be overwritten by uninitialized local data."""
+    fp = await UnifiedFireplace.build_fireplace_from_common(mock_common_data_local)
+
+    assert fp.read_mode == IntelliFireApiMode.CLOUD
+    # Freshly polled cloud values must be preserved, not reset to defaults
+    assert fp.data.ipv4_address == "192.168.1.69"  # NOSONAR
+    assert fp.data.brand == "H&G"
+    assert fp.data.serial == serial
+    try:
+        await fp.read_api.stop_background_polling()
     except Exception as e:
         logging.error(f"Exception during cleanup: {e}")
 
@@ -264,7 +283,7 @@ async def test_switch_read_mode_else_branch(mock_common_data_local):
     class DummyMode:
         pass
 
-    mode = DummyMode()
+    mode = cast(IntelliFireApiMode, DummyMode())
 
     # Patch stop_background_polling to be async no-op
     async def nop() -> bool:

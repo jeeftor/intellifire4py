@@ -206,6 +206,8 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                     json_data = json.loads(await response.text())
 
                     self._data = IntelliFirePollData(**json_data)
+                    # Cloud responses do not include the serial number
+                    self._data.serial = self._serial
                     self._log.debug(f"poll() complete: {self._data}")
 
                     self._last_poll = datetime.now(timezone.utc)
@@ -294,6 +296,8 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
                 response.raise_for_status()  # Handle 4xx/5xx responses here
                 json_data = await response.json()
                 self._data = IntelliFirePollData(**json_data)
+                # Cloud responses do not include the serial number
+                self._data.serial = self._serial
                 self._log.debug(f"poll() complete: {self._data}")
 
                 self._last_poll = datetime.now(timezone.utc)
@@ -385,6 +389,11 @@ class IntelliFireAPICloud(IntelliFireController, IntelliFireDataProvider):
         ):  # pragma: no cover - the tests SHOULD be hitting this but dont appear to be
             self._log.warning("Returning uninitialized poll data")  # pragma: no cover
         return self._data
+
+    @property
+    def is_initialized(self) -> bool:
+        """Return whether the data is initialized."""
+        return self._data.serial != "unset"
 
     def set_poll_mode(self, mode: IntelliFireCloudPollType):
         """Set the poll mode."""

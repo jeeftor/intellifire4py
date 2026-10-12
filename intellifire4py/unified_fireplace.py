@@ -300,13 +300,15 @@ class UnifiedFireplace:
         if mode == IntelliFireApiMode.LOCAL:
             if self._polling_enabled:
                 await self._cloud_api.stop_background_polling()
-            self._local_api.overwrite_data(self._cloud_api.data)
+            if self._cloud_api.is_initialized:
+                self._local_api.overwrite_data(self._cloud_api.data)
             if self._polling_enabled:
                 await self._local_api.start_background_polling()
         elif mode == IntelliFireApiMode.CLOUD:
             if self._polling_enabled:
                 await self._local_api.stop_background_polling()
-            self._cloud_api.overwrite_data(self._local_api.data)
+            if self._local_api.is_initialized:
+                self._cloud_api.overwrite_data(self._local_api.data)
             if self._polling_enabled:
                 await self._cloud_api.start_background_polling()
         else:
