@@ -18,6 +18,7 @@ This code is also available in `example_discovery.py`:
 import asyncio
 from intellifire4py.udp import UDPFireplaceFinder
 
+
 async def main() -> None:
     """Discovery fire places"""
 
@@ -32,10 +33,10 @@ async def main() -> None:
     af = UDPFireplaceFinder()
     print(await af.search_fireplace(timeout=timeout))
 
+
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
-
 ```
 
 ## Local Polling
@@ -50,6 +51,7 @@ import os
 from intellifire4py import IntelliFireAPILocal
 
 logging.basicConfig(level=logging.DEBUG)
+
 
 async def main() -> None:
     """Main function."""
@@ -94,11 +96,7 @@ In order to control the fireplace you must instantiate `IntelliFireAPILocal` as 
 ```python
 from intellifire4py import IntelliFireAPILocal
 
-api = IntelliFireAPILocal(
-    fireplace_ip=fireplace_ip,
-    user_id=user_id,
-    api_key=api_key
-)
+api = IntelliFireAPILocal(fireplace_ip=fireplace_ip, user_id=user_id, api_key=api_key)
 
 # And then you can issue commands such as:
 await api.flame_on()
